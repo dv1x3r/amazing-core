@@ -15,7 +15,8 @@ You can check some description in the /docs/intro.ipynb, or dig into the game fi
 ## How To Run
 
 1. Install the game using the link above
-2. Edit ServerConfig.xml : ```ServerIP = '127.0.0.1'```
-3. Run Amazing Core using command line and python 3.9+ : ```python app.py```
-4. Start the Game
-5. Cry a lot
+2. Remove (or rename) : ```steam_appid.txt``` and ```SteamworksNative.dll```, otherwise Steam will count hours in game
+3. Edit ServerConfig.xml : ```ServerIP = '127.0.0.1'```
+4. Run Amazing Core using command line and python 3.9+ : ```python app.py```
+5. Start the Game
+6. Cry a lot
