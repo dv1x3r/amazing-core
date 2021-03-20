@@ -3,8 +3,8 @@
 Here we will try to create a custom server for the Amazing World game, which was closed in 2018.
 
 - Game page on Steam: https://steamcommunity.com/app/293500
-- Download game with Steam: [steam://install/293500](steam://install/293500)
-- Discord Server: coming soon
+- Download game with Steam: steam://install/293500
+- Discord Server: https://discord.gg/TWfTBbfdA9
 
 **P.S.** I am not accepting / related to any donations as long as we do not have ready to go product and hosted server.  
 
