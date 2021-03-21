@@ -2,7 +2,7 @@ import asyncio
 from amazingcore.logger import LogLevel, log
 from asyncio.streams import StreamReader, StreamWriter
 from amazingcore.codec.bit_protocol import BitProtocol
-from amazingcore.game.session import Session
+from amazingcore.session import Session
 
 
 class Core:
