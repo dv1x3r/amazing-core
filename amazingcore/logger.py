@@ -1,5 +1,4 @@
 from enum import Enum
-from colorama import Fore, Back, Style
 from datetime import datetime
 
 
@@ -12,21 +11,32 @@ class LogLevel(Enum):
     FATAL = 6
 
 
+class Color:
+    # https://stackoverflow.com/questions/287871/how-to-print-colored-text-to-the-terminal
+    RED = '\x1b[1;31;1m'
+    GREEN = '\x1b[1;32;1m'
+    YELLOW = '\x1b[1;33;1m'
+    BLUE = '\x1b[1;34;1m'
+    CYAN = '\x1b[1;36;1m'
+    FATAL = '\x1b[1;37;41m'
+    END = '\x1b[0m'
+
+
 def log(message: str, log_level: LogLevel = 3):
     ts = datetime.now().strftime('%d/%b/%y %H:%M:%S')
     if LogLevel(log_level) == LogLevel.TRACE:
-        print(f'{Fore.CYAN}[TRACE] {ts} > {message}', end='')
+        print(f'{Color.BLUE}[TRACE] {ts} > {message}', end='')
     elif LogLevel(log_level) == LogLevel.DEBUG:
-        print(f'{Fore.GREEN}[DEBUG] {ts} > {message}', end='')
+        print(f'{Color.GREEN}[DEBUG] {ts} > {message}', end='')
     elif LogLevel(log_level) == LogLevel.INFO:
-        print(f'{Fore.WHITE}[INFO]  {ts} > {message}', end='')
+        print(f'[INFO]  {ts} > {message}', end='')
     elif LogLevel(log_level) == LogLevel.WARN:
-        print(f'{Fore.YELLOW}[WARN]  {ts} > {message}', end='')
+        print(f'{Color.YELLOW}[WARN]  {ts} > {message}', end='')
     elif LogLevel(log_level) == LogLevel.ERROR:
-        print(f'{Fore.RED}[ERROR] {ts} > {message}', end='')
+        print(f'{Color.RED}[ERROR] {ts} > {message}', end='')
     elif LogLevel(log_level) == LogLevel.FATAL:
-        print(f'{Fore.BLACK}{Back.RED}[FATAL] > {ts} {message}', end='')
-    print(Style.RESET_ALL)
+        print(f'{Color.FATAL}[FATAL] > {ts} {message}', end='')
+    print(Color.END)
 
 
 # log('trace text', LogLevel.TRACE)
