@@ -8,7 +8,9 @@ class ValidateNameMessage(Message):
         self.response: ValidateNameResponse = ValidateNameResponse()
 
     async def process(self):
-        pass
+        # restrict new username patterns
+        if self.request.name.lower().find('fuck') != -1:
+            self.response.filter_name = 'bad'
 
 
 class ValidateNameRequest(SerializableMessage):
