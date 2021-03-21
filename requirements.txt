@@ -1,0 +1,1 @@
+rich==9.* # coloring console output

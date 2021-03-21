@@ -1,6 +1,6 @@
 from enum import Enum
-from colorama import Fore, Back, Style
 from datetime import datetime
+import rich
 
 
 class LogLevel(Enum):
@@ -15,18 +15,17 @@ class LogLevel(Enum):
 def log(message: str, log_level: LogLevel = 3):
     ts = datetime.now().strftime('%d/%b/%y %H:%M:%S')
     if LogLevel(log_level) == LogLevel.TRACE:
-        print(f'{Fore.CYAN}[TRACE] {ts} > {message}', end='')
+        rich.print(f'[bold cyan][TRACE] {ts} > {message}[/]')
     elif LogLevel(log_level) == LogLevel.DEBUG:
-        print(f'{Fore.GREEN}[DEBUG] {ts} > {message}', end='')
+        rich.print(f'[bold green][DEBUG] {ts} > {message}[/]')
     elif LogLevel(log_level) == LogLevel.INFO:
-        print(f'{Fore.WHITE}[INFO]  {ts} > {message}', end='')
+        rich.print(f'[bold white][INFO]  {ts} > {message}[/]')
     elif LogLevel(log_level) == LogLevel.WARN:
-        print(f'{Fore.YELLOW}[WARN]  {ts} > {message}', end='')
+        rich.print(f'[bold yellow][WARN]  {ts} > {message}[/]')
     elif LogLevel(log_level) == LogLevel.ERROR:
-        print(f'{Fore.RED}[ERROR] {ts} > {message}', end='')
+        rich.print(f'[bold red][ERROR] {ts} > {message}[/]')
     elif LogLevel(log_level) == LogLevel.FATAL:
-        print(f'{Fore.BLACK}{Back.RED}[FATAL] > {ts} {message}', end='')
-    print(Style.RESET_ALL)
+        rich.print(f'[bold white on red][FATAL] > {ts} {message}[/]')
 
 
 # log('trace text', LogLevel.TRACE)
