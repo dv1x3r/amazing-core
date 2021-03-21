@@ -1,3 +1,4 @@
+from amazingcore.messages.user.selected_player_name import SelectedPlayerNameMessage
 from amazingcore.messages.user.random_names import RandomNamesMessage
 from amazingcore.messages.user.validate_name import ValidateNameMessage
 from amazingcore.messages.user.client_version import ClientVersionMessage
@@ -24,6 +25,8 @@ class MessageFactory:
             return ValidateNameMessage()
         if message_header.message_type == UserMessageTypes.GET_RANDOM_NAMES:
             return RandomNamesMessage()
+        if message_header.message_type == UserMessageTypes.SELECT_PLAYER_NAME:
+            return SelectedPlayerNameMessage()
 
     def __sync__(self, message_header: MessageHeader):
         pass
