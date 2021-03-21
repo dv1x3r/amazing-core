@@ -18,10 +18,13 @@ class Session:
             message.request.deserialize(request_bs)
             log(f'{peer_name} Request <{message_header.message_type}> {message.request}', LogLevel.TRACE)
             await message.process()
-            log(f'{peer_name} Response <{message_header.message_type}> {message.response}', LogLevel.TRACE)
-            response_bs = BitStream()
-            message_header.serialize(response_bs)
-            message.response.serialize(response_bs)
-            return response_bs
+            if message.response:
+                log(f'{peer_name} Response <{message_header.message_type}> {message.response}', LogLevel.TRACE)
+                response_bs = BitStream()
+                message_header.serialize(response_bs)
+                message.response.serialize(response_bs)
+                return response_bs
+            else:
+                log(f'{peer_name} No Response <{message_header.message_type}>', LogLevel.TRACE)
         else:
             log(f'{peer_name} Request <{message_header.message_type}> is not supported yet: {bytes(request_bs.data)}', LogLevel.WARN)
