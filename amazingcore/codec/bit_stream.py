@@ -70,6 +70,7 @@ class BitStream:
         while self.__bit_mask__() != 0x80:
             self.cursor += 1  # go to the next byte start
         self.data.append(byte)
+        self.cursor += 8
 
     def __write_size__(self, int_value: int):
         if int_value is None:
