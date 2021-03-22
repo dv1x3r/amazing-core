@@ -1,5 +1,6 @@
 import asyncio
 from asyncio.streams import StreamReader, StreamWriter
+import traceback
 from amazingcore.logger import LogLevel, log
 from amazingcore.codec.bit_protocol import BitProtocol
 from amazingcore.session import Session
@@ -21,17 +22,18 @@ class Core:
         session = Session()
         try:
             while True:
-                data = await self.bit_protocol.read_data(reader)
                 try:
+                    data = await self.bit_protocol.read_data(reader)
                     response = await session.process_message(peer_name, data)
+                    if response:
+                        await self.bit_protocol.write_message(writer, response.data)
                 except NotImplementedError as err:
                     log(f'{peer_name} {err}', LogLevel.ERROR)
-                except Exception as err:
-                    log(f'{peer_name} {err}', LogLevel.FATAL)
-                    raise err  # print traceback somewhere
-                if response:
-                    await self.bit_protocol.write_message(writer, response.data)
+                    traceback.print_exc()
         except ConnectionError as err:
             log(f'{peer_name} disconnected: {err}', LogLevel.INFO)
+        except Exception as err:
+            log(f'{peer_name} disconnected: {err}', LogLevel.FATAL)
+            traceback.print_exc()
         finally:
             writer.close()
