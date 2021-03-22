@@ -47,7 +47,7 @@ class MessageHeader:
 
     @app_code.setter
     def app_code(self, value: AppCode):
-        self.app_code = value.value
+        self.__app_code__ = value.value
 
     @property
     def is_service(self):
