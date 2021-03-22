@@ -1,4 +1,6 @@
 from amazingcore.messages.message_interfaces import Message, SerializableMessage
+from amazingcore.messages.message_codes import ResultCode, AppCode
+from amazingcore.messages.message_header import MessageHeader
 from amazingcore.codec.bit_stream import BitStream
 
 import random
@@ -15,7 +17,7 @@ class RandomNamesMessage(Message):
         self.request: RandomNamesRequest = RandomNamesRequest()
         self.response: RandomNamesResponse = RandomNamesResponse()
 
-    async def process(self):
+    async def process(self, message_header: MessageHeader):
         if self.request.name_part_type == 'Family_1':
             self.response.names = random.sample(FAMILY_1, self.request.amount)
         elif self.request.name_part_type == 'Family_2':
@@ -24,6 +26,8 @@ class RandomNamesMessage(Message):
             self.response.names = random.sample(FAMILY_3, self.request.amount)
         else:
             raise NotImplementedError('unknown random name type')
+        message_header.result_code = ResultCode.OK
+        message_header.app_code = AppCode.OK
 
 
 class RandomNamesRequest(SerializableMessage):

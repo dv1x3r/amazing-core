@@ -1,4 +1,6 @@
 from amazingcore.messages.message_interfaces import Message, SerializableMessage
+from amazingcore.messages.message_codes import ResultCode, AppCode
+from amazingcore.messages.message_header import MessageHeader
 from amazingcore.codec.bit_stream import BitStream
 
 
@@ -7,10 +9,12 @@ class ValidateNameMessage(Message):
         self.request: ValidateNameRequest = ValidateNameRequest()
         self.response: ValidateNameResponse = ValidateNameResponse()
 
-    async def process(self):
+    async def process(self, message_header: MessageHeader):
         # restrict new username patterns
         if self.request.name.lower().find('fuck') != -1:
             self.response.filter_name = 'bad'
+        message_header.result_code = ResultCode.OK
+        message_header.app_code = AppCode.OK
 
 
 class ValidateNameRequest(SerializableMessage):

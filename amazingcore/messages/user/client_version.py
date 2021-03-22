@@ -1,4 +1,6 @@
 from amazingcore.messages.message_interfaces import Message, SerializableMessage
+from amazingcore.messages.message_codes import ResultCode, AppCode
+from amazingcore.messages.message_header import MessageHeader
 from amazingcore.codec.bit_stream import BitStream
 
 
@@ -8,9 +10,11 @@ class ClientVersionMessage(Message):
         self.request: ClientVersionRequest = ClientVersionRequest()
         self.response: ClientVersionResponse = ClientVersionResponse()
 
-    async def process(self):
+    async def process(self, message_header: MessageHeader):
         if self.request.client_name == 'AmazingWorld':
             self.response.client_version = '133852.true'
+            message_header.result_code = ResultCode.OK
+            message_header.app_code = AppCode.OK
         else:
             raise ValueError('invalid client_name')
 

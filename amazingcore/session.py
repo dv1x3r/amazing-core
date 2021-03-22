@@ -16,10 +16,11 @@ class Session:
         message = self.message_factory.build_message(message_header)
         if message:
             message.request.deserialize(request_bs)
-            log(f'{peer_name} Request <{message_header.message_type}> {message.request}', LogLevel.TRACE)
-            await message.process()
+            log(f'{peer_name} Request <{message_header}> {message.request}', LogLevel.TRACE)
+            await message.process(message_header)
             if message.response:
-                log(f'{peer_name} Response <{message_header.message_type}> {message.response}', LogLevel.TRACE)
+                message_header.is_response = True
+                log(f'{peer_name} Response <{message_header}> {message.response}', LogLevel.TRACE)
                 response_bs = BitStream()
                 message_header.serialize(response_bs)
                 message.response.serialize(response_bs)

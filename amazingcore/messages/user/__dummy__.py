@@ -1,4 +1,6 @@
 from amazingcore.messages.message_interfaces import Message, SerializableMessage
+from amazingcore.messages.message_codes import ResultCode, AppCode
+from amazingcore.messages.message_header import MessageHeader
 from amazingcore.codec.bit_stream import BitStream
 
 
@@ -7,8 +9,9 @@ class DummyMessage(Message):
         self.request: DummyRequest = DummyRequest()
         self.response: DummyResponse = DummyResponse()
 
-    async def process(self):
-        pass
+    async def process(self, message_header: MessageHeader):
+        message_header.result_code = ResultCode.OK
+        message_header.app_code = AppCode.OK
 
 
 class DummyRequest(SerializableMessage):

@@ -1,9 +1,8 @@
 from amazingcore.codec.bit_stream import BitStream
-from amazingcore.messages.message_interfaces import SerializableMessage
 from amazingcore.messages.message_codes import ServiceClass, UserMessageTypes, SyncMessageTypes, ClientMessageTypes, ResultCode, AppCode
 
 
-class MessageHeader(SerializableMessage):
+class MessageHeader:
 
     def __init__(self,
                  flags: int = None,
@@ -15,7 +14,7 @@ class MessageHeader(SerializableMessage):
         self.__flags__: int = flags
         self.__service_class__: int = service_class
         self.__message_type__: int = message_type
-        self.__request_id__: int = request_id
+        self.request_id: int = request_id
         self.__result_code__: int = result_code
         self.__app_code__: int = app_code
 
@@ -38,9 +37,17 @@ class MessageHeader(SerializableMessage):
     def result_code(self):
         return ResultCode(self.__result_code__)
 
+    @result_code.setter
+    def result_code(self, value: ResultCode):
+        self.__result_code__ = value.value
+
     @property
     def app_code(self):
         return AppCode(self.__app_code__)
+
+    @app_code.setter
+    def app_code(self, value: AppCode):
+        self.app_code = value.value
 
     @property
     def is_service(self):
@@ -49,6 +56,13 @@ class MessageHeader(SerializableMessage):
     @property
     def is_response(self):
         return self.is_service & (self.__flags__ & 1) != 0
+
+    @is_response.setter
+    def is_response(self, value: bool):
+        if value:
+            self.__flags__ |= 1
+        else:
+            self.__flags__ &= ~1
 
     @property
     def is_request(self):
@@ -69,14 +83,15 @@ class MessageHeader(SerializableMessage):
         bit_stream.write_int(self.__service_class__)
         bit_stream.write_int(self.__message_type__)
         if self.is_service:
-            bit_stream.write_int(self.__request_id__)
+            bit_stream.write_int(self.request_id)
         if self.is_request:
             bit_stream.write_str(None)  # log_correlator (always empty)
         if self.is_response:
             bit_stream.write_int(self.__result_code__)
             bit_stream.write_int(self.__app_code__)
             if self.__app_code__ != 0:
-                bit_stream.write_str(self.app_code.name)
+                app_code_name = self.app_code.name if self.__app_code__ is not None else ''
+                bit_stream.write_str(app_code_name)
             if self.__app_code__ == 17:
                 bit_stream.write_int(0)  # app_codes size (always empty)
 
@@ -87,18 +102,20 @@ class MessageHeader(SerializableMessage):
         self.__service_class__ = bit_stream.read_int()
         self.__message_type__ = bit_stream.read_int()
         if self.is_service:
-            self.__request_id__ = bit_stream.read_int()
+            self.request_id = bit_stream.read_int()
         if self.is_request:
             bit_stream.read_str()  # log_correlator (always empty)
 
     def __str__(self):
         return str({
-            'is_service': self.is_service,
+            # 'is_service': self.is_service,
             'is_response': self.is_response,
-            'is_request': self.is_request,
-            'is_notify': self.is_notify,
-            'is_discardable': self.is_discardable,
-            'service_class': self.service_class,
-            'message_type': self.message_type,
-            'request_id': self.__request_id__,
+            # 'is_request': self.is_request,
+            # 'is_notify': self.is_notify,
+            # 'is_discardable': self.is_discardable,
+            'service_class': self.service_class if self.__service_class__ is not None else None,
+            'message_type': self.message_type if self.__message_type__ is not None else None,
+            # 'request_id': self.request_id,
+            'result_code': self.result_code if self.__result_code__ is not None else None,
+            'app_code': self.app_code if self.__app_code__ is not None else None,
         })

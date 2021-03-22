@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from amazingcore.codec.bit_stream import BitStream
+from amazingcore.messages.message_header import MessageHeader
 
 
 class SerializableMessage(ABC):
@@ -17,5 +18,5 @@ class Message(ABC):
     response: SerializableMessage
 
     @abstractmethod
-    async def process(self):
+    async def process(self, message_header: MessageHeader):
         pass
