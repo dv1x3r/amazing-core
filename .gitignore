@@ -351,3 +351,4 @@ MigrationBackup/
 
 # Python
 venv/
+.idea/
