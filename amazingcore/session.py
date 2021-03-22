@@ -27,4 +27,5 @@ class Session:
             else:
                 log(f'{peer_name} No Response <{message_header.message_type}>', LogLevel.TRACE)
         else:
-            log(f'{peer_name} Request <{message_header.message_type}> is not supported yet: {bytes(request_bs.data)}', LogLevel.WARN)
+            log(f'{peer_name} Request <{message_header.message_type}> is not supported yet: {bytes(request_bs.data)}',
+                LogLevel.WARN)

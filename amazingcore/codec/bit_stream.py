@@ -57,12 +57,12 @@ class BitStream:
         str_value = bytearray(bytes).decode('utf-8')
         return str_value
 
-    def __write_bit__(self, active: bool):
+    def __write_bit__(self, active: int):
         byte = self.__byte_index__()
         bit = self.__bit_mask__()
         if bit == 0x80:  # cursor stands on the new byte
             self.data.append(0)
-        if active:  # set current bit
+        if active != 0:  # set current bit
             self.data[byte] |= bit
         self.cursor += 1
 

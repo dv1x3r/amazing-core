@@ -9,13 +9,13 @@ from amazingcore.messages.message_codes import ServiceClass, UserMessageTypes
 class MessageFactory:
 
     def build_message(self, message_header: MessageHeader):
-        if(message_header.service_class == ServiceClass.USER_SERVER):
+        if message_header.service_class == ServiceClass.USER_SERVER:
             return self.__user__(message_header)
-        if(message_header.service_class == ServiceClass.SYNC_SERVER):
+        if message_header.service_class == ServiceClass.SYNC_SERVER:
             return self.__sync__(message_header)
-        if(message_header.service_class == ServiceClass.LOCATION):
+        if message_header.service_class == ServiceClass.LOCATION:
             return self.__location__(message_header)
-        if(message_header.service_class == ServiceClass.CLIENT):
+        if message_header.service_class == ServiceClass.CLIENT:
             return self.__client__(message_header)
 
     def __user__(self, message_header: MessageHeader):

@@ -3,7 +3,7 @@ from asyncio.streams import StreamReader, StreamWriter
 
 class BitProtocol:
 
-    async def decode_data_length(self, reader: StreamReader):
+    async def __decode_data_length__(self, reader: StreamReader):
         data_length = 0
         while True:
             data_byte = await reader.read(1)
@@ -18,7 +18,8 @@ class BitProtocol:
                 break  # finished reading all length bytes
         return data_length
 
-    async def read_data(self, reader: StreamReader, data_length):
+    async def read_data(self, reader: StreamReader):
+        data_length = await self.__decode_data_length__(reader)
         data = await reader.read(data_length)  # message starts with its size
         if data[-1] != 0:  # and ends with 0 byte
             raise ValueError(f'last message byte is not 0: {data}')

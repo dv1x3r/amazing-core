@@ -21,8 +21,7 @@ class Core:
         session = Session()
         try:
             while True:
-                data_length = await self.bit_protocol.decode_data_length(reader)
-                data = await self.bit_protocol.read_data(reader, data_length)
+                data = await self.bit_protocol.read_data(reader)
                 try:
                     response = await session.process_message(peer_name, data)
                 except NotImplementedError as err:
