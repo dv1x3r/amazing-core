@@ -73,8 +73,6 @@ class BitStream:
         self.cursor += 8
 
     def __write_size__(self, int_value: int):
-        if int_value is None:
-            raise ValueError('int value is empty')
         size_bits = 4  # int_value must fit in size_bits
         if int_value > 0:
             int_max = 7
@@ -99,6 +97,8 @@ class BitStream:
         self.__write_bit__(0)  # Message starts with 0
 
     def write_int(self, int_value: int):
+        if not int_value:
+            int_value = 0
         self.__write_bit__(1)
         size_bits = self.__write_size__(int_value)
         write_bit = (1 << (size_bits - 1))  # current write bit mask
