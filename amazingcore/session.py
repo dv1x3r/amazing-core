@@ -14,19 +14,29 @@ class Session:
         message_header = MessageHeader()
         message_header.deserialize(request_bs)
         message = self.message_factory.build_message(message_header)
-        if message:
-            message.request.deserialize(request_bs)
-            log(f'{peer_name} Request <{message_header}> {message.request}', LogLevel.TRACE)
-            await message.process(message_header)
-            if message.response:
-                message_header.is_response = True
-                log(f'{peer_name} Response <{message_header}> {message.response}', LogLevel.TRACE)
-                response_bs = BitStream()
-                message_header.serialize(response_bs)
-                message.response.serialize(response_bs)
-                return response_bs
-            else:
-                log(f'{peer_name} No Response <{message_header.message_type}>', LogLevel.TRACE)
-        else:
-            log(f'{peer_name} Request <{message_header.message_type}> is not supported yet: {bytes(request_bs.data)}',
-                LogLevel.WARN)
+
+        if not message:
+            log(LogLevel.WARN, '{} <{}> is not supported yet: {}'.format(
+                peer_name, message_header.message_type, bytes(request_bs.data)))
+            return
+
+        if message_header.is_response:
+            log(LogLevel.WARN, '{} <{}> responses from client are not supported yet: {}'.format(
+                peer_name, message_header.message_type, bytes(request_bs.data)))
+            return
+
+        message.request.deserialize(request_bs)
+        await message.process(message_header)
+        message_header.is_response = True
+
+        log(LogLevel.INFO, '{} Processed [bold]<{}>[/] with [bold]<{}> <{}>[/]'.format(
+            peer_name, message_header.message_type, message_header.result_code, message_header.app_code))
+
+        log(LogLevel.DEBUG, '=>', {
+            'request': message.request.to_dict(),
+            'response': message.response.to_dict()})
+
+        response_bs = BitStream()
+        message_header.serialize(response_bs)
+        message.response.serialize(response_bs)
+        return response_bs
