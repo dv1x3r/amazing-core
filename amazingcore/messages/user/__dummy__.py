@@ -24,8 +24,8 @@ class DummyRequest(SerializableMessage):
     def deserialize(self, bit_stream: BitStream):
         pass
 
-    def __str__(self):
-        return str({})
+    def to_dict(self):
+        return {}
 
 
 class DummyResponse(SerializableMessage):
@@ -38,5 +38,5 @@ class DummyResponse(SerializableMessage):
     def deserialize(self, bit_stream: BitStream):
         raise NotImplementedError
 
-    def __str__(self):
-        return str({})
+    def to_dict(self):
+        return {}
