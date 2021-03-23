@@ -43,8 +43,8 @@ class RandomNamesRequest(SerializableMessage):
         self.amount = bit_stream.read_int()
         self.name_part_type = bit_stream.read_str()
 
-    def __str__(self):
-        return str({'amount': self.amount, 'name_part_type': self.name_part_type})
+    def to_dict(self):
+        return {'amount': self.amount, 'name_part_type': self.name_part_type}
 
 
 class RandomNamesResponse(SerializableMessage):
@@ -60,5 +60,5 @@ class RandomNamesResponse(SerializableMessage):
     def deserialize(self, bit_stream: BitStream):
         raise NotImplementedError
 
-    def __str__(self):
-        return str({'names': self.names})
+    def to_dict(self):
+        return {'names': self.names}

@@ -106,16 +106,16 @@ class MessageHeader:
         if self.is_request:
             bit_stream.read_str()  # log_correlator (always empty)
 
-    def __str__(self):
-        return str({
-            # 'is_service': self.is_service,
+    def to_dict(self):
+        return {
+            'is_service': self.is_service,
             'is_response': self.is_response,
-            # 'is_request': self.is_request,
-            # 'is_notify': self.is_notify,
-            # 'is_discardable': self.is_discardable,
+            'is_request': self.is_request,
+            'is_notify': self.is_notify,
+            'is_discardable': self.is_discardable,
             'service_class': self.service_class if self.__service_class__ is not None else None,
             'message_type': self.message_type if self.__message_type__ is not None else None,
-            # 'request_id': self.request_id,
+            'request_id': self.request_id,
             'result_code': self.result_code if self.__result_code__ is not None else None,
             'app_code': self.app_code if self.__app_code__ is not None else None,
-        })
+        }

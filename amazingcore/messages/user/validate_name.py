@@ -32,8 +32,8 @@ class ValidateNameRequest(SerializableMessage):
         bit_stream.read_start()
         self.name = bit_stream.read_str()
 
-    def __str__(self):
-        return str({'name': self.name})
+    def to_dict(self):
+        return {'name': self.name}
 
 
 class ValidateNameResponse(SerializableMessage):
@@ -51,5 +51,5 @@ class ValidateNameResponse(SerializableMessage):
     def deserialize(self, bit_stream: BitStream):
         raise NotImplementedError
 
-    def __str__(self):
-        return str({'filter_name': self.filter_name})
+    def to_dict(self):
+        return {'filter_name': self.filter_name}

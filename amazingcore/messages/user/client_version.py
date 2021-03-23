@@ -34,8 +34,8 @@ class ClientVersionRequest(SerializableMessage):
         bit_stream.read_start()
         self.client_name = bit_stream.read_str()
 
-    def __str__(self):
-        return str({'client_name': self.client_name})
+    def to_dict(self):
+        return {'client_name': self.client_name}
 
 
 class ClientVersionResponse(SerializableMessage):
@@ -55,5 +55,5 @@ class ClientVersionResponse(SerializableMessage):
     def deserialize(self, bit_stream: BitStream):
         raise NotImplementedError
 
-    def __str__(self):
-        return str({'client_version': self.client_version})
+    def to_dict(self):
+        return {'client_version': self.client_version}

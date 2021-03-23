@@ -12,6 +12,10 @@ class SerializableMessage(ABC):
     def deserialize(self, bit_stream: BitStream):
         pass
 
+    @abstractmethod
+    def to_dict(self):
+        pass
+
 
 class Message(ABC):
     request: SerializableMessage

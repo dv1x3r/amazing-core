@@ -25,8 +25,8 @@ class SelectedPlayerNameRequest(SerializableMessage):
         bit_stream.read_start()
         self.family_name = bit_stream.read_str()
 
-    def __str__(self):
-        return str({'family_name': self.family_name})
+    def to_dict(self):
+        return {'family_name': self.family_name}
 
 
 class SelectedPlayerNameResponse(SerializableMessage):
@@ -36,3 +36,6 @@ class SelectedPlayerNameResponse(SerializableMessage):
 
     def deserialize(self, bit_stream: BitStream):
         raise NotImplementedError
+
+    def to_dict(self):
+        pass

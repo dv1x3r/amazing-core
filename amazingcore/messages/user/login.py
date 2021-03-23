@@ -45,12 +45,12 @@ class LoginRequest(SerializableMessage):
         # self.login_type = bit_stream.read_int()
         # self.cnl = bit_stream.read_str()
 
-    def __str__(self):
-        return str({
+    def to_dict(self):
+        return {
             'login_id': self.login_id,
             'password': self.password,
             'site_pin': self.site_pin
-        })
+        }
 
 
 class LoginResponse(SerializableMessage):
@@ -63,5 +63,5 @@ class LoginResponse(SerializableMessage):
     def deserialize(self, bit_stream: BitStream):
         raise NotImplementedError
 
-    def __str__(self):
-        return str({})
+    def to_dict(self):
+        return {}
