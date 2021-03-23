@@ -1,11 +1,9 @@
 from enum import Enum
-import datetime as dt
 from rich.console import Console
 from rich.panel import Panel
 from rich.pretty import Pretty
-from rich.theme import Theme
 
-console = Console(theme=Theme(inherit=False))
+console = Console(highlight=False, log_path=False, markup=True)
 
 
 class LogLevel(Enum):
@@ -17,18 +15,17 @@ class LogLevel(Enum):
 
 
 def log(log_level: LogLevel, message: str, debug_object: any = None):
-    ts = dt.datetime.now().strftime('%H:%M:%S')
     if LogLevel(log_level) == LogLevel.DEBUG:
-        console.print(f'{ts} [bold green]DEBUG[/]  {message}')
+        console.log(f'[bold green]DEBUG[/]  {message}')
         if debug_object:
-            console.print(Panel(Pretty(debug_object), expand=False))
+            console.log(Panel(Pretty(debug_object), expand=False))
     elif LogLevel(log_level) == LogLevel.INFO:
-        console.print(f'{ts} [bold]INFO[/]  {message}')
+        console.log(f'[bold blue]INFO[/]  {message}')
     elif LogLevel(log_level) == LogLevel.WARN:
-        console.print(f'{ts} [bold yellow]WARN[/]  {message}')
+        console.log(f'[bold yellow]WARN[/]  {message}')
     elif LogLevel(log_level) == LogLevel.ERROR:
-        console.print(f'{ts} [bold red]ERROR[/] {message}')
+        console.log(f'[bold red]ERROR[/] {message}')
         console.print_exception()
     elif LogLevel(log_level) == LogLevel.FATAL:
-        console.print(f'{ts} [bold white on red]FATAL[/] {message}')
+        console.log(f'[bold white on red]FATAL[/] {message}')
         console.print_exception()

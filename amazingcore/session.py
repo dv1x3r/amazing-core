@@ -16,12 +16,12 @@ class Session:
         message = self.message_factory.build_message(message_header)
 
         if not message:
-            log(LogLevel.WARN, '{} <{}> is not supported yet: {}'.format(
+            log(LogLevel.WARN, '{} [bold yellow]<{}>[/] is not supported yet: {}'.format(
                 peer_name, message_header.message_type, bytes(request_bs.data)))
             return
 
         if message_header.is_response:
-            log(LogLevel.WARN, '{} <{}> responses from client are not supported yet: {}'.format(
+            log(LogLevel.WARN, '{} [bold yellow]<{}>[/] responses from client are not supported yet: {}'.format(
                 peer_name, message_header.message_type, bytes(request_bs.data)))
             return
 
@@ -29,7 +29,7 @@ class Session:
         await message.process(message_header)
         message_header.is_response = True
 
-        log(LogLevel.INFO, '{} Processed [bold]<{}>[/] with [bold]<{}> <{}>[/]'.format(
+        log(LogLevel.INFO, '{} Processed [bold blue]<{}>[/] with [bold blue]<{}> <{}>[/]'.format(
             peer_name, message_header.message_type, message_header.result_code, message_header.app_code))
 
         log(LogLevel.DEBUG, '=>', {
