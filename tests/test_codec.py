@@ -22,13 +22,13 @@ class TestBitProtocol(unittest.IsolatedAsyncioTestCase):
         for case in cases:
             reader = AsyncMock()
             reader.read.side_effect = case['stream']
-            result = await BitProtocol().decode_data_length(reader)
+            result = await BitProtocol().__decode_data_length__(reader)
             self.assertEqual(result, case['expected'])
         with self.assertRaises(ValueError):
             reader = AsyncMock()
             reader.read.side_effect = [
                 b'\x81', b'\x80', b'\x80', b'\x80', b'\x80']
-            result = await BitProtocol().decode_data_length(reader)
+            result = await BitProtocol().__decode_data_length__(reader)
 
     def test_encode_length(self):
         cases = [
