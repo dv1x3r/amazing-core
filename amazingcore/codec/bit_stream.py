@@ -1,3 +1,6 @@
+import datetime as dt
+
+
 class BitStream:
 
     def __init__(self, data: bytearray = None):
@@ -33,10 +36,7 @@ class BitStream:
                 raise ValueError(f'size exceeds {base} bytes')
         return size_bits
 
-    def __read_number__(self, base: int):
-        if self.__read_bit__() == 0:  # number starts with 1
-            raise ValueError('invalid number object')
-        size_bits = self.__read_size__(base)
+    def __read_number__(self, size_bits: int):
         value = 0
         for _ in range(size_bits):
             value <<= 1  # shift the big endian
@@ -47,10 +47,16 @@ class BitStream:
         return value
 
     def read_int(self):
-        return self.__read_number__(4)
+        if self.__read_bit__() == 0:  # number starts with 1
+            raise ValueError('invalid number object')
+        size_bits = self.__read_size__(4)  # int compressed
+        return self.__read_number__(size_bits)
 
     def read_long(self):
-        return self.__read_number__(8)
+        if self.__read_bit__() == 0:  # number starts with 1
+            raise ValueError('invalid number object')
+        size_bits = self.__read_size__(8)  # long compressed
+        return self.__read_number__(size_bits)
 
     def read_start(self):  # message starts with 0
         return self.__read_bit__() == 0
@@ -63,6 +69,14 @@ class BitStream:
         bytes = [self.__read_align_byte__() for _ in range(size_bytes)]
         str_value = bytearray(bytes).decode('utf-8')
         return str_value
+
+    def read_dt(self):
+        if not self.read_start():
+            return  # date starts with 0
+        data = self.__read_number__(8 * 8)  # long uncompressed
+        data = (data - 31622400) * 1000.0
+        data = data if data > 0 else 0
+        return dt.datetime(1, 3, 1) + dt.timedelta(milliseconds=data)
 
     def __write_bit__(self, active: int):
         byte = self.__byte_index__()
@@ -109,11 +123,7 @@ class BitStream:
         self.__write_bit__(0)  # done with extra bits
         return size_bits
 
-    def __write_number__(self, value: int, max_bytes: int):
-        if not value:
-            value = 0
-        self.__write_bit__(1)
-        size_bits = self.__write_size__(value, max_bytes)
+    def __write_number__(self, value: int, size_bits: int):
         write_bit = (1 << (size_bits - 1))  # current write bit mask
         for _ in range(size_bits):
             bit = value & write_bit != 0
@@ -121,10 +131,18 @@ class BitStream:
             write_bit >>= 1  # next write bit mask
 
     def write_int(self, value: int):
-        self.__write_number__(value, 4)
+        if not value:
+            value = 0
+        self.__write_bit__(1)
+        size_bits = self.__write_size__(value, 4)
+        self.__write_number__(value, size_bits)
 
     def write_long(self, value: int):
-        self.__write_number__(value, 8)
+        if not value:
+            value = 0
+        self.__write_bit__(1)
+        size_bits = self.__write_size__(value, 8)
+        self.__write_number__(value, size_bits)
 
     def write_start(self):
         self.__write_bit__(0)  # Message starts with 0
@@ -137,3 +155,6 @@ class BitStream:
         self.write_int(len(str_bytes))
         for char_byte in str_bytes:
             self.__write_align_byte__(char_byte)  # write to the byte start
+
+    def write_dt(self, valie: dt.datetime):
+        raise NotImplementedError('writing datetime is not supported yet')
