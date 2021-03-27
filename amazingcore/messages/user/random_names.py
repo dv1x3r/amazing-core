@@ -39,7 +39,8 @@ class RandomNamesRequest(SerializableMessage):
         raise NotImplementedError
 
     def deserialize(self, bit_stream: BitStream):
-        bit_stream.read_start()
+        if not bit_stream.read_start():
+            return
         self.amount = bit_stream.read_int()
         self.name_part_type = bit_stream.read_str()
 

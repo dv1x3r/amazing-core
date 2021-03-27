@@ -22,7 +22,8 @@ class SelectedPlayerNameRequest(SerializableMessage):
         raise NotImplementedError
 
     def deserialize(self, bit_stream: BitStream):
-        bit_stream.read_start()
+        if not bit_stream.read_start():
+            return
         self.family_name = bit_stream.read_str()
 
     def to_dict(self):

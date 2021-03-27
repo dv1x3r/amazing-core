@@ -96,8 +96,10 @@ class MessageHeader:
                 bit_stream.write_int(0)  # app_codes size (always empty)
 
     def deserialize(self, bit_stream: BitStream):
-        bit_stream.read_start()  # GSFMessage
-        bit_stream.read_start()  # MessageHeader
+        if not bit_stream.read_start():  # GSFMessage
+            return
+        if not bit_stream.read_start():  # MessageHeader
+            return
         self.__flags__ = bit_stream.read_int()
         self.__service_class__ = bit_stream.read_int()
         self.__message_type__ = bit_stream.read_int()

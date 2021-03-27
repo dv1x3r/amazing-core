@@ -17,7 +17,8 @@ class ObjectID(SerializableMessage):
         bit_stream.write_long(self.object_number)
 
     def deserialize(self, bit_stream: BitStream):
-        bit_stream.read_start()
+        if not bit_stream.read_start():
+            return
         self.object_class = bit_stream.read_int()
         self.object_type = bit_stream.read_int()
         self.server = bit_stream.read_int()

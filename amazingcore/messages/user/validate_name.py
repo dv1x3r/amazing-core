@@ -45,7 +45,8 @@ class ValidateNameResponse(SerializableMessage):
         self.filter_name = filter_name
 
     def serialize(self, bit_stream: BitStream):
-        bit_stream.write_start()
+        if not bit_stream.read_start():
+            return
         bit_stream.write_str(self.filter_name)
 
     def deserialize(self, bit_stream: BitStream):
