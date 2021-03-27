@@ -32,18 +32,19 @@ class LoginRequest(SerializableMessage):
         raise NotImplementedError
 
     def deserialize(self, bit_stream: BitStream):
-        bit_stream.read_start()
+        if not bit_stream.read_start():
+            return
         self.login_id = bit_stream.read_str()
         self.password = bit_stream.read_str()
         self.site_pin = bit_stream.read_int()
         self.language_local_pair_id = ObjectID()
         self.language_local_pair_id.deserialize(bit_stream)
         self.user_queueing_token = bit_stream.read_str()
-        # self.client_environment = ClientEnvironment()
-        # self.client_environment.deserialize(bit_stream)
-        # self.token = bit_stream.read_str()
-        # self.login_type = bit_stream.read_int()
-        # self.cnl = bit_stream.read_str()
+        self.client_environment = ClientEnvironment()
+        self.client_environment.deserialize(bit_stream)
+        self.token = bit_stream.read_str()
+        self.login_type = bit_stream.read_int()
+        self.cnl = bit_stream.read_str()
 
     def to_dict(self):
         return {
@@ -52,6 +53,10 @@ class LoginRequest(SerializableMessage):
             'site_pin': self.site_pin,
             'language_local_pair_id': self.language_local_pair_id.to_dict(),
             'user_queueing_token': self.user_queueing_token,
+            'client_environment': self.client_environment.to_dict(),
+            'token': self.token,
+            'login_type': self.login_type,
+            'cnl': self.cnl,
         }
 
 
