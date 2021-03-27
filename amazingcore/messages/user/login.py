@@ -36,9 +36,9 @@ class LoginRequest(SerializableMessage):
         self.login_id = bit_stream.read_str()
         self.password = bit_stream.read_str()
         self.site_pin = bit_stream.read_int()
-        # self.language_local_pair_id = ObjectID()
-        # self.language_local_pair_id.deserialize(bit_stream)
-        # self.user_queueing_token = bit_stream.read_str()
+        self.language_local_pair_id = ObjectID()
+        self.language_local_pair_id.deserialize(bit_stream)
+        self.user_queueing_token = bit_stream.read_str()
         # self.client_environment = ClientEnvironment()
         # self.client_environment.deserialize(bit_stream)
         # self.token = bit_stream.read_str()
@@ -49,7 +49,9 @@ class LoginRequest(SerializableMessage):
         return {
             'login_id': self.login_id,
             'password': self.password,
-            'site_pin': self.site_pin
+            'site_pin': self.site_pin,
+            'language_local_pair_id': self.language_local_pair_id.to_dict(),
+            'user_queueing_token': self.user_queueing_token,
         }
 
 
