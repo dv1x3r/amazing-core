@@ -32,11 +32,14 @@ class Session:
         log(LogLevel.INFO, '{} Processed [bold blue]<{}>[/] with [bold blue]<{}> <{}>[/]'.format(
             peer_name, message_header.message_type, message_header.result_code, message_header.app_code))
 
-        log(LogLevel.DEBUG, '=>', {
-            'request': message.request.to_dict(),
-            'response': message.response.to_dict()})
-
         response_bs = BitStream()
         message_header.serialize(response_bs)
         message.response.serialize(response_bs)
+
+        log(LogLevel.DEBUG, '=>', {
+            'request_bs': bytes(request_bs.data),
+            'response_bs': bytes(response_bs.data),
+            'request': message.request.to_dict(),
+            'response': message.response.to_dict()})
+
         return response_bs
