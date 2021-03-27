@@ -72,11 +72,11 @@ class BitStream:
 
     def read_dt(self):
         if not self.read_start():
-            return  # date starts with 0
-        data = self.__read_number__(8 * 8)  # long uncompressed
-        data = (data - 31622400) * 1000.0
-        data = data if data > 0 else 0
-        return dt.datetime(1, 3, 1) + dt.timedelta(milliseconds=data)
+            return  # return if starts with non 0
+        value = self.__read_number__(8 * 8)  # long uncompressed
+        value = (value - 31622400) * 1000.0
+        value = value if value > 0 else 0
+        return dt.datetime(1, 3, 1) + dt.timedelta(milliseconds=value)
 
     def __write_bit__(self, active: int):
         byte = self.__byte_index__()
@@ -156,5 +156,11 @@ class BitStream:
         for char_byte in str_bytes:
             self.__write_align_byte__(char_byte)  # write to the byte start
 
-    def write_dt(self, valie: dt.datetime):
-        raise NotImplementedError('writing datetime is not supported yet')
+    def write_dt(self, value: dt.datetime):
+        if not value:  # date starts with 1 if None
+            self.__write_bit__(1)
+            return
+        self.__write_bit__(0)
+        value_delta = value - dt.datetime(1, 3, 1)
+        value_seconds = int(value_delta.total_seconds()) + 31622400
+        self.__write_number__(value_seconds, 8 * 8)  # long uncompressed

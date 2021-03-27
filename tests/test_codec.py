@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import AsyncMock
 from amazingcore.codec.bit_protocol import BitProtocol
 from amazingcore.codec.bit_stream import BitStream
+import datetime as dt
 
 # flags = 0, service_class = 18, message_type = 566, log_correlator = ''
 # client_name = 'AmazingWorld'
@@ -137,7 +138,7 @@ class TestBitStream(unittest.TestCase):
 
 class TestBitStreamRW(unittest.TestCase):
 
-    def test_read_write(self):
+    def test_read_write_primitive(self):
         int_values = [-32769, -32768, -128, -127, -8, -7,
                       0, 7, 8, 127, 128, 32768, 32769]
         bit_stream = BitStream()
@@ -151,6 +152,13 @@ class TestBitStreamRW(unittest.TestCase):
             self.assertEqual(bit_stream.read_int(), i)
             self.assertEqual(bit_stream.read_long(), i)
             self.assertEqual(bit_stream.read_str(), str(i))
+
+    def test_read_write_datetime(self):
+        value = dt.datetime(2020, 3, 27, 19, 30, 42)
+        bit_stream = BitStream()
+        bit_stream.write_dt(value)
+        bit_stream.cursor = 0
+        self.assertEqual(str(bit_stream.read_dt()), str(value))
 
 
 if __name__ == '__main__':
