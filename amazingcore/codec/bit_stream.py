@@ -52,9 +52,8 @@ class BitStream:
     def read_long(self):
         return self.__read_number__(8)
 
-    def read_start(self):
-        if self.__read_bit__() != 0:  # message starts with 0
-            raise ValueError('invalid message object')
+    def read_start(self):  # message starts with 0
+        return self.__read_bit__() == 0
 
     def read_str(self):
         size_bytes = self.read_int()
