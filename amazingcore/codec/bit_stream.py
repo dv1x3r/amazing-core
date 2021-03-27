@@ -19,34 +19,42 @@ class BitStream:
     def __read_align_byte__(self):
         while self.__bit_mask__() != 0x80:
             self.cursor += 1  # go to the next byte start
-        byte = self.__byte_index__()
-        self.cursor += 8
+        byte = self.__byte_index__()  # current byte index
+        self.cursor += 8  # aligh cursor to the next one
         return self.data[byte]
 
-    def __read_size__(self):
-        size_bits = 4  # base size = 4
+    def __read_size__(self, base: int):
+        if self.__read_bit__() == 0:
+            return 4  # min bits per value
+        size_bits = 8  # 1 byte per every active bit
         while self.__read_bit__() != 0:
-            size_bits <<= 1  # extra bits = 4, 8, 16, 32
-            if size_bits > 32:
-                raise ValueError('invalid integer size')
+            size_bits += 8  # extra bits = 8, 16, 24, 32...
+            if size_bits > (8 * base):  # 32 for int, 64 for long
+                raise ValueError(f'size exceeds {base} bytes')
         return size_bits
+
+    def __read_number__(self, base: int):
+        if self.__read_bit__() == 0:  # number starts with 1
+            raise ValueError('invalid number object')
+        size_bits = self.__read_size__(base)
+        value = 0
+        for _ in range(size_bits):
+            value <<= 1  # shift the big endian
+            value |= (self.__read_bit__() != 0)
+        is_negative_mask = 1 << (size_bits - 1)
+        if (value & is_negative_mask) != 0:  # the first bit stands for negative
+            value |= -is_negative_mask  # signed two’s complement
+        return value
+
+    def read_int(self):
+        return self.__read_number__(4)
+
+    def read_long(self):
+        return self.__read_number__(8)
 
     def read_start(self):
         if self.__read_bit__() != 0:  # message starts with 0
             raise ValueError('invalid message object')
-
-    def read_int(self):
-        if self.__read_bit__() == 0:  # integer starts with 1
-            raise ValueError('invalid integer object')
-        size_bits = self.__read_size__()  # is followed by number of bytes
-        int_value = 0  # read bit by bit
-        for _ in range(size_bits):
-            int_value <<= 1  # shift the big endian
-            int_value |= self.__read_bit__() != 0
-        is_negative_mask = 1 << (size_bits - 1)
-        if int_value & is_negative_mask != 0:  # the first bit stands for negative
-            int_value |= -is_negative_mask  # signed two’s complement
-        return int_value
 
     def read_str(self):
         size_bytes = self.read_int()
@@ -72,46 +80,61 @@ class BitStream:
         self.data.append(byte)
         self.cursor += 8
 
-    def __write_size__(self, int_value: int):
-        size_bits = 4  # int_value must fit in size_bits
-        if int_value > 0:
-            int_max = 7
-            while int_value > int_max:
-                int_max = ((int_max + 1) << 4) - 1
-                size_bits <<= 1  # 7, 127...
-                if size_bits > 32:
-                    raise ValueError('invalid pos integer size', int_value)
+    def __write_size__(self, value: int, base: int):
+        if value > -9 and value < 8:  # from -8 to 7 inclusive
+            self.__write_bit__(0)  # done with extra bits
+            return 4  # 4 bits for value is enough
+
+        size_bits = 8  # 1 byte is needed
+        self.__write_bit__(1)  # each 1 will respresent additional 1 byte
+
+        if value > 0:
+            max_value = 127
+            while value > max_value:
+                # new max_value = 32767, 8388607, 2147483647...
+                max_value = (128 << size_bits) - 1
+                size_bits += 8  # extra bits = 8, 16, 24, 32...
+                if size_bits > (8 * base):  # 32 for int, 64 for long
+                    raise ValueError(f'size exceeds {base} bytes', value)
                 self.__write_bit__(1)
         else:
-            int_min = -8
-            while int_value < int_min:
-                int_min <<= size_bits
-                size_bits <<= 1  # -8, -128...
-                if size_bits > 32:
-                    raise ValueError('invalid neg integer size', int_value)
+            min_value = -128
+            while value < min_value:
+                # new max_value = -32768, -8388608, -2147483648...
+                min_value = -128 << size_bits
+                size_bits += 8  # extra bits = 8, 16, 24, 32...
+                if size_bits > (8 * base):  # 32 for int, 64 for long
+                    raise ValueError(f'size exceeds {base} bytes', value)
                 self.__write_bit__(1)
+
         self.__write_bit__(0)  # done with extra bits
         return size_bits
+
+    def __write_number__(self, value: int, max_bytes: int):
+        if not value:
+            value = 0
+        self.__write_bit__(1)
+        size_bits = self.__write_size__(value, max_bytes)
+        write_bit = (1 << (size_bits - 1))  # current write bit mask
+        for _ in range(size_bits):
+            bit = value & write_bit != 0
+            self.__write_bit__(bit)
+            write_bit >>= 1  # next write bit mask
+
+    def write_int(self, value: int):
+        self.__write_number__(value, 4)
+
+    def write_long(self, value: int):
+        self.__write_number__(value, 8)
 
     def write_start(self):
         self.__write_bit__(0)  # Message starts with 0
 
-    def write_int(self, int_value: int):
-        if not int_value:
-            int_value = 0
-        self.__write_bit__(1)
-        size_bits = self.__write_size__(int_value)
-        write_bit = (1 << (size_bits - 1))  # current write bit mask
-        for _ in range(size_bits):
-            bit = int_value & write_bit != 0
-            self.__write_bit__(bit)
-            write_bit >>= 1  # next write bit mask
-
-    def write_str(self, str_value: str):
-        if not str_value:
+    def write_str(self, value: str):
+        if not value:
             self.write_int(0)
             return  # string starts with size (0 if empty)
-        str_bytes = str_value.encode('utf-8')
+        str_bytes = value.encode('utf-8')
         self.write_int(len(str_bytes))
         for char_byte in str_bytes:
             self.__write_align_byte__(char_byte)  # write to the byte start

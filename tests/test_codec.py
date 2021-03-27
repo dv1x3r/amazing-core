@@ -51,14 +51,15 @@ class TestBitStream(unittest.TestCase):
             {'data': b'\x00', 'expected': 4},  # 0000
             {'data': b'\x80', 'expected': 8},  # 1000
             {'data': b'\xC0', 'expected': 16},  # 1100
-            {'data': b'\xE0', 'expected': 32}]  # 1110
+            {'data': b'\xE0', 'expected': 24},  # 1110
+            {'data': b'\xF0', 'expected': 32}]  # 1111
         for case in cases:
             bit_stream = BitStream(case['data'])
-            result = bit_stream.__read_size__()
+            result = bit_stream.__read_size__(4)
             self.assertEqual(result, case['expected'])
         with self.assertRaises(ValueError):
-            bit_stream = BitStream(b'\xF0')  # 1111
-            result = bit_stream.__read_size__()
+            bit_stream = BitStream(b'\xF8')  # 1111 1
+            result = bit_stream.__read_size__(4)
 
     def test_read_int(self):
         cases = [  # is_integer size data        i s data
@@ -103,10 +104,10 @@ class TestBitStream(unittest.TestCase):
             {'int': -129, 'expected': b'\xC0'}]  # 16
         for case in cases:
             bit_stream = BitStream()
-            bit_stream.__write_size__(case['int'])
+            bit_stream.__write_size__(case['int'], 4)
             self.assertEqual(bit_stream.data, case['expected'], case['int'])
         with self.assertRaises(ValueError):
-            BitStream().__write_size__(4294967296)
+            BitStream().__write_size__(4294967296, 4)
 
     def test_write_int(self):
         cases = [  # is_integer size data        i s data
@@ -132,6 +133,24 @@ class TestBitStream(unittest.TestCase):
         bit_stream = BitStream()
         bit_stream.write_str('ЯAmazing')
         self.assertEqual(bit_stream.data, b'\xC1\x20\xD0\xAFAmazing')
+
+
+class TestBitStreamRW(unittest.TestCase):
+
+    def test_read_write(self):
+        int_values = [-32769, -32768, -128, -127, -8, -7,
+                      0, 7, 8, 127, 128, 32768, 32769]
+        bit_stream = BitStream()
+
+        for i in int_values:
+            bit_stream.write_int(i)
+            bit_stream.write_long(i)
+            bit_stream.write_str(str(i))
+        bit_stream.cursor = 0
+        for i in int_values:
+            self.assertEqual(bit_stream.read_int(), i)
+            self.assertEqual(bit_stream.read_long(), i)
+            self.assertEqual(bit_stream.read_str(), str(i))
 
 
 if __name__ == '__main__':
