@@ -46,17 +46,26 @@ class BitStream:
             value |= -is_negative_mask  # signed two’s complement
         return value
 
+    def read_short(self):
+        if self.__read_bit__() == 0:  # number starts with 1
+            raise ValueError('invalid short object')
+        size_bits = self.__read_size__(2)  # short compressed
+        return self.__read_number__(size_bits)
+
     def read_int(self):
         if self.__read_bit__() == 0:  # number starts with 1
-            raise ValueError('invalid number object')
+            raise ValueError('invalid int object')
         size_bits = self.__read_size__(4)  # int compressed
         return self.__read_number__(size_bits)
 
     def read_long(self):
         if self.__read_bit__() == 0:  # number starts with 1
-            raise ValueError('invalid number object')
+            raise ValueError('invalid long object')
         size_bits = self.__read_size__(8)  # long compressed
         return self.__read_number__(size_bits)
+
+    def read_bool(self):
+        return self.__read_bit__ != 0
 
     def read_start(self):  # message starts with 0
         return self.__read_bit__() == 0
@@ -130,6 +139,13 @@ class BitStream:
             self.__write_bit__(bit)
             write_bit >>= 1  # next write bit mask
 
+    def write_short(self, value: int):
+        if not value:
+            value = 0
+        self.__write_bit__(1)
+        size_bits = self.__write_size__(value, 2)
+        self.__write_number__(value, size_bits)
+
     def write_int(self, value: int):
         if not value:
             value = 0
@@ -143,6 +159,9 @@ class BitStream:
         self.__write_bit__(1)
         size_bits = self.__write_size__(value, 8)
         self.__write_number__(value, size_bits)
+
+    def write_bool(self, value: bool):
+        self.__write_bit__(int(value))
 
     def write_start(self):
         self.__write_bit__(0)  # Message starts with 0
