@@ -21,21 +21,21 @@ class Core:
     async def client_connected(self, reader: StreamReader, writer: StreamWriter):
         peer_name = writer.transport.get_extra_info('peername')
         log(LogLevel.INFO, f'{peer_name} connected')
-        try:
-            while True:
-                try:
-                    data = await self.bit_protocol.read_data(reader)
-                    response = await self.process_message(peer_name, data)
-                    if response:
-                        await self.bit_protocol.write_message(writer, response.data)
-                except NotImplementedError as err:
-                    log(LogLevel.ERROR, f'{peer_name}')
-        except ConnectionError as err:
-            log(LogLevel.INFO, f'{peer_name} disconnected: {err}')
-        except Exception as err:
-            log(LogLevel.FATAL, f'{peer_name} disconnected')
-        finally:
-            writer.close()
+        while True:
+            try:
+                data = await self.bit_protocol.read_data(reader)
+                response = await self.process_message(peer_name, data)
+                if response:
+                    await self.bit_protocol.write_message(writer, response.data)
+            except ConnectionError as err:
+                log(LogLevel.INFO, f'{peer_name} disconnected: {err}')
+                break
+            except NotImplementedError as err:
+                log(LogLevel.ERROR, f'{peer_name}: {data}')
+            except Exception as err:
+                log(LogLevel.FATAL, f'{peer_name} disconnected: {data}')
+                break
+        writer.close()
 
     async def process_message(self, peer_name: str, data: bytearray) -> BitStream:
         request_bs = BitStream(data)
