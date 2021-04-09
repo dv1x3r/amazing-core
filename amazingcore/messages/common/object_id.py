@@ -3,11 +3,15 @@ from amazingcore.codec.bit_stream import BitStream
 
 
 class ObjectID(SerializableMessage):
-    def __init__(self):
-        self.object_class: int = None
-        self.object_type: int = None
-        self.server: int = None
-        self.object_number: int = None
+    def __init__(self,
+                 object_class: int = None,
+                 object_type: int = None,
+                 server: int = None,
+                 object_number: int = None):
+        self.object_class = object_class
+        self.object_type = object_type
+        self.server = server
+        self.object_number = object_number
 
     def serialize(self, bit_stream: BitStream):
         bit_stream.write_start()
