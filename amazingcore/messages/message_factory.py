@@ -1,3 +1,4 @@
+from amazingcore.messages.user.register_avatar_for_registration import RegisterAvatarForRegistrationMessage
 from amazingcore.messages.user.register_player import RegisterPlayerMessage
 from amazingcore.messages.user.check_username import CheckUsernameMessage
 from amazingcore.messages.user.login import LoginMessage
@@ -36,6 +37,8 @@ class MessageFactory:
             return CheckUsernameMessage()
         if message_header.message_type == UserMessageTypes.REGISTER_PLAYER:
             return RegisterPlayerMessage()
+        if message_header.message_type == UserMessageTypes.REGISTER_AVATAR_FOR_REGISTRATION:
+            return RegisterAvatarForRegistrationMessage()
 
     def __sync__(self, message_header: MessageHeader):
         pass
