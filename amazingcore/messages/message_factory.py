@@ -1,3 +1,4 @@
+from amazingcore.messages.user.check_username import CheckUsernameMessage
 from amazingcore.messages.user.login import LoginMessage
 from amazingcore.messages.user.selected_player_name import SelectedPlayerNameMessage
 from amazingcore.messages.user.random_names import RandomNamesMessage
@@ -30,6 +31,8 @@ class MessageFactory:
             return SelectedPlayerNameMessage()
         if message_header.message_type == UserMessageTypes.LOGIN:
             return LoginMessage()
+        if message_header.message_type == UserMessageTypes.CHECK_USERNAME:
+            return CheckUsernameMessage()
 
     def __sync__(self, message_header: MessageHeader):
         pass
