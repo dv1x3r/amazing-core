@@ -68,7 +68,7 @@ class BitStream:
             return self.__read_number__(size_bits)
 
     def read_bool(self):
-        return self.__read_bit__ != 0
+        return self.__read_bit__() != 0
 
     def read_start(self):  # message starts with 0
         return self.__read_bit__() == 0
