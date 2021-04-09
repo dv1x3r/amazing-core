@@ -47,21 +47,24 @@ class BitStream:
         return value
 
     def read_short(self):
-        if self.__read_bit__() == 0:  # number starts with 1
-            raise ValueError('invalid short object')
-        size_bits = self.__read_size__(2)  # short compressed
+        if self.__read_bit__() == 0:
+            return self.__read_number__(2 * 8)  # uncompressed
+        else:
+            size_bits = self.__read_size__(2)  # compressed
         return self.__read_number__(size_bits)
 
     def read_int(self):
-        if self.__read_bit__() == 0:  # number starts with 1
-            raise ValueError('invalid int object')
-        size_bits = self.__read_size__(4)  # int compressed
+        if self.__read_bit__() == 0:
+            return self.__read_number__(4 * 8)  # uncompressed
+        else:
+            size_bits = self.__read_size__(4)  # compressed
         return self.__read_number__(size_bits)
 
     def read_long(self):
-        if self.__read_bit__() == 0:  # number starts with 1
-            raise ValueError('invalid long object')
-        size_bits = self.__read_size__(8)  # long compressed
+        if self.__read_bit__() == 0:
+            return self.__read_number__(8 * 8)  # uncompressed
+        else:
+            size_bits = self.__read_size__(8)  # compressed
         return self.__read_number__(size_bits)
 
     def read_bool(self):
