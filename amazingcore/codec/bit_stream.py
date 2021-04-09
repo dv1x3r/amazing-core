@@ -46,17 +46,29 @@ class BitStream:
             value |= -is_negative_mask  # signed two’s complement
         return value
 
+    def read_short(self):
+        if self.__read_bit__() == 0:
+            return self.__read_number__(2 * 8)  # uncompressed
+        else:
+            size_bits = self.__read_size__(2)  # compressed
+            return self.__read_number__(size_bits)
+
     def read_int(self):
-        if self.__read_bit__() == 0:  # number starts with 1
-            raise ValueError('invalid number object')
-        size_bits = self.__read_size__(4)  # int compressed
-        return self.__read_number__(size_bits)
+        if self.__read_bit__() == 0:
+            return self.__read_number__(4 * 8)  # uncompressed
+        else:
+            size_bits = self.__read_size__(4)  # compressed
+            return self.__read_number__(size_bits)
 
     def read_long(self):
-        if self.__read_bit__() == 0:  # number starts with 1
-            raise ValueError('invalid number object')
-        size_bits = self.__read_size__(8)  # long compressed
-        return self.__read_number__(size_bits)
+        if self.__read_bit__() == 0:
+            return self.__read_number__(8 * 8)  # uncompressed
+        else:
+            size_bits = self.__read_size__(8)  # compressed
+            return self.__read_number__(size_bits)
+
+    def read_bool(self):
+        return self.__read_bit__() != 0
 
     def read_start(self):  # message starts with 0
         return self.__read_bit__() == 0
@@ -94,6 +106,7 @@ class BitStream:
         self.cursor += 8
 
     def __write_size__(self, value: int, base: int):
+        value = 0 if value is None else value
         if value > -9 and value < 8:  # from -8 to 7 inclusive
             self.__write_bit__(0)  # done with extra bits
             return 4  # 4 bits for value is enough
@@ -124,25 +137,44 @@ class BitStream:
         return size_bits
 
     def __write_number__(self, value: int, size_bits: int):
+        value = 0 if value is None else value
         write_bit = (1 << (size_bits - 1))  # current write bit mask
         for _ in range(size_bits):
             bit = value & write_bit != 0
             self.__write_bit__(bit)
             write_bit >>= 1  # next write bit mask
 
-    def write_int(self, value: int):
-        if not value:
-            value = 0
-        self.__write_bit__(1)
+    def __write_nullable__(self, value: int):
+        is_null = value is None
+        self.__write_bit__(is_null)
+        return is_null
+
+    def write_short(self, value: int, nullable: bool = False):
+        if nullable and self.__write_nullable__(value):
+            return  # 1 if is null, 0 if is not null
+        self.__write_bit__(1)  # compressed (todo: uncompressed?)
+        size_bits = self.__write_size__(value, 2)
+        self.__write_number__(value, size_bits)
+
+    def write_int(self, value: int, nullable: bool = False):
+        if nullable and self.__write_nullable__(value):
+            return  # 1 if is null, 0 if is not null
+        self.__write_bit__(1)  # compressed (todo: uncompressed?)
         size_bits = self.__write_size__(value, 4)
         self.__write_number__(value, size_bits)
 
-    def write_long(self, value: int):
-        if not value:
-            value = 0
-        self.__write_bit__(1)
+    def write_long(self, value: int, nullable: bool = False):
+        if nullable and self.__write_nullable__(value):
+            return  # 1 if is null, 0 if is not null
+        self.__write_bit__(1)  # compressed (todo: uncompressed?)
         size_bits = self.__write_size__(value, 8)
         self.__write_number__(value, size_bits)
+
+    def write_double(self, value: int):
+        self.__write_number__(value, 8 * 8)  # long uncompressed
+
+    def write_bool(self, value: bool):
+        self.__write_bit__(int(value))
 
     def write_start(self):
         self.__write_bit__(0)  # Message starts with 0

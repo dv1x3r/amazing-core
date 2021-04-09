@@ -46,7 +46,7 @@ class ClientVersionResponse(SerializableMessage):
     With <133853.true> game will require to update
     """
 
-    def __init__(self,):
+    def __init__(self):
         self.client_version: str = None
 
     def serialize(self, bit_stream: BitStream):
