@@ -23,7 +23,8 @@ class CheckUsernameRequest(SerializableMessage):
         raise NotImplementedError
 
     def deserialize(self, bit_stream: BitStream):
-        bit_stream.read_start()
+        if not bit_stream.read_start():
+            return
         self.username = bit_stream.read_str()
         self.password = bit_stream.read_str()
 
