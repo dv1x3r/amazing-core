@@ -25,7 +25,8 @@ class RandomNamesMessage(Message):
         elif self.request.name_part_type == 'Family_3':
             self.response.names = random.sample(FAMILY_3, self.request.amount)
         else:
-            raise NotImplementedError('unknown random name type')
+            raise NotImplementedError(
+                f'unknown random name type: {self.request.name_part_type}')
         message_header.result_code = ResultCode.OK
         message_header.app_code = AppCode.OK
 
