@@ -12,7 +12,7 @@ from amazingcore.messages.common.player_info import PlayerInfo
 from amazingcore.messages.common.player_avatar import PlayerAvatar
 from amazingcore.messages.common.avatar import Avatar
 from amazingcore.messages.common.asset import Asset
-from amazingcore.messages.common.asset_package import AssetPackageContainer
+from amazingcore.messages.common.asset_package import AssetPackage
 from amazingcore.messages.common.race_mode import RaceMode
 from amazingcore.messages.common.crisp_data import CrispData
 from amazingcore.messages.common.player_setting import PlayerSetting
@@ -50,11 +50,12 @@ class LoginMessage(Message):
             group_name='group_name',
             file_size=1024)
 
-        apc = AssetPackageContainer(
-            p_tag='p_tag', create_date=dt.datetime.now())
-        apc.container_aw_object_id = object_id
-        apc.container_asset_map = {}
-        apc.container_asset_pkg = []
+        apc = AssetPackage(
+            container_aw_object_id=object_id,
+            container_asset_map={},
+            container_asset_pkg=[],
+            p_tag='p_tag',
+            create_date=dt.datetime.now())
 
         avatar = Avatar(
             aw_object_id=object_id,

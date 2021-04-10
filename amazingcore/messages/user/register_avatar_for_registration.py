@@ -6,7 +6,7 @@ from amazingcore.messages.common.object_id import ObjectID
 from amazingcore.messages.common.player_avatar import PlayerAvatar
 from amazingcore.messages.common.avatar import Avatar
 from amazingcore.messages.common.asset import Asset
-from amazingcore.messages.common.asset_package import AssetPackageContainer
+from amazingcore.messages.common.asset_package import AssetPackage
 
 import datetime as dt
 
@@ -33,7 +33,7 @@ class RegisterAvatarForRegistrationMessage(Message):
             group_name='group_name',
             file_size=1024)
 
-        apc = AssetPackageContainer(
+        apc = AssetPackage(
             p_tag='p_tag', create_date=dt.datetime.now())
         apc.container_aw_object_id = object_id
         apc.container_asset_map = {}

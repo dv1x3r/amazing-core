@@ -2,14 +2,14 @@ from amazingcore.messages.message_interfaces import SerializableMessage
 from amazingcore.codec.bit_stream import BitStream
 from amazingcore.messages.common.object_id import ObjectID
 from amazingcore.messages.common.asset import Asset
-from amazingcore.messages.common.asset_package import AssetPackageContainer
+from amazingcore.messages.common.asset_package import AssetPackage
 
 
 class Avatar(SerializableMessage):
     def __init__(self,
                  aw_object_id: ObjectID = None,  # GSFAwObject
                  asset_map: dict[str, list[Asset]] = None,  # GSFAssetContainer
-                 asset_packages: list[AssetPackageContainer] = None,
+                 asset_packages: list[AssetPackage] = None,
                  dimensions: str = None,
                  weight: int = None,
                  height: int = None,

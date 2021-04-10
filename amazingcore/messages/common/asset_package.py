@@ -6,13 +6,17 @@ from amazingcore.messages.common.object_id import ObjectID
 import datetime as dt
 
 
-class AssetPackageContainer(SerializableMessage):
+class AssetPackage(SerializableMessage):
+
     def __init__(self,
+                 container_aw_object_id: ObjectID = None,
+                 container_asset_map: dict[str, list[Asset]] = None,
+                 container_asset_pkg: list[any] = None,  # list[AssetPackage]
                  p_tag: str = None,
                  create_date: dt.datetime = None):
-        self.container_aw_object_id: ObjectID = None
-        self.container_asset_map:  dict[str, list[Asset]] = None
-        self.container_asset_pkg: list[AssetPackageContainer] = None
+        self.container_aw_object_id = container_aw_object_id
+        self.container_asset_map = container_asset_map
+        self.container_asset_pkg: list[AssetPackage] = container_asset_pkg
         self.p_tag = p_tag
         self.create_date = create_date
 
@@ -43,5 +47,5 @@ class AssetPackageContainer(SerializableMessage):
         return {
             'container_aw_object_id': self.container_aw_object_id.to_dict(),
             'container_asset_map': asset_map_dict,
-            'container_asset_packages': [item.to_dict() for item in self.container_asset_pkg],
+            'container_asset_pkg': [item.to_dict() for item in self.container_asset_pkg],
         }
