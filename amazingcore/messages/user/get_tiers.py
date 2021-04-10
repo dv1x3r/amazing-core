@@ -1,8 +1,8 @@
-from amazingcore.messages.common.object_id import ObjectID
 from amazingcore.messages.message_interfaces import Message, SerializableMessage
 from amazingcore.messages.message_codes import ResultCode, AppCode
 from amazingcore.messages.message_header import MessageHeader
 from amazingcore.codec.bit_stream import BitStream
+from amazingcore.messages.common.object_id import ObjectID
 from amazingcore.messages.common.tier import Tier
 
 
