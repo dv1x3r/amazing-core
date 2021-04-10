@@ -1,3 +1,4 @@
+from amazingcore.messages.user.get_tiers import GetTiersMessage
 from amazingcore.messages.user.register_avatar_for_registration import RegisterAvatarForRegistrationMessage
 from amazingcore.messages.user.register_player import RegisterPlayerMessage
 from amazingcore.messages.user.check_username import CheckUsernameMessage
@@ -39,6 +40,8 @@ class MessageFactory:
             return RegisterPlayerMessage()
         if message_header.message_type == UserMessageTypes.REGISTER_AVATAR_FOR_REGISTRATION:
             return RegisterAvatarForRegistrationMessage()
+        if message_header.message_type == UserMessageTypes.GET_TIERS:
+            return GetTiersMessage()
 
     def __sync__(self, message_header: MessageHeader):
         pass
