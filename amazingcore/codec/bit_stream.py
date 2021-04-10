@@ -26,14 +26,14 @@ class BitStream:
         self.cursor += 8  # aligh cursor to the next one
         return self.data[byte]
 
-    def __read_size__(self, base: int):
+    def __read_size__(self, max_bits: int):
         if self.__read_bit__() == 0:
             return 4  # min bits per value
         size_bits = 8  # 1 byte per every active bit
         while self.__read_bit__() != 0:
             size_bits += 8  # extra bits = 8, 16, 24, 32...
-            if size_bits > (8 * base):  # 32 for int, 64 for long
-                raise ValueError(f'size exceeds {base} bytes')
+            if size_bits > max_bits:  # 32 for int, 64 for long
+                raise ValueError(f'size exceeds {max_bits} bits')
         return size_bits
 
     def __read_number__(self, size_bits: int):
@@ -50,21 +50,21 @@ class BitStream:
         if self.__read_bit__() == 0:
             return self.__read_number__(2 * 8)  # uncompressed
         else:
-            size_bits = self.__read_size__(2)  # compressed
+            size_bits = self.__read_size__(2 * 8)  # compressed
             return self.__read_number__(size_bits)
 
     def read_int(self):
         if self.__read_bit__() == 0:
             return self.__read_number__(4 * 8)  # uncompressed
         else:
-            size_bits = self.__read_size__(4)  # compressed
+            size_bits = self.__read_size__(4 * 8)  # compressed
             return self.__read_number__(size_bits)
 
     def read_long(self):
         if self.__read_bit__() == 0:
             return self.__read_number__(8 * 8)  # uncompressed
         else:
-            size_bits = self.__read_size__(8)  # compressed
+            size_bits = self.__read_size__(8 * 8)  # compressed
             return self.__read_number__(size_bits)
 
     def read_bool(self):
@@ -105,7 +105,7 @@ class BitStream:
         self.data.append(byte)
         self.cursor += 8
 
-    def __write_size__(self, value: int, base: int):
+    def __write_size__(self, value: int, max_bits: int):
         value = 0 if value is None else value
         if value > -9 and value < 8:  # from -8 to 7 inclusive
             self.__write_bit__(0)  # done with extra bits
@@ -120,8 +120,8 @@ class BitStream:
                 # new max_value = 32767, 8388607, 2147483647...
                 max_value = (128 << size_bits) - 1
                 size_bits += 8  # extra bits = 8, 16, 24, 32...
-                if size_bits > (8 * base):  # 32 for int, 64 for long
-                    raise ValueError(f'size exceeds {base} bytes', value)
+                if size_bits > max_bits:  # 32 for int, 64 for long
+                    raise ValueError(f'size exceeds {max_bits} bits', value)
                 self.__write_bit__(1)
         else:
             min_value = -128
@@ -129,8 +129,8 @@ class BitStream:
                 # new max_value = -32768, -8388608, -2147483648...
                 min_value = -128 << size_bits
                 size_bits += 8  # extra bits = 8, 16, 24, 32...
-                if size_bits > (8 * base):  # 32 for int, 64 for long
-                    raise ValueError(f'size exceeds {base} bytes', value)
+                if size_bits > max_bits:  # 32 for int, 64 for long
+                    raise ValueError(f'size exceeds {max_bits} bits', value)
                 self.__write_bit__(1)
 
         self.__write_bit__(0)  # done with extra bits
@@ -153,21 +153,21 @@ class BitStream:
         if nullable and self.__write_nullable__(value):
             return  # 1 if is null, 0 if is not null
         self.__write_bit__(1)  # compressed (todo: uncompressed?)
-        size_bits = self.__write_size__(value, 2)
+        size_bits = self.__write_size__(value, 2 * 8)
         self.__write_number__(value, size_bits)
 
     def write_int(self, value: int, nullable: bool = False):
         if nullable and self.__write_nullable__(value):
             return  # 1 if is null, 0 if is not null
         self.__write_bit__(1)  # compressed (todo: uncompressed?)
-        size_bits = self.__write_size__(value, 4)
+        size_bits = self.__write_size__(value, 4 * 8)
         self.__write_number__(value, size_bits)
 
     def write_long(self, value: int, nullable: bool = False):
         if nullable and self.__write_nullable__(value):
             return  # 1 if is null, 0 if is not null
         self.__write_bit__(1)  # compressed (todo: uncompressed?)
-        size_bits = self.__write_size__(value, 8)
+        size_bits = self.__write_size__(value, 8 * 8)
         self.__write_number__(value, size_bits)
 
     def write_double(self, value: int):
