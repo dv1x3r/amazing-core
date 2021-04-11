@@ -1,3 +1,4 @@
+from amazingcore.messages.user.get_cms_notifications import GetCmsNotificationsMessage
 from amazingcore.messages.user.get_stats_type import GetStatsTypeMessage
 from amazingcore.messages.user.get_tiers import GetTiersMessage
 from amazingcore.messages.user.register_avatar_for_registration import RegisterAvatarForRegistrationMessage
@@ -45,6 +46,8 @@ class MessageFactory:
             return GetTiersMessage()
         if message_header.message_type == UserMessageTypes.GET_STATS_TYPE:
             return GetStatsTypeMessage()
+        if message_header.message_type == UserMessageTypes.GET_CMS_NOTIFICATIONS:
+            return GetCmsNotificationsMessage()
 
     def __sync__(self, message_header: MessageHeader):
         pass
