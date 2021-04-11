@@ -1,3 +1,4 @@
+from amazingcore.messages.user.get_home_invitations import GetHomeInvitationsMessage
 from amazingcore.messages.user.get_notification_by_player_id import GetNotificationByPlayerIdMessage
 from amazingcore.messages.user.get_cms_notifications import GetCmsNotificationsMessage
 from amazingcore.messages.user.get_stats_type import GetStatsTypeMessage
@@ -51,6 +52,8 @@ class MessageFactory:
             return GetCmsNotificationsMessage()
         if message_header.message_type == UserMessageTypes.GET_NOTIFICATION_BY_PLAYER_ID:
             return GetNotificationByPlayerIdMessage()
+        if message_header.message_type == UserMessageTypes.GET_HOME_INVITATIONS:
+            return GetHomeInvitationsMessage()
 
     def __sync__(self, message_header: MessageHeader):
         pass
