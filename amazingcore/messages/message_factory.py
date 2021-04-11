@@ -1,3 +1,4 @@
+from amazingcore.messages.user.get_notification_by_player_id import GetNotificationByPlayerIdMessage
 from amazingcore.messages.user.get_cms_notifications import GetCmsNotificationsMessage
 from amazingcore.messages.user.get_stats_type import GetStatsTypeMessage
 from amazingcore.messages.user.get_tiers import GetTiersMessage
@@ -48,6 +49,8 @@ class MessageFactory:
             return GetStatsTypeMessage()
         if message_header.message_type == UserMessageTypes.GET_CMS_NOTIFICATIONS:
             return GetCmsNotificationsMessage()
+        if message_header.message_type == UserMessageTypes.GET_NOTIFICATION_BY_PLAYER_ID:
+            return GetNotificationByPlayerIdMessage()
 
     def __sync__(self, message_header: MessageHeader):
         pass
