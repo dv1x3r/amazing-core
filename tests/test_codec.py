@@ -56,11 +56,11 @@ class TestBitStream(unittest.TestCase):
             {'data': b'\xF0', 'expected': 32}]  # 1111
         for case in cases:
             bit_stream = BitStream(case['data'])
-            result = bit_stream.__read_size__(4)
+            result = bit_stream.__read_size__(4 * 8)
             self.assertEqual(result, case['expected'])
         with self.assertRaises(ValueError):
             bit_stream = BitStream(b'\xF8')  # 1111 1
-            result = bit_stream.__read_size__(4)
+            result = bit_stream.__read_size__(4 * 8)
 
     def test_read_int(self):
         cases = [  # is_integer size data        i s data
@@ -105,10 +105,10 @@ class TestBitStream(unittest.TestCase):
             {'int': -129, 'expected': b'\xC0'}]  # 16
         for case in cases:
             bit_stream = BitStream()
-            bit_stream.__write_size__(case['int'], 4)
+            bit_stream.__write_size__(case['int'], 4 * 8)
             self.assertEqual(bit_stream.data, case['expected'], case['int'])
         with self.assertRaises(ValueError):
-            BitStream().__write_size__(4294967296, 4)
+            BitStream().__write_size__(4294967296, 4 * 8)
 
     def test_write_int(self):
         cases = [  # is_integer size data        i s data
