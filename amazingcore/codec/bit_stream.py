@@ -173,7 +173,9 @@ class BitStream:
     def write_double(self, value: int):
         self.__write_number__(value, 8 * 8)  # long uncompressed
 
-    def write_bool(self, value: bool):
+    def write_bool(self, value: bool, nullable: bool = False):
+        if nullable and self.__write_nullable__(value):
+            return  # 1 if is null, 0 if is not null
         self.__write_bit__(int(value))
 
     def write_start(self):
