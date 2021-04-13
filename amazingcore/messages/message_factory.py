@@ -1,3 +1,4 @@
+from amazingcore.messages.user.get_player_missions import GetPlayerMissionsMessage
 from amazingcore.messages.user.get_npc_relationship_levels import GetNpcRelationshipLevelsMessage
 from amazingcore.messages.user.get_home_invitations import GetHomeInvitationsMessage
 from amazingcore.messages.user.get_notification_by_player_id import GetNotificationByPlayerIdMessage
@@ -57,6 +58,8 @@ class MessageFactory:
             return GetHomeInvitationsMessage()
         if message_header.message_type == UserMessageTypes.GET_NPC_RELATIONSHIP_LEVELS:
             return GetNpcRelationshipLevelsMessage()
+        if message_header.message_type == UserMessageTypes.GET_PLAYER_MISSIONS:
+            return GetPlayerMissionsMessage()
 
     def __sync__(self, message_header: MessageHeader):
         pass
