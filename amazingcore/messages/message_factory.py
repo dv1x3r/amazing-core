@@ -1,3 +1,4 @@
+from amazingcore.messages.user.get_currencies import GetCurrenciesMessage
 from amazingcore.messages.user.get_player_missions import GetPlayerMissionsMessage
 from amazingcore.messages.user.get_npc_relationship_levels import GetNpcRelationshipLevelsMessage
 from amazingcore.messages.user.get_home_invitations import GetHomeInvitationsMessage
@@ -60,6 +61,8 @@ class MessageFactory:
             return GetNpcRelationshipLevelsMessage()
         if message_header.message_type == UserMessageTypes.GET_PLAYER_MISSIONS:
             return GetPlayerMissionsMessage()
+        if message_header.message_type == UserMessageTypes.GET_CURRENCIES:
+            return GetCurrenciesMessage()
 
     def __sync__(self, message_header: MessageHeader):
         pass
