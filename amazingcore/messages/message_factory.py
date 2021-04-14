@@ -1,3 +1,4 @@
+from amazingcore.messages.user.get_site_frame import GetSiteFrameMessage
 from amazingcore.messages.user.get_player_stats import GetPlayerStatsMessage
 from amazingcore.messages.user.manage_home_invitations import ManageHomeInvitationsMessage
 from amazingcore.messages.user.get_crisp_actions import GetCrispActionsMessage
@@ -75,6 +76,8 @@ class MessageFactory:
             return ManageHomeInvitationsMessage()
         if message_header.message_type == UserMessageTypes.GET_PLAYER_STATS:
             return GetPlayerStatsMessage()
+        if message_header.message_type == UserMessageTypes.GET_SITE_FRAME:
+            return GetSiteFrameMessage()
 
     def __sync__(self, message_header: MessageHeader):
         pass
