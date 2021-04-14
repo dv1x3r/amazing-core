@@ -1,3 +1,4 @@
+from amazingcore.messages.user.get_crisp_actions import GetCrispActionsMessage
 from amazingcore.messages.user.get_cms_missions import GetCmsMissionsMessage
 from amazingcore.messages.user.get_currencies import GetCurrenciesMessage
 from amazingcore.messages.user.get_player_missions import GetPlayerMissionsMessage
@@ -66,6 +67,8 @@ class MessageFactory:
             return GetCurrenciesMessage()
         if message_header.message_type == UserMessageTypes.GET_CMS_MISSIONS:
             return GetCmsMissionsMessage()
+        if message_header.message_type == UserMessageTypes.GET_CRISP_ACTIONS:
+            return GetCrispActionsMessage()
 
     def __sync__(self, message_header: MessageHeader):
         pass
