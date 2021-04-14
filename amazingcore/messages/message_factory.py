@@ -1,3 +1,4 @@
+from amazingcore.messages.user.manage_home_invitations import ManageHomeInvitationsMessage
 from amazingcore.messages.user.get_crisp_actions import GetCrispActionsMessage
 from amazingcore.messages.user.get_cms_missions import GetCmsMissionsMessage
 from amazingcore.messages.user.get_currencies import GetCurrenciesMessage
@@ -69,6 +70,8 @@ class MessageFactory:
             return GetCmsMissionsMessage()
         if message_header.message_type == UserMessageTypes.GET_CRISP_ACTIONS:
             return GetCrispActionsMessage()
+        if message_header.message_type == UserMessageTypes.MANAGE_HOME_INVITATIONS:
+            return ManageHomeInvitationsMessage()
 
     def __sync__(self, message_header: MessageHeader):
         pass
