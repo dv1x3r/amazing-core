@@ -15,7 +15,7 @@ class Core:
 
     async def main(self, host, port):
         tcp_server = await asyncio.start_server(self.client_connected, host, port)
-        log(LogLevel.INFO, 'Server is listening for connections...')
+        log(LogLevel.INFO, 'TCP Core server is listening for connections...')
         await tcp_server.serve_forever()
 
     async def client_connected(self, reader: StreamReader, writer: StreamWriter):

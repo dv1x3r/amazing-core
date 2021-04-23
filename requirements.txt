@@ -1,1 +1,2 @@
-rich==9.* # coloring console output
+rich==9.*
+aiohttp==3.*
