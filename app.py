@@ -1,7 +1,7 @@
 import os
 import asyncio
 from amazingcore.core import Core
-from amazingcore.cdn import Cdn
+from amazingcdn.cdn import Cdn
 
 
 async def main():

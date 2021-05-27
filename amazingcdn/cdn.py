@@ -6,9 +6,15 @@ from amazingcore.logger import LogLevel, log
 class Cdn:
 
     async def handler(self, request: web.Request):
-        log(LogLevel.INFO, 'CDN ' + str(request))
+        log(LogLevel.INFO, 'HTTP CDN ' + str(request))
         log(LogLevel.DEBUG, 'headers =>', dict(request.headers))
-        # return web.Response(text='hello world')
+
+        try:
+            val = open('amazingcdn\\' + str(request.rel_url), 'rb').read()
+            return web.Response(body=val)
+        except:
+            log(LogLevel.WARN, 'HTTP CDN Not Found:   ' + str(request.rel_url))
+            return
 
     async def main(self, host, port):
         app = web.Application()
