@@ -7,7 +7,7 @@ class Cdn:
 
     async def handler(self, request: web.Request):
         log(LogLevel.INFO, 'HTTP CDN ' + str(request))
-        log(LogLevel.DEBUG, 'headers =>', dict(request.headers))
+        # log(LogLevel.DEBUG, 'headers =>', dict(request.headers))
 
         try:
             val = open('amazingcdn\\' + str(request.rel_url), 'rb').read()
