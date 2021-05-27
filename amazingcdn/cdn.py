@@ -14,7 +14,7 @@ class Cdn:
             return web.Response(body=val)
         except:
             log(LogLevel.WARN, 'HTTP CDN Not Found:   ' + str(request.rel_url))
-            return
+            return web.HTTPNotFound()
 
     async def main(self, host, port):
         app = web.Application()
