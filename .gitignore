@@ -352,3 +352,4 @@ MigrationBackup/
 # Python
 venv/
 .idea/
+.vscode/
