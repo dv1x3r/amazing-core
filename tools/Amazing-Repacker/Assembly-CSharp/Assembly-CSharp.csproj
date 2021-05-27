@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Assembly-CSharp</AssemblyName>
+    <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
+    <TargetFramework>net35</TargetFramework>
+  </PropertyGroup>
+  <PropertyGroup>
+    <LangVersion>4</LangVersion>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup />
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp-firstpass">
+      <HintPath>dll\Assembly-CSharp-firstpass.dll</HintPath>
+    </Reference>
+    <Reference Include="SteamworksManaged">
+      <HintPath>dll\SteamworksManaged.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml" />
+    <Reference Include="UnityEngine">
+      <HintPath>dll\UnityEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.Networking">
+      <HintPath>dll\UnityEngine.Networking.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>dll\UnityEngine.UI.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>
