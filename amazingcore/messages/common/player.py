@@ -46,7 +46,10 @@ class Player(SerializableMessage):
         bit_stream.write_start()
         self.aw_object_id.serialize(bit_stream)
         bit_stream.write_dt(self.create_date)
-        self.active_player_avatar.serialize(bit_stream)
+        if self.active_player_avatar:
+            self.active_player_avatar.serialize(bit_stream)
+        else:
+            bit_stream.write_none()
         self.home_theme_id.serialize(bit_stream)
         self.current_race_mode.serialize(bit_stream)
         bit_stream.write_str(self.workshop_options)
@@ -68,7 +71,7 @@ class Player(SerializableMessage):
         return {
             'aw_object_id': self.aw_object_id.to_dict(),
             'create_date': self.create_date,
-            'active_player_avatar': self.active_player_avatar.to_dict(),
+            'active_player_avatar': self.active_player_avatar.to_dict() if self.active_player_avatar else None,
             'home_theme_id': self.home_theme_id.to_dict(),
             'current_race_mode': self.current_race_mode.to_dict(),
             'workshop_options': self.workshop_options,
