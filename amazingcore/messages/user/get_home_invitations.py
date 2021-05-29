@@ -17,15 +17,17 @@ class GetHomeInvitationsMessage(Message):
         message_header.result_code = ResultCode.OK
         message_header.app_code = AppCode.OK
 
-        self.response.player_home_invites = [PlayerHomeInvite(
-            aw_object_id=ObjectID(1, 2, 3, 4),
-            invite_player_id=ObjectID(1, 2, 3, 4),
-            player_id=ObjectID(1, 2, 3, 4),
-            is_player_home=True,
-            invite_status=0,
-            invite_date=dt.datetime.now(),
-            blocked_date=(dt.datetime.now() + dt.timedelta(days=1))
-        )]
+        # self.response.player_home_invites = [PlayerHomeInvite(
+        #     aw_object_id=ObjectID(1, 2, 3, 4),
+        #     invite_player_id=ObjectID(1, 2, 3, 4),
+        #     player_id=ObjectID(1, 2, 3, 4),
+        #     is_player_home=True,
+        #     invite_status=0,
+        #     invite_date=dt.datetime.now(),
+        #     blocked_date=(dt.datetime.now() + dt.timedelta(days=1))
+        # )]
+
+        self.response.player_home_invites = []
 
 
 class GetHomeInvitationsRequest(SerializableMessage):

@@ -15,12 +15,14 @@ class GetNpcRelationshipLevelsMessage(Message):
         message_header.result_code = ResultCode.OK
         message_header.app_code = AppCode.OK
 
-        self.response.npc_relationship_levels = [NpcRelationshipLevel(
-            aw_object_id=ObjectID(1, 2, 3, 4),
-            level=0,
-            relationship_value=1,
-            npc_id=ObjectID(1, 2, 3, 4)
-        )]
+        # self.response.npc_relationship_levels = [NpcRelationshipLevel(
+        #     aw_object_id=ObjectID(1, 2, 3, 4),
+        #     level=0,
+        #     relationship_value=1,
+        #     npc_id=ObjectID(1, 2, 3, 4)
+        # )]
+
+        self.response.npc_relationship_levels = []
 
 
 class GetNpcRelationshipLevelsRequest(SerializableMessage):

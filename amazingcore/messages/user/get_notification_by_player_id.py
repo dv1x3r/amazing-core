@@ -19,28 +19,30 @@ class GetNotificationByPlayerIdMessage(Message):
         message_header.result_code = ResultCode.OK
         message_header.app_code = AppCode.OK
 
-        notification = Notification(
-            aw_object_id=ObjectID(1, 2, 3, 4),
-            notification_category=NotificationCategory(
-                ObjectID(1, 2, 3, 4), 1, 2),
-            notification_type=3,
-            requires_email=False
-        )
+        # notification = Notification(
+        #     aw_object_id=ObjectID(1, 2, 3, 4),
+        #     notification_category=NotificationCategory(
+        #         ObjectID(1, 2, 3, 4), 1, 2),
+        #     notification_type=3,
+        #     requires_email=False
+        # )
 
-        self.response.player_notifications = [PlayerNotification(
-            aw_object_id=ObjectID(1, 2, 3, 4),
-            from_player_id=ObjectID(1, 2, 3, 4),
-            from_player_name='from_player_name',
-            to_player_id=ObjectID(1, 2, 3, 4),
-            village_name='from_player_name',
-            village_id=ObjectID(1, 2, 3, 4),
-            object_id=ObjectID(1, 2, 3, 4),
-            notification_text='notification_text',
-            notification=notification,
-            is_read=False,
-            create_date=dt.datetime.now(),
-            expiry_date=(dt.datetime.now() + dt.timedelta(days=1))
-        )]
+        # self.response.player_notifications = [PlayerNotification(
+        #     aw_object_id=ObjectID(1, 2, 3, 4),
+        #     from_player_id=ObjectID(1, 2, 3, 4),
+        #     from_player_name='from_player_name',
+        #     to_player_id=ObjectID(1, 2, 3, 4),
+        #     village_name='from_player_name',
+        #     village_id=ObjectID(1, 2, 3, 4),
+        #     object_id=ObjectID(1, 2, 3, 4),
+        #     notification_text='notification_text',
+        #     notification=notification,
+        #     is_read=False,
+        #     create_date=dt.datetime.now(),
+        #     expiry_date=(dt.datetime.now() + dt.timedelta(days=1))
+        # )]
+
+        self.response.player_notifications = []
 
 
 class GetNotificationByPlayerIdRequest(SerializableMessage):

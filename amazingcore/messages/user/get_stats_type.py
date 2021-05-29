@@ -15,14 +15,16 @@ class GetStatsTypeMessage(Message):
         message_header.result_code = ResultCode.OK
         message_header.app_code = AppCode.OK
 
-        self.response.player_stats_types = [PlayerStatsType(
-            container_aw_object_id=ObjectID(1, 2, 3, 4),
-            container_asset_map={},
-            container_asset_pkg=[],
-            player_stats_type_value=PlayerStatsTypeValue.LEVEL,
-            is_avatar=False,
-            name='name'
-        )]
+        # self.response.player_stats_types = [PlayerStatsType(
+        #     container_aw_object_id=ObjectID(1, 2, 3, 4),
+        #     container_asset_map={},
+        #     container_asset_pkg=[],
+        #     player_stats_type_value=PlayerStatsTypeValue.LEVEL,
+        #     is_avatar=False,
+        #     name='name'
+        # )]
+
+        self.response.player_stats_types = []
 
 
 class GetStatsTypeRequest(SerializableMessage):

@@ -15,21 +15,23 @@ class GetTiersMessage(Message):
         message_header.result_code = ResultCode.OK
         message_header.app_code = AppCode.OK
 
-        self.response.tiers = [Tier(
-            container_aw_object_id=ObjectID(1, 2, 3, 4),
-            container_asset_map={},
-            container_asset_pkg=[],
-            rotation_days=1,
-            rotation_rate=2,
-            reporting_level_id=ObjectID(1, 2, 3, 4),
-            paid=True,
-            premium=True,
-            closed=False,
-            pricing_info='pricing_info',
-            expiry_period=3,
-            ordinal=4,
-            expiry_tier_id=ObjectID(1, 2, 3, 4)
-        )]
+        # self.response.tiers = [Tier(
+        #     container_aw_object_id=ObjectID(1, 2, 3, 4),
+        #     container_asset_map={},
+        #     container_asset_pkg=[],
+        #     rotation_days=1,
+        #     rotation_rate=2,
+        #     reporting_level_id=ObjectID(1, 2, 3, 4),
+        #     paid=True,
+        #     premium=True,
+        #     closed=False,
+        #     pricing_info='pricing_info',
+        #     expiry_period=3,
+        #     ordinal=4,
+        #     expiry_tier_id=ObjectID(1, 2, 3, 4)
+        # )]
+
+        self.response.tiers = []
 
 
 class GetTiersRequest(SerializableMessage):

@@ -15,25 +15,27 @@ class GetCurrenciesMessage(Message):
         message_header.result_code = ResultCode.OK
         message_header.app_code = AppCode.OK
 
-        self.response.currencies = [Currency(
-            aw_object_id=ObjectID(1, 2, 3, 4),
-            asset_map={},
-            asset_packages=[],
-            stats_type_id=ObjectID(1, 2, 3, 4),
-            is_default=True
-        ), Currency(
-            aw_object_id=ObjectID(1, 2, 3, 4),
-            asset_map={},
-            asset_packages=[],
-            stats_type_id=ObjectID(1, 2, 3, 4),
-            is_default=False
-        ), Currency(
-            aw_object_id=ObjectID(1, 2, 3, 4),
-            asset_map={},
-            asset_packages=[],
-            stats_type_id=ObjectID(1, 2, 3, 4),
-            is_default=None
-        )]
+        # self.response.currencies = [Currency(
+        #     aw_object_id=ObjectID(1, 2, 3, 4),
+        #     asset_map={},
+        #     asset_packages=[],
+        #     stats_type_id=ObjectID(1, 2, 3, 4),
+        #     is_default=True
+        # ), Currency(
+        #     aw_object_id=ObjectID(1, 2, 3, 4),
+        #     asset_map={},
+        #     asset_packages=[],
+        #     stats_type_id=ObjectID(1, 2, 3, 4),
+        #     is_default=False
+        # ), Currency(
+        #     aw_object_id=ObjectID(1, 2, 3, 4),
+        #     asset_map={},
+        #     asset_packages=[],
+        #     stats_type_id=ObjectID(1, 2, 3, 4),
+        #     is_default=None
+        # )]
+
+        self.response.currencies = []
 
 
 class GetCurrenciesRequest(SerializableMessage):
