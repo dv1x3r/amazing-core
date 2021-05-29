@@ -29,7 +29,7 @@ class LoginMessage(Message):
         message_header.result_code = ResultCode.OK
         message_header.app_code = AppCode.OK
 
-        object_id = ObjectID(1, 2, 3, 4)
+        object_id = ObjectID(0, 0, 0, 0)
 
         self.response.site_info = SiteInfo(
             site_id=object_id,
@@ -40,31 +40,21 @@ class LoginMessage(Message):
         self.response.session_status = SessionStatus.IN_PROGRESS
         self.response.session_id = object_id
         self.response.conversation_id = 5
-        self.response.asset_delivery_url = 'localhost'
-
-        asset = Asset(
-            aw_object_id=object_id,
-            asset_type_name='asset_type_name',
-            cdn_id='cdn_id',
-            res_name='res_name',
-            group_name='group_name',
-            file_size=1024)
-
-        apc = AssetPackage(
-            container_aw_object_id=object_id,
-            container_asset_map={},
-            container_asset_pkg=[],
-            p_tag='p_tag',
-            create_date=dt.datetime.now())
+        self.response.asset_delivery_url = 'http://localhost:8080/'
 
         avatar = Avatar(
             aw_object_id=object_id,
-            asset_map={'asset_map_key': [asset]},
-            asset_packages=[apc],
-            dimensions='6',
-            weight=7,
-            height=8,
-            max_outfits=9,
+            asset_map={
+                "Prefab_Unity3D": [
+                    Asset(ObjectID(0, 0, 0, 0), 'asset_type', 'assets/Player_Avatar.unity3d',
+                          'Player_Avatar.unity3d', 'asset_group', 59109),  # !(item.resName == "PF__Avatar.unity3d")
+                ],
+            },
+            asset_packages=[],
+            dimensions='1',
+            weight=1,
+            height=1,
+            max_outfits=1,
             name='avatar_name')
 
         player_avatar = PlayerAvatar(
@@ -101,15 +91,7 @@ class LoginMessage(Message):
             village_id=object_id)
 
         self.response.max_outfit = 13
-
-        player_stats_1 = PlayerStats(
-            aw_object_id=object_id,
-            player_avatar_id=object_id,
-            stats_type_id=object_id,
-            level=14,
-            object_id=object_id)
-
-        self.response.player_stats = [player_stats_1]
+        self.response.player_stats = []
 
         crisp_data = CrispData(
             crisp_action_id=object_id,
@@ -117,11 +99,11 @@ class LoginMessage(Message):
             crisp_expiry_date=dt.datetime.now() + dt.timedelta(days=1),
             crisp_confirmed=True)
 
-        player_setting_1 = PlayerSetting(
-            aw_object_id=object_id,
-            player_id=object_id,
-            setting_name='setting_name',
-            value='value')
+        # player_setting_1 = PlayerSetting(
+        #     aw_object_id=object_id,
+        #     player_id=object_id,
+        #     setting_name='setting_name',
+        #     value='value')
 
         self.response.player_info = PlayerInfo(
             tier_id=object_id,
@@ -141,7 +123,7 @@ class LoginMessage(Message):
             findable_date=dt.datetime.now() + dt.timedelta(days=1),
             user_subscription_expiry_date=dt.datetime.now() + dt.timedelta(days=1),
             qa=True,
-            player_settings=[player_setting_1])
+            player_settings=[])
 
         self.response.current_server_time = dt.datetime.now()
         self.response.system_lockout_time = dt.datetime.now() + dt.timedelta(days=1)

@@ -4,6 +4,8 @@ from amazingcore.messages.message_header import MessageHeader
 from amazingcore.codec.bit_stream import BitStream
 from amazingcore.messages.common.object_id import ObjectID
 from amazingcore.messages.common.site_frame import SiteFrame
+from amazingcore.messages.common.asset import Asset
+
 
 import datetime as dt
 
@@ -18,13 +20,24 @@ class GetSiteFrameMessage(Message):
         message_header.app_code = AppCode.OK
 
         self.response.site_frame = SiteFrame(
-            aw_object_id=ObjectID(1, 2, 3, 4),
-            asset_map={},
+            aw_object_id=ObjectID(0, 0, 0, 0),
+            asset_map={
+                # preload objects are downloaded to the Cached folder ClientManager.cs -> LoadPreloadedAssets()
+                # 'Preload_PrefabUnity3D': [],
+
+                # this is used to load hardcoded assets (instead of using Resources.Load())
+                # LoadLoginScene.cs -> LoadAvatar -> DownloadManager.LoadAsset("Player_Base.unity3d")
+                'Amazing_Core': [Asset(ObjectID(0, 0, 0, 0), 'asset_type', 'assets/Player_Base.unity3d', 'Player_Base.unity3d', 'asset_group', 58974)],
+
+                # LoadLoginScene.cs -> AvatarLoadedHandler() -> LoadSlotIds()
+                # DressAvatarManager.cs -> LoadSlotIds -> ClientManager.Instance.configList
+                'Config_Text': []
+            },
             asset_packages=[],
             type_value=1
         )
 
-        self.response.asset_delivery_url = 'localhost'
+        self.response.asset_delivery_url = 'http://localhost:8080/'  # + asset.cdn_id
 
 
 class GetSiteFrameRequest(SerializableMessage):
