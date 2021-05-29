@@ -149,6 +149,9 @@ class BitStream:
         self.__write_bit__(is_null)
         return is_null
 
+    def write_none(self):
+        self.__write_bit__(1)
+
     def write_short(self, value: int, nullable: bool = False):
         if nullable and self.__write_nullable__(value):
             return  # 1 if is null, 0 if is not null
