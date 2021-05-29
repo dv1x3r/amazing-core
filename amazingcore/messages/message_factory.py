@@ -1,3 +1,5 @@
+from amazingcore.messages.user.get_item_categories import GetItemCategoriesMessage
+from amazingcore.messages.user.get_required_experience import GetRequiredExperienceMessage
 from amazingcore.messages.user.get_site_frame import GetSiteFrameMessage
 from amazingcore.messages.user.get_player_stats import GetPlayerStatsMessage
 from amazingcore.messages.user.manage_home_invitations import ManageHomeInvitationsMessage
@@ -78,6 +80,10 @@ class MessageFactory:
             return GetPlayerStatsMessage()
         if message_header.message_type == UserMessageTypes.GET_SITE_FRAME:
             return GetSiteFrameMessage()
+        if message_header.message_type == UserMessageTypes.GET_REQUIRED_EXPERIENCE:
+            return GetRequiredExperienceMessage()
+        if message_header.message_type == UserMessageTypes.GET_CMS_ITEMCATEGORIES:
+            return GetItemCategoriesMessage()
 
     def __sync__(self, message_header: MessageHeader):
         pass
