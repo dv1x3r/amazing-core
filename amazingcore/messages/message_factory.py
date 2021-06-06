@@ -1,3 +1,4 @@
+from amazingcore.messages.user.get_outfit_items import GetOutfitItemsMessage
 from amazingcore.messages.user.get_item_categories import GetItemCategoriesMessage
 from amazingcore.messages.user.get_required_experience import GetRequiredExperienceMessage
 from amazingcore.messages.user.get_site_frame import GetSiteFrameMessage
@@ -84,6 +85,8 @@ class MessageFactory:
             return GetRequiredExperienceMessage()
         if message_header.message_type == UserMessageTypes.GET_CMS_ITEMCATEGORIES:
             return GetItemCategoriesMessage()
+        if message_header.message_type == UserMessageTypes.GET_OUTFIT_ITEMS:
+            return GetOutfitItemsMessage()
 
     def __sync__(self, message_header: MessageHeader):
         pass
