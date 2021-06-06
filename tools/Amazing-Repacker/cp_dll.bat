@@ -1,1 +1,0 @@
-xcopy .\Assembly-CSharp\bin\Debug\net35\Assembly-CSharp.dll C:\Users\dx\source\repos\amazing-core\tools\_game\AmazingWorld_Data\Managed
