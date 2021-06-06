@@ -353,3 +353,7 @@ MigrationBackup/
 venv/
 .idea/
 .vscode/
+
+# Amazing World
+tools/AmazingWorld/
+tools/Amazing-Repacker/Assembly-CSharp/**/*.cs
