@@ -11,21 +11,21 @@
   <PropertyGroup />
   <ItemGroup>
     <Reference Include="Assembly-CSharp-firstpass">
-      <HintPath>..\..\_game\AmazingWorld_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
+      <HintPath>dll\Assembly-CSharp-firstpass.dll</HintPath>
     </Reference>
     <Reference Include="SteamworksManaged">
-      <HintPath>..\..\_game\AmazingWorld_Data\Managed\SteamworksManaged.dll</HintPath>
+      <HintPath>dll\SteamworksManaged.dll</HintPath>
     </Reference>
     <Reference Include="System.Core" />
     <Reference Include="System.Xml" />
     <Reference Include="UnityEngine">
-      <HintPath>..\..\_game\AmazingWorld_Data\Managed\UnityEngine.dll</HintPath>
+      <HintPath>dll\UnityEngine.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.Networking">
-      <HintPath>..\..\_game\AmazingWorld_Data\Managed\UnityEngine.Networking.dll</HintPath>
+      <HintPath>dll\UnityEngine.Networking.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UI">
-      <HintPath>..\..\_game\AmazingWorld_Data\Managed\UnityEngine.UI.dll</HintPath>
+      <HintPath>dll\UnityEngine.UI.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>
