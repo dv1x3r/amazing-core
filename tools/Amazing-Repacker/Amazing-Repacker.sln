@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31005.135
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Console-Tester", "Console-Tester\Console-Tester.csproj", "{CAAEFE9B-C906-4709-9426-61FD5B783D88}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Amazing-Tester", "Amazing-Tester\Amazing-Tester.csproj", "{CAAEFE9B-C906-4709-9426-61FD5B783D88}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Assembly-CSharp", "Assembly-CSharp\Assembly-CSharp.csproj", "{6BBA3D9C-860B-451D-9410-992591CC8399}"
 EndProject
