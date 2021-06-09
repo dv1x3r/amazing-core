@@ -22,16 +22,20 @@ class GetSiteFrameMessage(Message):
         self.response.site_frame = SiteFrame(
             aw_object_id=ObjectID(0, 0, 0, 0),
             asset_map={
-                # preload objects are downloaded to the Cached folder ClientManager.cs -> LoadPreloadedAssets()
-                # 'Preload_PrefabUnity3D': [],
-
                 # this is used to load hardcoded assets (instead of using Resources.Load())
                 # LoadLoginScene.cs -> LoadAvatar -> DownloadManager.LoadAsset("Player_Base.unity3d")
                 'Amazing_Core': [Asset(ObjectID(0, 0, 0, 0), 'asset_type', 'assets/Player_Base.unity3d', 'Player_Base.unity3d', 'asset_group', 58974)],
 
                 # LoadLoginScene.cs -> AvatarLoadedHandler() -> LoadSlotIds()
                 # DressAvatarManager.cs -> LoadSlotIds -> ClientManager.Instance.configList
-                'Config_Text': []
+                'Config_Text': [],
+
+                # preload objects are downloaded to the Cached folder ClientManager.cs -> LoadPreloadedAssets()
+                # also used to pass AWLoadingScreen: OutdoorMazeLoader.cs -> LoadPreloadAssetsCommand() -> preloadList
+                'Preload_PrefabUnity3D': [],
+
+                # also used to pass AWLoadingScreen: OutdoorMazeLoader.cs -> LoadPreloadAssetsCommand() -> audioClipList
+                'Audio': [],
             },
             asset_packages=[],
             type_value=1
