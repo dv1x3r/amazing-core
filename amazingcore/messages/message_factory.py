@@ -1,3 +1,4 @@
+from amazingcore.messages.user.get_outfits import GetOutfitsMessage
 from amazingcore.messages.user.get_avatars import GetAvatarsMessage
 from amazingcore.messages.user.get_outfit_items import GetOutfitItemsMessage
 from amazingcore.messages.user.get_item_categories import GetItemCategoriesMessage
@@ -90,6 +91,8 @@ class MessageFactory:
             return GetOutfitItemsMessage()
         if message_header.message_type == UserMessageTypes.GET_AVATARS:
             return GetAvatarsMessage()
+        if message_header.message_type == UserMessageTypes.GET_OUTFITS:
+            return GetOutfitsMessage()
 
     def __sync__(self, message_header: MessageHeader):
         pass
