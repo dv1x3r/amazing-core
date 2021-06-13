@@ -201,3 +201,6 @@ class BitStream:
         value_delta = value - dt.datetime(1, 3, 1)
         value_seconds = int(value_delta.total_seconds()) + 31622400
         self.__write_number__(value_seconds, 8 * 8)  # long uncompressed
+
+    def write_bytes(self, value):
+        self.write_int(0)  # TBD: Write(byte[] values) / ReadByteArray
