@@ -1,3 +1,4 @@
+from amazingcore.messages.sync.sync_login import SyncLoginMessage
 from amazingcore.messages.user.init_location import InitLocationMessage
 from amazingcore.messages.user.get_zones import GetZonesMessage
 from amazingcore.messages.user.get_outfits import GetOutfitsMessage
@@ -27,7 +28,7 @@ from amazingcore.messages.user.random_names import RandomNamesMessage
 from amazingcore.messages.user.validate_name import ValidateNameMessage
 from amazingcore.messages.user.client_version import ClientVersionMessage
 from amazingcore.messages.message_header import MessageHeader
-from amazingcore.messages.message_codes import ServiceClass, UserMessageTypes
+from amazingcore.messages.message_codes import ServiceClass, SyncMessageTypes, UserMessageTypes
 
 
 class MessageFactory:
@@ -101,7 +102,8 @@ class MessageFactory:
             return InitLocationMessage()
 
     def __sync__(self, message_header: MessageHeader):
-        pass
+        if message_header.message_type == SyncMessageTypes.LOGIN:
+            return SyncLoginMessage()
 
     def __location__(self, message_header: MessageHeader):
         pass
