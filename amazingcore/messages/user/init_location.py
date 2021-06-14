@@ -27,13 +27,20 @@ class InitLocationMessage(Message):
         self.response.sync_server_port = 8182
 
         object_id = ObjectID(0, 0, 0, 0)
+
+        home_theme = HomeTheme(object_id, {
+            # LoadMazeCommand.cs -> LoadMainScene() -> AssetDownloadManager.cs -> LoadMainScene()
+            # 'Scene_Unity3D': [Asset(object_id, 'asset_type', 'non_existing_cdn_id', 'HomeLotSmall.unity3d', 'Main_Scene', 0)]
+            'Scene_Unity3D': [Asset(object_id, 'asset_type', 'non_existing_cdn_id', 'Springtime003.unity3d', 'Main_Scene', 0)]
+        }, [])
+
         player_maze = PlayerMaze(
             object_id, 'coremaze', 42, None, dt.datetime.now(
-            ), 1, 1, 1, False, True, True, False, object_id, [], HomeTheme(object_id, {}, []), object_id, object_id
+            ), 1, 1, 1, False, True, True, False, object_id, [], home_theme, object_id, object_id
         )
 
         self.response.home = PlayerHome(
-            player_maze, 'kek', True, dt.datetime.now(), HomeTheme(object_id, {}, []),  object_id, [])
+            player_maze, 'kek', True, dt.datetime.now(), home_theme, object_id, [player_maze])
 
 
 class InitLocationRequest(SerializableMessage):
