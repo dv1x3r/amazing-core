@@ -1,3 +1,4 @@
+from amazingcore.messages.user.get_maze_items import GetMazeItemsMessage
 from amazingcore.messages.sync.sync_login import SyncLoginMessage
 from amazingcore.messages.user.init_location import InitLocationMessage
 from amazingcore.messages.user.get_zones import GetZonesMessage
@@ -100,6 +101,8 @@ class MessageFactory:
             return GetZonesMessage()
         if message_header.message_type == UserMessageTypes.INIT_LOCATION:
             return InitLocationMessage()
+        if message_header.message_type == UserMessageTypes.GET_MAZE_ITEMS:
+            return GetMazeItemsMessage()
 
     def __sync__(self, message_header: MessageHeader):
         if message_header.message_type == SyncMessageTypes.LOGIN:
