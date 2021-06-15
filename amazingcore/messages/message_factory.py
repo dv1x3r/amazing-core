@@ -1,3 +1,4 @@
+from amazingcore.messages.user.get_inventory_objects import GetInventoryObjectsMessage
 from amazingcore.messages.user.get_build_objects import GetBuildObjectsMessage
 from amazingcore.messages.user.get_maze_items import GetMazeItemsMessage
 from amazingcore.messages.sync.sync_login import SyncLoginMessage
@@ -106,6 +107,8 @@ class MessageFactory:
             return GetMazeItemsMessage()
         if message_header.message_type == UserMessageTypes.GET_BUILD_OBJECTS:
             return GetBuildObjectsMessage()
+        if message_header.message_type == UserMessageTypes.GET_INVENTORY_OBJECTS:
+            return GetInventoryObjectsMessage()
 
     def __sync__(self, message_header: MessageHeader):
         if message_header.message_type == SyncMessageTypes.LOGIN:
