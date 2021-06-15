@@ -30,8 +30,8 @@ class InitLocationMessage(Message):
 
         home_theme = HomeTheme(object_id, {
             # LoadMazeCommand.cs -> LoadMainScene() -> AssetDownloadManager.cs -> LoadMainScene()
-            # 'Scene_Unity3D': [Asset(object_id, 'asset_type', 'non_existing_cdn_id', 'HomeLotSmall.unity3d', 'Main_Scene', 0)]
-            'Scene_Unity3D': [Asset(object_id, 'asset_type', 'non_existing_cdn_id', 'Springtime003.unity3d', 'Main_Scene', 0)]
+            'Scene_Unity3D': [Asset(object_id, 'asset_type', 'non_existing_cdn_id', 'HomeLotSmall.unity3d', 'Main_Scene', 0)]
+            # 'Scene_Unity3D': [Asset(object_id, 'asset_type', 'non_existing_cdn_id', 'Springtime003.unity3d', 'Main_Scene', 0)]
         }, [])
 
         player_maze = PlayerMaze(
