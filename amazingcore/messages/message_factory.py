@@ -1,3 +1,4 @@
+from amazingcore.messages.user.get_player_npcs import GetPlayerNpcsMessage
 from amazingcore.messages.user.get_npc_relationships import GetNpcRelationshipsMessage
 from amazingcore.messages.user.get_online_statuses import GetOnlineStatusesMessage
 from amazingcore.messages.user.enter_building import EnterBuildingMessage
@@ -124,6 +125,8 @@ class MessageFactory:
             return GetOnlineStatusesMessage()
         if message_header.message_type == UserMessageTypes.GET_NPC_RELATIONSHIPS:
             return GetNpcRelationshipsMessage()
+        if message_header.message_type == UserMessageTypes.GET_PLAYER_NPCS:
+            return GetPlayerNpcsMessage()
 
     def __sync__(self, message_header: MessageHeader):
         if message_header.message_type == SyncMessageTypes.LOGIN:
