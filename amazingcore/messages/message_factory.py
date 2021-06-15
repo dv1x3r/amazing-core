@@ -1,3 +1,4 @@
+from amazingcore.messages.user.list_limits import ListLimitsMessage
 from amazingcore.messages.user.get_player_npcs import GetPlayerNpcsMessage
 from amazingcore.messages.user.get_npc_relationships import GetNpcRelationshipsMessage
 from amazingcore.messages.user.get_online_statuses import GetOnlineStatusesMessage
@@ -127,6 +128,8 @@ class MessageFactory:
             return GetNpcRelationshipsMessage()
         if message_header.message_type == UserMessageTypes.GET_PLAYER_NPCS:
             return GetPlayerNpcsMessage()
+        if message_header.message_type == UserMessageTypes.LIST_LIMITS:
+            return ListLimitsMessage()
 
     def __sync__(self, message_header: MessageHeader):
         if message_header.message_type == SyncMessageTypes.LOGIN:
