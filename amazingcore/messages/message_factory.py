@@ -1,3 +1,4 @@
+from amazingcore.messages.user.get_announcements import GetAnnouncementsMessage
 from amazingcore.messages.user.get_chat_channel_types import GetChatChannelTypesMessage
 from amazingcore.messages.user.get_inventory_objects import GetInventoryObjectsMessage
 from amazingcore.messages.user.get_build_objects import GetBuildObjectsMessage
@@ -112,6 +113,8 @@ class MessageFactory:
             return GetInventoryObjectsMessage()
         if message_header.message_type == UserMessageTypes.GET_CHAT_CHANNEL_TYPES:
             return GetChatChannelTypesMessage()
+        if message_header.message_type == UserMessageTypes.GET_ANNOUNCEMENTS:
+            return GetAnnouncementsMessage()
 
     def __sync__(self, message_header: MessageHeader):
         if message_header.message_type == SyncMessageTypes.LOGIN:
