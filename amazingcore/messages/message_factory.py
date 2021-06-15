@@ -1,3 +1,4 @@
+from amazingcore.messages.user.enter_building import EnterBuildingMessage
 from amazingcore.messages.user.get_announcements import GetAnnouncementsMessage
 from amazingcore.messages.user.get_chat_channel_types import GetChatChannelTypesMessage
 from amazingcore.messages.user.get_inventory_objects import GetInventoryObjectsMessage
@@ -115,6 +116,8 @@ class MessageFactory:
             return GetChatChannelTypesMessage()
         if message_header.message_type == UserMessageTypes.GET_ANNOUNCEMENTS:
             return GetAnnouncementsMessage()
+        if message_header.message_type == UserMessageTypes.ENTER_BUILDING:
+            return EnterBuildingMessage()
 
     def __sync__(self, message_header: MessageHeader):
         if message_header.message_type == SyncMessageTypes.LOGIN:
