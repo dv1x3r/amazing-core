@@ -25,7 +25,13 @@ class GetSiteFrameMessage(Message):
                 # this is used to load hardcoded assets (instead of using Resources.Load())
                 # LoadLoginScene.cs -> LoadAvatar -> DownloadManager.LoadAsset("Player_Base.unity3d")
                 # Should contain child object with animation (PlayerController GetAnimObject checks for child objects)
-                'Amazing_Core': [Asset(ObjectID(0, 0, 0, 0), 'asset_type', 'assets/Player_Base.unity3d', 'Player_Base.unity3d', 'asset_group', 59051)],
+                'Amazing_Core': [
+                    Asset(ObjectID(0, 0, 0, 0), 'asset_type', 'assets/Player_Base.unity3d',
+                          'Player_Base.unity3d', 'asset_group', 59051),
+                    Asset(ObjectID(0, 0, 0, 0), 'asset_type', 'assets/PlayerCamera.unity3d',
+                          'PlayerCamera.unity3d', 'asset_group', 1467),
+                ],
+
 
                 # LoadLoginScene.cs -> AvatarLoadedHandler() -> LoadSlotIds()
                 # DressAvatarManager.cs -> LoadSlotIds -> ClientManager.Instance.configList
