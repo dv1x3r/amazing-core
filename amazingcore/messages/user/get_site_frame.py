@@ -27,7 +27,7 @@ class GetSiteFrameMessage(Message):
                 # Should contain child object with animation (PlayerController GetAnimObject checks for child objects)
                 'Amazing_Core': [
                     Asset(ObjectID(0, 0, 0, 0), 'asset_type', 'assets/Player_Base.unity3d',
-                          'Player_Base.unity3d', 'asset_group', 59051),
+                          'Player_Base.unity3d', 'asset_group', 59400),
                     Asset(ObjectID(0, 0, 0, 0), 'asset_type', 'assets/PlayerCamera.unity3d',
                           'PlayerCamera.unity3d', 'asset_group', 1467),
                 ],
