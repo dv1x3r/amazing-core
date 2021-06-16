@@ -15,6 +15,7 @@ namespace Console_Tester
             //session.SendMessage(ServiceClass.UserServer, 566, new GSFGetClientVersionInfoSvc.GSFRequest("AmazingWorld"), null, null);
             //session.SendMessage(ServiceClass.UserServer, 213, new GSFGetRequiredExperienceSvc.GSFRequest(1), null, null);
             //session.SendMessage(ServiceClass.UserServer, 103, new GSFGetOutfitItemsSvc.GSFRequest(new GSFOID(), new GSFOID()), null, null);
+            session.SendMessage(ServiceClass.UserServer, 154, new GSFGetZonesSvc.GSFRequest(), null, null);
             Console.WriteLine("Hello World!");
         }
     }
