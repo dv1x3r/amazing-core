@@ -28,8 +28,10 @@ class GetSiteFrameMessage(Message):
                 'Amazing_Core': [
                     Asset(ObjectID(0, 0, 0, 0), 'asset_type', 'assets/Player_Base.unity3d',
                           'Player_Base.unity3d', 'asset_group', 59400),
-                    Asset(ObjectID(0, 0, 0, 0), 'asset_type', 'assets/PlayerCamera.unity3d',
-                          'PlayerCamera.unity3d', 'asset_group', 1467),
+                    # Asset(ObjectID(0, 0, 0, 0), 'asset_type', 'assets/PlayerCamera.unity3d',
+                    #       'PlayerCamera.unity3d', 'asset_group', 1466),
+                    Asset(ObjectID(0, 0, 0, 0), 'asset_type', 'assets/OTQyNDc5ODIyMDMwMg',
+                          'PlayerCamera.unity3d', 'asset_group', 1878),
                 ],
 
 
