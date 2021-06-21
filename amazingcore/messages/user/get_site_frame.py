@@ -30,6 +30,9 @@ class GetSiteFrameMessage(Message):
                     # OutdoorMazeLoader.cs -> LoadSharedPrefabsCommand -> DownloadManager.LoadAsset("PlayerCamera.unity3d")
                     Asset(ObjectID(0, 0, 0, 0), 'asset_type', 'assets/OTQyNDc5ODIyMDMwMg',
                           'PlayerCamera.unity3d', 'asset_group', 1878),
+                    # ClientManager.cs -> LoadPreloadAssetsCommand -> DownloadManager.LoadAsset("ShadersList.unity3d")
+                    Asset(ObjectID(0, 0, 0, 0), 'asset_type', 'assets/OTYyNDQwNDA5OTA4Ng',
+                          'ShadersList.unity3d', 'asset_group', 91142),
                 ],
 
                 # LoadLoginScene.cs -> AvatarLoadedHandler() -> LoadSlotIds()
