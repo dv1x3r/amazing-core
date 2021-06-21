@@ -23,17 +23,14 @@ class GetSiteFrameMessage(Message):
             aw_object_id=ObjectID(0, 0, 0, 0),
             asset_map={
                 # this is used to load hardcoded assets (instead of using Resources.Load())
-                # LoadLoginScene.cs -> LoadAvatar -> DownloadManager.LoadAsset("Player_Base.unity3d")
-                # Should contain child object with animation (PlayerController GetAnimObject checks for child objects)
                 'Amazing_Core': [
-                    Asset(ObjectID(0, 0, 0, 0), 'asset_type', 'assets/Player_Base.unity3d',
-                          'Player_Base.unity3d', 'asset_group', 59400),
-                    # Asset(ObjectID(0, 0, 0, 0), 'asset_type', 'assets/PlayerCamera.unity3d',
-                    #       'PlayerCamera.unity3d', 'asset_group', 1466),
+                    # LoadLoginScene.cs -> LoadAvatar -> DownloadManager.LoadAsset("Player_Base.unity3d")
+                    Asset(ObjectID(0, 0, 0, 0), 'asset_type', 'assets/OTU2NTAzNTgyMzExOA',
+                          'Player_Base.unity3d', 'asset_group', 565066),
+                    # OutdoorMazeLoader.cs -> LoadSharedPrefabsCommand -> DownloadManager.LoadAsset("PlayerCamera.unity3d")
                     Asset(ObjectID(0, 0, 0, 0), 'asset_type', 'assets/OTQyNDc5ODIyMDMwMg',
                           'PlayerCamera.unity3d', 'asset_group', 1878),
                 ],
-
 
                 # LoadLoginScene.cs -> AvatarLoadedHandler() -> LoadSlotIds()
                 # DressAvatarManager.cs -> LoadSlotIds -> ClientManager.Instance.configList
