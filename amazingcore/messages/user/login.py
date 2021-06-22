@@ -61,7 +61,7 @@ class LoginMessage(Message):
             aw_object_id=object_id,
             avatar=avatar,
             player_id=object_id,
-            name='player_name',
+            name='AMAZING_CORE',
             bio='player_bio',
             secret_code='1234',
             create_ts=dt.datetime.now(),
@@ -108,7 +108,7 @@ class LoginMessage(Message):
         self.response.player_info = PlayerInfo(
             tier_id=object_id,
             player_name='omnio',
-            world_name='coreworld',
+            world_name='2021',
             crisp_data=crisp_data,
             verified=True,
             verification_expiry=dt.datetime.now() + dt.timedelta(days=1),
