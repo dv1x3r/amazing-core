@@ -7,8 +7,7 @@ Here we will try to create a custom server for the Amazing World game, which was
 - Game page on Steam: https://steamcommunity.com/app/293500
 - Download game with Steam: steam://install/293500
 - Discord Server: https://discord.gg/TWfTBbfdA9
-- See what is implemented in [GitHub Releases](https://github.com/dv1x3r/amazing-core/releases)
-- We have [GitHub Projects](https://github.com/dv1x3r/amazing-core/projects) so you can monitor ongoing / finished tasks
+- See what is implemented in [GitHub Releases](https://github.com/dv1x3r/amazing-core/releases) and [GitHub Projects](https://github.com/dv1x3r/amazing-core/projects)
 
 <br> <br>
 
