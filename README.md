@@ -1,43 +1,92 @@
-# Amazing Core
+# <img src="web/images/logo.png" height="75"> Amazing Core
 
-<img align="left" src="docs/logo.png" style="margin:20px">
+Amazing Core is an open-source server emulator for the MMO **Amazing World**, originally developed by Ganz and shut down in 2018.
+This project provides a modular, configurable framework with tools for server management, asset handling, and game services, accessible via a web-based dashboard.
 
-Here we will try to create a custom server for the Amazing World game, which was closed in 2018.
+Feel free to join our [Discord server!](https://discord.com/invite/TWfTBbfdA9)
 
-- Game page on Steam: https://steamcommunity.com/app/293500
-- Download game with Steam: steam://install/293500
-- Discord Server: https://discord.gg/TWfTBbfdA9
-- See what is implemented in [GitHub Releases](https://github.com/dv1x3r/amazing-core/releases) and [GitHub Projects](https://github.com/dv1x3r/amazing-core/projects)
+## Features
 
-<br> <br>
+Amazing Core is still in development and **not yet in a playable state** - *many* message handlers currently return placeholder responses.
+However, the project already includes:
 
-## Looks like this
+- Modular architecture for game services;
+- Implementation of the networking protocol;
+- SQLite storage for simplicity and portability;
+- Lightweight Web UI for server and database management;
 
-![screenshot](docs/screenshot_1.png)
+## Install the game
 
-## How to Run
+1. Visit the game SteamDB page: https://steamdb.info/app/293500/;
+2. Click the **Install** button in the top right corner;
+3. Install the game using Steam;
+4. Navigate to the game folder and open the `ServerConfig.xml` file in a text editor;
+5. Modify the server address as shown below:
 
-1. Download and install [python 3.9+](https://www.python.org/downloads/) using a big yellow button (use installer defaults)
-2. Install the game with Steam: paste this link into your browser - steam://install/293500
-3. Remove (or rename) : ```steam_api.dll```, ```steam_appid.txt``` and ```SteamworksNative.dll``` in the game folder, otherwise Steam will count hours in game
-4. Edit ServerConfig.xml in the game folder: ```ServerIP = 'localhost'```
-5. Download the latest Amazing Core [release](https://github.com/dv1x3r/amazing-core/releases)
-6. Shift + Right click on the Amazing Core folder -> Open PowerShell / Open Command Prompt
-7. Run the following command to install python libraries
-   ```
-   pip install -r .\requirements.txt
-   ```
-8. Run the following command to start Amazing Core server
-   ```
-   python app.py
-   ```
-9. Start the Game
+If you **do not want to run a server yourself**, you can use the public development server:
 
-<br>
+```xml
+ServerIP = 'springbay.amazingcore.org'
+```
 
-## Contributing
+**To use your your own local server**:
 
-We are happy to any kind of support!
+```xml
+ServerIP = 'localhost'
+```
 
-- Join us on [Discord](https://discord.gg/TWfTBbfdA9) to dive into the Legacy World together and share some datamining insights!
-- Explore our technical documentation [here](docs/documentation.md) to better understand how Amazing World / Core works.
+- To play the intro level, click the `I'm new!` button in the main menu;
+- To explore Spring Bay, click the `Log in` button and enter any username and password;
+
+## Getting Started
+
+1. **Download** the latest [server binary](https://github.com/dv1x3r/amazing-core/releases);
+2. **Place** the [config.json](https://github.com/dv1x3r/amazing-core/blob/master/config.json) in the same folder as the server binary;
+3. **Create** a folder named `data_db`;
+4. **Download** the [blob.db](https://drive.google.com/drive/folders/1K7k7ZHrL5KZTdsa5_BblgafPgeGWwKRc?usp=share_link), and place it inside `data_db`;
+5. **Run** the server binary;
+
+Once started:
+
+- The API server will be available at http://localhost:3000
+- The Game server will listen on `localhost:8182`
+- You can customize server settings using the `config.json`.
+
+## Build
+
+Make sure you have the following installed:
+
+- **Go >= 1.24**;
+
+To build the project:
+
+```sh
+go build -o ./build/server ./cmd/server/main.go
+```
+
+To build and run it with a single command:
+
+```sh
+go run ./cmd/server/main.go
+```
+
+## Structure
+
+```
+cmd/           - entry point
+data/          - sql migrations
+internal/      
+├── api/       - http server for admin dashboard and asset streaming
+├── game/      - tcp game server and message handling
+├── config/    - configuration variables
+├── lib/       - shared libraries (e.g. logging, helpers)
+├── services/  - business logic and database interaction
+tools/         - development tools (e.g. asset importers)
+web/           - embedded frontend for admin dashboard
+```
+
+## License
+
+This project is licensed under the [GNU AGPL v3](LICENSE).
+
+Amazing World™ is a registered trademark of Ganz. Amazing Core is an unofficial, fan-made project intended for personal and educational use only. It is not affiliated with or endorsed by Ganz or Amazing World™ in any way.

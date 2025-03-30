@@ -1,2 +1,0 @@
-rich==9.*
-aiohttp==3.*

@@ -1,0 +1,34 @@
+{
+  "servers": {
+    "api": "localhost:3000",
+    "game": "localhost:8182"
+  },
+  "settings": {
+    "assetDeliveryURL": "http://localhost:3000/cdn/",
+    "syncServerIP": "localhost",
+    "syncServerPort": 8182
+  },
+  "storage": {
+    "databases": {
+      "core": "./data_db/core.db",
+      "blob": "./data_db/blob.db"
+    }
+  },
+  "secure": {
+    "auth": {
+      "username": "admin",
+      "password": "admin"
+    },
+    "session": {
+      "key": "openssl rand -hex 32",
+      "secure": false
+    },
+    "csrf": {
+      "key": "openssl rand -hex 32",
+      "secure": false,
+      "trustedOrigins": [
+        "localhost:3000"
+      ]
+    }
+  }
+}
