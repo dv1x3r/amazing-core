@@ -40,11 +40,12 @@ ServerIP = 'localhost'
 
 ## Getting Started
 
-1. **Download** the latest [server binary](https://github.com/dv1x3r/amazing-core/releases);
-2. **Place** the [config.json](https://github.com/dv1x3r/amazing-core/blob/master/config.json) in the same folder as the server binary;
-3. **Create** a folder named `data_db`;
-4. **Download** the [blob.db](https://drive.google.com/drive/folders/1K7k7ZHrL5KZTdsa5_BblgafPgeGWwKRc?usp=share_link), and place it inside `data_db`;
-5. **Run** the server binary;
+1. **Download** the latest [server release](https://github.com/dv1x3r/amazing-core/releases):
+   - For regular Windows use `amazing-core_Windows_x86_64.zip`
+   - For Apple silicon Mac use `amazing-core_Darwin_arm64.tar.gz`
+2. **Extract** the archive to a folder of your choice;
+3. **Download** the [blob.db](https://drive.google.com/drive/folders/1K7k7ZHrL5KZTdsa5_BblgafPgeGWwKRc?usp=share_link) database file and place it inside the `data_db` folder;
+4. **Run** the server binary;
 
 Once started:
 
