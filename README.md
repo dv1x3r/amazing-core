@@ -1,13 +1,13 @@
 # <img src="web/images/logo.png" height="75"> Amazing Core
 
-Amazing Core is an open-source server emulator for the MMO **Amazing World**, originally developed by Ganz and shut down in 2018.
+Amazing Core is an open-source server emulator for **Amazing World**, an MMO originally developed by Ganz and shut down in 2018.
 This project provides a modular, configurable framework with tools for server management, asset handling, and game services, accessible via a web-based dashboard.
 
 Feel free to join our [Discord server!](https://discord.com/invite/TWfTBbfdA9)
 
 ## Features
 
-Amazing Core is still in development and **not yet in a playable state** - *many* message handlers currently return placeholder responses.
+Amazing Core is still in development and **not yet in a playable state** - _many_ message handlers currently return placeholder responses.
 However, the project already includes:
 
 - Modular architecture for game services;
