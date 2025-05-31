@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"io/fs"
 	"net/http"
 	"time"
 
@@ -34,6 +35,13 @@ func NewServer(
 
 	router.Handle("GET /{$}", admin.Handler(authService))
 	router.Handle("GET /web/", http.StripPrefix("/web", http.FileServerFS(web.FS)))
+	router.Handle("GET /favicon.ico", fsFileHandler(web.FS, "favicon_io/favicon.ico"))
+	router.Handle("GET /site.webmanifest", fsFileHandler(web.FS, "favicon_io/site.webmanifest"))
+	router.Handle("GET /favicon-16x16.png", fsFileHandler(web.FS, "favicon_io/favicon-16x16.png"))
+	router.Handle("GET /favicon-32x32.png", fsFileHandler(web.FS, "favicon_io/favicon-32x32.png"))
+	router.Handle("GET /apple-touch-icon.png", fsFileHandler(web.FS, "favicon_io/apple-touch-icon.png"))
+	router.Handle("GET /android-chrome-192x192.png", fsFileHandler(web.FS, "favicon_io/android-chrome-192x192.png"))
+	router.Handle("GET /android-chrome-512x512.png", fsFileHandler(web.FS, "favicon_io/android-chrome-512x512.png"))
 
 	blobHandler := blob.NewAPIHandler(blobService)
 	router.HandleFunc("GET /cdn/{cdnid}", errorHandler(blobHandler.GetBlob))
@@ -93,6 +101,12 @@ func (s *Server) Shutdown(ctx context.Context) {
 	logger.Get().Info("shutting down the api server")
 	if err := s.server.Shutdown(ctx); err != nil {
 		logger.Get().Error("[api]" + err.Error())
+	}
+}
+
+func fsFileHandler(fsys fs.FS, name string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFileFS(w, r, fsys, name)
 	}
 }
 
