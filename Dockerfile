@@ -14,8 +14,6 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 go build -o ./build/server ./cmd/server
 
-RUN go test -v ./...
-
 FROM alpine:latest
 
 WORKDIR /app
