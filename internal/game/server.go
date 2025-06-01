@@ -2,6 +2,8 @@ package game
 
 import (
 	"context"
+	"errors"
+	"net"
 
 	"github.com/dv1x3r/amazing-core/internal/game/dummy"
 	"github.com/dv1x3r/amazing-core/internal/game/gsf"
@@ -62,10 +64,14 @@ func NewServer(
 	return &Server{server: server}
 }
 
-func (s *Server) Start(address string) error {
+func (s *Server) ListenAndServe(address string) {
 	s.server.Addr = address
 	logger.Get().Info("starting the game server on " + address)
-	return s.server.ListenAndServe()
+	if err := s.server.ListenAndServe(); err != nil {
+		if !errors.Is(err, net.ErrClosed) {
+			logger.Get().Error("[gsf]" + err.Error())
+		}
+	}
 }
 
 func (s *Server) Shutdown(ctx context.Context) {

@@ -91,10 +91,14 @@ func NewServer(
 	return &Server{server: server}
 }
 
-func (s *Server) Start(address string) error {
+func (s *Server) ListenAndServe(address string) {
 	s.server.Addr = address
 	logger.Get().Info("starting the api server on " + address)
-	return s.server.ListenAndServe()
+	if err := s.server.ListenAndServe(); err != nil {
+		if !errors.Is(err, http.ErrServerClosed) {
+			logger.Get().Error("[api]" + err.Error())
+		}
+	}
 }
 
 func (s *Server) Shutdown(ctx context.Context) {

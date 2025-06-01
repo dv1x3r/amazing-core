@@ -38,13 +38,13 @@ func (s *Server) ListenAndServe() error {
 
 	for {
 		conn, err := listener.Accept()
-		if errors.Is(err, net.ErrClosed) {
-			return nil
-		}
-
 		if err != nil {
-			time.Sleep(1 * time.Second)
-			continue
+			if errors.Is(err, net.ErrClosed) {
+				return err
+			} else {
+				time.Sleep(1 * time.Second)
+				continue
+			}
 		}
 
 		s.conns.Store(conn, struct{}{})

@@ -2,10 +2,8 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -112,26 +110,20 @@ func main() {
 		randomNamesService,
 	)
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	interruptCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
 	go func() {
-		err := apiServer.Start(cfg.Servers.API)
-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logger.Get().Error(err.Error())
-			stop()
-		}
+		apiServer.ListenAndServe(cfg.Servers.API)
+		stop()
 	}()
 
 	go func() {
-		err := gameServer.Start(cfg.Servers.Game)
-		if err != nil && !errors.Is(err, net.ErrClosed) {
-			logger.Get().Error(err.Error())
-			stop()
-		}
+		gameServer.ListenAndServe(cfg.Servers.Game)
+		stop()
 	}()
 
-	<-ctx.Done()
+	<-interruptCtx.Done()
 
 	// Wait for interrupt signal to gracefully shut down the server with a timeout of 10 seconds.
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
