@@ -6,6 +6,10 @@ import (
 	"time"
 
 	"github.com/dv1x3r/amazing-core/internal/game/gsf"
+	"github.com/dv1x3r/amazing-core/internal/game/types/clientmessagetype"
+	"github.com/dv1x3r/amazing-core/internal/game/types/serviceclass"
+	"github.com/dv1x3r/amazing-core/internal/game/types/syncmessagetype"
+	"github.com/dv1x3r/amazing-core/internal/game/types/usermessagetype"
 )
 
 func Logger(logger *slog.Logger) gsf.Middleware {
@@ -27,7 +31,19 @@ func Logger(logger *slog.Logger) gsf.Middleware {
 				attrs = append(attrs, slog.String("error", err.Error()))
 			}
 
-			message := fmt.Sprintf("[gsf] %s %+v", r.RemoteAddr, w.Header())
+			svcClass := serviceclass.ServiceClass(w.Header().SvcClass).String()
+			msgType := fmt.Sprint(w.Header().MsgType)
+
+			switch w.Header().SvcClass {
+			case int32(serviceclass.USER_SERVER):
+				msgType = usermessagetype.UserMessageType(w.Header().MsgType).String()
+			case int32(serviceclass.SYNC_SERVER):
+				msgType = syncmessagetype.SyncMessageType(w.Header().MsgType).String()
+			case int32(serviceclass.CLIENT):
+				msgType = clientmessagetype.ClientMessageType(w.Header().MsgType).String()
+			}
+
+			message := fmt.Sprintf("[gsf] %s %s.%s %+v", r.RemoteAddr, svcClass, msgType, w.Header())
 
 			logFn(message, attrs...)
 			return err

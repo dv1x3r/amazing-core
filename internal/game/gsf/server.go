@@ -103,7 +103,7 @@ func (s *Server) handleConn(ctx context.Context, conn net.Conn) {
 		}
 
 		if errors.Is(err, io.EOF) {
-			logger.Get().Info(fmt.Sprintf("[gsf] %s disconnected", remoteAddr))
+			logger.Get().Info(fmt.Sprintf("[gsf] %s disconnected: eof", remoteAddr))
 			break
 		}
 
