@@ -50,9 +50,27 @@ func NewService(store db.Store) *Service {
 	}
 }
 
+func (s *Service) attach() error {
+	const op = "blob.Service.attach"
+	_, err := s.store.DB().Exec("attach database ? as blob;", config.Get().Storage.Databases.Blob)
+	return wrap.IfErr(op, err)
+}
+
+func (s *Service) detach() error {
+	const op = "blob.Service.detach"
+	_, err := s.store.DB().Exec("detach database blob;")
+	return wrap.IfErr(op, err)
+}
+
 func (s *Service) FetchFileBlob(ctx context.Context, cdnid string) ([]byte, error) {
 	const op = "blob.Service.FetchFileBlob"
 	const query = "select blob from blob.asset_file where cdnid = ?;"
+
+	if err := s.attach(); err != nil {
+		return nil, wrap.IfErr(op, err)
+	}
+	defer s.detach()
+
 	var blob []byte
 	err := s.store.DB().QueryRowContext(ctx, query, cdnid).Scan(&blob)
 	if err == sql.ErrNoRows {
@@ -63,6 +81,11 @@ func (s *Service) FetchFileBlob(ctx context.Context, cdnid string) ([]byte, erro
 
 func (s *Service) FetchFilesList(ctx context.Context, r w2.GridDataRequest) ([]FileInfo, int, error) {
 	const op = "blob.Service.FetchFilesList"
+
+	if err := s.attach(); err != nil {
+		return nil, 0, wrap.IfErr(op, err)
+	}
+	defer s.detach()
 
 	var total int
 	var records []FileInfo
@@ -134,6 +157,11 @@ func (s *Service) FetchFilesList(ctx context.Context, r w2.GridDataRequest) ([]F
 func (s *Service) SaveFiles(ctx context.Context, files []*multipart.FileHeader) error {
 	const op = "blob.Service.SaveFiles"
 
+	if err := s.attach(); err != nil {
+		return wrap.IfErr(op, err)
+	}
+	defer s.detach()
+
 	logger.Get().Debug(op, "files", files)
 
 	tx, err := s.store.DB().Begin()
@@ -171,6 +199,12 @@ func (s *Service) SaveFiles(ctx context.Context, files []*multipart.FileHeader) 
 
 func (s *Service) DeleteFiles(ctx context.Context, ids []int) error {
 	const op = "blob.Service.DeleteFiles"
+
+	if err := s.attach(); err != nil {
+		return wrap.IfErr(op, err)
+	}
+	defer s.detach()
+
 	dlb := sqlbuilder.DeleteFrom("blob.asset_file")
 	dlb.Where(dlb.In("id", sqlbuilder.List(ids)))
 	query, args := dlb.BuildWithFlavor(sqlbuilder.SQLite)

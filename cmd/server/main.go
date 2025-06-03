@@ -71,11 +71,6 @@ func main() {
 	defer store.DB().Close()
 
 	logger.Get().Info(fmt.Sprintf("connected to the %s using the %s driver", cfg.Storage.Databases.Core, store.DriverName()))
-	logger.Get().Info(fmt.Sprintf("attaching the %s database", cfg.Storage.Databases.Blob))
-	if _, err := store.DB().Exec("attach database ? as blob;", cfg.Storage.Databases.Blob); err != nil {
-		logger.Get().Error("unable to attach the blob database", "err", err)
-		os.Exit(1)
-	}
 
 	if err := db.MigrateBase(logger.Get(), store.DB(), sqldata.FS, "base/core_db.sql"); err != nil {
 		logger.Get().Error("unable to initialize the core database", "err", err)
