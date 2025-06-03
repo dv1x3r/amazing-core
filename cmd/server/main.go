@@ -63,21 +63,30 @@ func main() {
 		os.Exit(1)
 	}
 
-	store, err := db.NewSQLiteStore(cfg.Storage.Databases.Core)
+	blobStore, err := db.NewSQLiteStore(cfg.Storage.Databases.Blob)
+	if err != nil {
+		logger.Get().Error("unable to connect to the blob database", "err", err)
+		os.Exit(1)
+	}
+	defer blobStore.DB().Close()
+
+	logger.Get().Info(fmt.Sprintf("connected to the %s using the %s driver", cfg.Storage.Databases.Blob, blobStore.DriverName()))
+
+	coreStore, err := db.NewSQLiteStore(cfg.Storage.Databases.Core)
 	if err != nil {
 		logger.Get().Error("unable to connect to the core database", "err", err)
 		os.Exit(1)
 	}
-	defer store.DB().Close()
+	defer coreStore.DB().Close()
 
-	logger.Get().Info(fmt.Sprintf("connected to the %s using the %s driver", cfg.Storage.Databases.Core, store.DriverName()))
+	logger.Get().Info(fmt.Sprintf("connected to the %s using the %s driver", cfg.Storage.Databases.Core, coreStore.DriverName()))
 
-	if err := db.MigrateBase(logger.Get(), store.DB(), sqldata.FS, "base/core_db.sql"); err != nil {
+	if err := db.MigrateBase(logger.Get(), coreStore.DB(), sqldata.FS, "base/core_db.sql"); err != nil {
 		logger.Get().Error("unable to initialize the core database", "err", err)
 		os.Exit(1)
 	}
 
-	if err := db.MigrateUp(logger.Get(), store.DB(), sqldata.FS, "updates"); err != nil {
+	if err := db.MigrateUp(logger.Get(), coreStore.DB(), sqldata.FS, "updates"); err != nil {
 		logger.Get().Error("unable to migrate the core database", "err", err)
 		os.Exit(1)
 	}
@@ -92,8 +101,8 @@ func main() {
 	}
 
 	authService := auth.NewService(session)
-	blobService := blob.NewService(store)
-	randomNamesService := randomnames.NewService(store)
+	blobService := blob.NewService(blobStore)
+	randomNamesService := randomnames.NewService(coreStore)
 
 	apiServer := api.NewServer(
 		authService,
