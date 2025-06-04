@@ -44,7 +44,7 @@ ServerIP = 'localhost'
 ## 🕹 In the game
 
 - To play the intro level, click the `I'm new!` button in the main menu;
-- To explore Spring Bay, click the `Log in` button and enter any username and password;
+- To explore the Spring Bay, click the `Log in` button and enter any username and password;
 
 ## 🧪 Getting Started
 
