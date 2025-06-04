@@ -3,7 +3,7 @@
 Amazing Core is an open-source server emulator for **Amazing World**, an MMO originally developed by Ganz and shut down in 2018.
 This project provides a modular, configurable framework with tools for server management, asset handling, and game services, accessible via a web-based dashboard.
 
-👉 Join our [Discord server!](https://discord.com/invite/TWfTBbfdA9)
+👉 Feel free to join our [Discord server!](https://discord.com/invite/TWfTBbfdA9)
 
 ## ⚠️ Warning!
 
@@ -65,7 +65,7 @@ Once started:
 
 ## 🧱 Build
 
-If you prefer to build the server from source, follow the steps below. This requires Go 1.24 or newer:
+To build the server from source, you will need **Go 1.24** or newer:
 
 ```sh
 go build -o ./build/server ./cmd/server/main.go
@@ -77,7 +77,7 @@ To build and run with a single command:
 go run ./cmd/server/main.go
 ```
 
-Optional configuration:
+You can choose between SQLite drivers by setting the `CGO_ENABLED` environment variable:
 
 - Build with `CGO_ENABLED=0` to use `modernc.org/sqlite` driver (release version);
 - Build with `CGO_ENABLED=1` to use `github.com/mattn/go-sqlite3` driver (default);
