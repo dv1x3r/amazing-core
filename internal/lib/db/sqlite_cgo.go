@@ -22,7 +22,7 @@ func NewSQLiteStore(filePath string) (Store, error) {
 	return &SQLiteStore{db: db}, nil
 }
 
-func (s SQLiteStore) DB() *sql.DB {
+func (s *SQLiteStore) DB() *sql.DB {
 	return s.db
 }
 
