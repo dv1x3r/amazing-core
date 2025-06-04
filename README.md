@@ -3,19 +3,25 @@
 Amazing Core is an open-source server emulator for **Amazing World**, an MMO originally developed by Ganz and shut down in 2018.
 This project provides a modular, configurable framework with tools for server management, asset handling, and game services, accessible via a web-based dashboard.
 
-Feel free to join our [Discord server!](https://discord.com/invite/TWfTBbfdA9)
+👉 Join our [Discord server!](https://discord.com/invite/TWfTBbfdA9)
 
-## Features
+## ⚠️ Warning!
 
 Amazing Core is still in development and **not yet in a playable state** - _many_ message handlers currently return placeholder responses.
-However, the project already includes:
+
+- **No multiplayer, NPCs, or quests yet**;
+- **Only the intro level and the _empty_ Spring Bay map are accessible**;
+- **Do not use your real username or password**;
+- **Use any dummy username and password to log in**;
+
+## 🎯 Features
 
 - Modular architecture for game services;
-- Implementation of the networking protocol;
+- Networking protocol implementation;
 - SQLite storage for simplicity and portability;
 - Lightweight Web UI for server and database management;
 
-## Install the game
+## 🎮 Install the game
 
 1. Visit the game SteamDB page: https://steamdb.info/app/293500/;
 2. Click the **Install** button in the top right corner;
@@ -23,22 +29,26 @@ However, the project already includes:
 4. Navigate to the game folder and open the `ServerConfig.xml` file in a text editor;
 5. Modify the server address as shown below:
 
-If you **do not want to run a server yourself**, you can use the public development server:
+If you **do not want to run a server yourself**, use the public demo server:
 
 ```xml
 ServerIP = 'springbay.amazingcore.org'
 ```
 
-**To use your your own local server**:
+To use your **own local server**, use the value below and proceed to the **Getting Started** section:
 
 ```xml
 ServerIP = 'localhost'
 ```
 
+## 🕹 In the game
+
 - To play the intro level, click the `I'm new!` button in the main menu;
 - To explore Spring Bay, click the `Log in` button and enter any username and password;
 
-## Getting Started
+## 🧪 Getting Started
+
+Use this section if you want to download and run the prebuilt server - no setup or compilation required.
 
 1. **Download** the latest [server release](https://github.com/dv1x3r/amazing-core/releases):
    - For regular Windows use `amazing-core_Windows_x86_64.zip`
@@ -53,25 +63,26 @@ Once started:
 - The Game server will listen on `localhost:8182`
 - You can customize server settings using the `config.json`.
 
-## Build
+## 🧱 Build
 
-Make sure you have the following installed:
-
-- **Go >= 1.24**;
-
-To build the project:
+If you prefer to build the server from source, follow the steps below. This requires Go 1.24 or newer:
 
 ```sh
 go build -o ./build/server ./cmd/server/main.go
 ```
 
-To build and run it with a single command:
+To build and run with a single command:
 
 ```sh
 go run ./cmd/server/main.go
 ```
 
-## Structure
+Optional configuration:
+
+- Build with `CGO_ENABLED=0` to use `modernc.org/sqlite` driver (release version);
+- Build with `CGO_ENABLED=1` to use `github.com/mattn/go-sqlite3` driver (default);
+
+## 📁 Structure
 
 ```
 cmd/           - entry point
@@ -86,7 +97,7 @@ tools/         - development tools (e.g. asset importers)
 web/           - embedded frontend for admin dashboard
 ```
 
-## License
+## 📄 License
 
 This project is licensed under the [GNU AGPL v3](LICENSE).
 
