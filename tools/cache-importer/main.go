@@ -41,6 +41,7 @@ func importCacheDir(cacheDir string, blobDB string, everything bool) error {
 	if err != nil {
 		return err
 	}
+	defer tx.Rollback()
 
 	dirEntries, err := os.ReadDir(cacheDir)
 	if err != nil {
