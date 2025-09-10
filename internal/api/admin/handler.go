@@ -8,7 +8,6 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/services/auth"
 
 	"github.com/dv1x3r/w2go/w2"
-	"github.com/gorilla/csrf"
 )
 
 //go:embed *.gotmpl
@@ -30,7 +29,7 @@ func Handler(authService *auth.Service) http.Handler {
 			}
 		}
 
-		data := map[string]any{"csrfToken": csrf.Token(r), "username": username}
+		data := map[string]any{"username": username}
 		if err := tmpl.ExecuteTemplate(w, "admin.gotmpl", data); err != nil {
 			w2.NewErrorResponse(err.Error()).Write(w, http.StatusInternalServerError)
 		}

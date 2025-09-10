@@ -19,7 +19,6 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/services/randomnames"
 
 	"github.com/dv1x3r/w2go/w2"
-	"github.com/gorilla/csrf"
 )
 
 type Server struct {
@@ -34,7 +33,7 @@ func NewServer(
 	router := http.NewServeMux()
 
 	router.Handle("GET /{$}", admin.Handler(authService))
-	router.Handle("GET /web/", http.StripPrefix("/web", http.FileServerFS(web.FS)))
+	router.Handle("GET /admin/", fsFolderHandler(web.FS, "admin", "/admin"))
 	router.Handle("GET /favicon.ico", fsFileHandler(web.FS, "favicon_io/favicon.ico"))
 	router.Handle("GET /site.webmanifest", fsFileHandler(web.FS, "favicon_io/site.webmanifest"))
 	router.Handle("GET /favicon-16x16.png", fsFileHandler(web.FS, "favicon_io/favicon-16x16.png"))
@@ -65,6 +64,11 @@ func NewServer(
 	protected := middleware.Protected(authService)
 	router.Handle("/api/v1/", http.StripPrefix("/api/v1", protected(v1)))
 
+	cop := http.NewCrossOriginProtection()
+	for _, origin := range config.Get().Secure.CSRF.TrustedOrigins {
+		cop.AddTrustedOrigin(origin)
+	}
+
 	stack := middleware.CreateStack(
 		middleware.Gzip(),
 		middleware.Secure(),
@@ -72,13 +76,7 @@ func NewServer(
 		middleware.Logger(logger.Get()),
 		middleware.Recover(),
 		middleware.RateLimiter(50, 50, 3*time.Minute),
-		csrf.Protect(
-			[]byte(config.Get().Secure.CSRF.Key),
-			csrf.Secure(config.Get().Secure.CSRF.Secure),
-			csrf.TrustedOrigins(config.Get().Secure.CSRF.TrustedOrigins),
-			csrf.CookieName("csrfcookie"),
-			csrf.Path("/"),
-		),
+		cop.Handler,
 	)
 
 	server := &http.Server{
@@ -112,6 +110,13 @@ func fsFileHandler(fsys fs.FS, name string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFileFS(w, r, fsys, name)
 	}
+}
+
+func fsFolderHandler(fsys fs.FS, dir string, strip string) http.Handler {
+	subfs, _ := fs.Sub(fsys, dir)
+	handler := http.FileServerFS(subfs)
+	handler = http.StripPrefix(strip, handler)
+	return handler
 }
 
 func errorHandler(handler func(http.ResponseWriter, *http.Request) error) http.HandlerFunc {

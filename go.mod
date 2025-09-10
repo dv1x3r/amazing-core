@@ -1,6 +1,6 @@
 module github.com/dv1x3r/amazing-core
 
-go 1.24
+go 1.25
 
 tool (
 	github.com/pressly/goose/v3/cmd/goose
@@ -10,7 +10,6 @@ tool (
 require (
 	github.com/dustin/go-humanize v1.0.1
 	github.com/dv1x3r/w2go v0.2.6
-	github.com/gorilla/csrf v1.7.3
 	github.com/gorilla/sessions v1.4.0
 	github.com/huandu/go-sqlbuilder v1.35.0
 	github.com/mattn/go-sqlite3 v1.14.28

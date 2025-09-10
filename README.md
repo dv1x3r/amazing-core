@@ -16,18 +16,17 @@ Amazing Core is still in development and **not yet in a playable state** - _many
 
 ## 🎯 Features
 
-- Modular architecture for game services;
-- Networking protocol implementation;
-- SQLite storage for simplicity and portability;
-- Lightweight Web UI for server and database management;
+- Open-source Amazing World server;
+- Web-based control panel for server management;
+- Lightweight and portable, no complex setup needed;
 
 ## 🎮 Install the game
 
 1. Visit the game SteamDB page: https://steamdb.info/app/293500/;
-2. Click the **Install** button in the top right corner;
-3. Install the game using Steam;
-4. Navigate to the game folder and open the `ServerConfig.xml` file in a text editor;
-5. Modify the server address as shown below:
+2. Click the **Install** button in the top right corner to open Steam;
+3. A Steam popup will appear, allowing you to install the game;
+4. After installation, navigate to the game folder and open the `ServerConfig.xml` file in a text editor;
+5. Modify the server address value as shown below:
 
 If you **do not want to run a server yourself**, use the public demo server:
 
@@ -51,10 +50,9 @@ ServerIP = 'localhost'
 Use this section if you want to download and run the prebuilt server - no setup or compilation required.
 
 1. **Download** the latest [server release](https://github.com/dv1x3r/amazing-core/releases):
-   - For regular Windows use `amazing-core_Windows_x86_64.zip`
-   - For Apple silicon Mac use `amazing-core_Darwin_arm64.tar.gz`
+   - For regular Windows just use `amazing-core_Windows_x86_64.zip`
 2. **Extract** the archive to a folder of your choice;
-3. **Download** the [blob.db](https://drive.google.com/drive/folders/1K7k7ZHrL5KZTdsa5_BblgafPgeGWwKRc?usp=share_link) database file and place it inside the `data_db` folder;
+3. **Download** the game assets database [blob.db](https://drive.google.com/drive/folders/1K7k7ZHrL5KZTdsa5_BblgafPgeGWwKRc?usp=share_link) and place it inside the `data_db` folder;
 4. **Run** the server binary;
 
 Once started:
@@ -65,7 +63,7 @@ Once started:
 
 ## 🧱 Build
 
-To build the server from source, you will need **Go 1.24** or newer:
+To build the server from source, you will need **Go 1.25** or newer:
 
 ```sh
 go build -o ./build/server ./cmd/server/main.go
@@ -90,9 +88,9 @@ data/          - sql migrations
 internal/      
 ├── api/       - http server for admin dashboard and asset streaming
 ├── game/      - tcp game server and message handling
+├── services/  - business logic and database interaction
 ├── config/    - configuration variables
 ├── lib/       - shared libraries (e.g. logging, helpers)
-├── services/  - business logic and database interaction
 tools/         - development tools (e.g. asset importers)
 web/           - embedded frontend for admin dashboard
 ```

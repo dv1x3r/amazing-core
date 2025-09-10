@@ -9,7 +9,6 @@ new w2form({
   box: '#login-form',
   header: 'Amazing Core Dashboard',
   url: '/login',
-  httpHeaders: { 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content },
   fields: [
     { field: 'username', type: 'text', html: { label: '', span: 0, attr: 'placeholder="Username" style="width: 100%"' } },
     { field: 'password', type: 'password', html: { label: '', span: 0, attr: 'placeholder="Password" style="width: 100%"' } },
