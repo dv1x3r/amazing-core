@@ -7,7 +7,6 @@ export function createRandomNamesGrid() {
       get: '/api/v1/randomnames/records',
       remove: '/api/v1/randomnames/remove',
     },
-    httpHeaders: { 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content },
     recid: 'id',
     multiSearch: true,
     show: {
@@ -47,7 +46,6 @@ function openRandomNamePopup(event) {
   const randomNameForm = new w2form({
     name: `randomNameForm`,
     url: '/api/v1/randomnames/form',
-    httpHeaders: { 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content },
     recid: event.detail.recid,
     fields: [
       { field: 'id', type: 'text', html: { label: 'ID', attr: 'size="10" readonly', span: 4, column: 0 } },

@@ -40,8 +40,6 @@ type Secure struct {
 		Secure bool   `json:"secure"`
 	} `json:"session"`
 	CSRF struct {
-		Key            string   `json:"key"`
-		Secure         bool     `json:"secure"`
 		TrustedOrigins []string `json:"trustedOrigins"`
 	} `json:"csrf"`
 }

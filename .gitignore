@@ -24,15 +24,18 @@ go.work.sum
 /build
 /dist
 
+# Environment
+.DS_Store
+.idea/
+.vscode/
+node_modules/
+
 # Database
 /data_db
 
 # Tools
 /tools/depot-downloader/293500
 
-# Environment
-.DS_Store
-.idea/
-.vscode/
-node_modules/
+# Client source
+/Assembly-CSharp
 

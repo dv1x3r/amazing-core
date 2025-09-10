@@ -7,7 +7,6 @@ export function createBlobGrid() {
       get: '/api/v1/blob/records',
       remove: '/api/v1/blob/remove',
     },
-    httpHeaders: { 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content },
     recid: 'id',
     multiSearch: true,
     show: {
@@ -54,7 +53,6 @@ export function createBlobGrid() {
 
         const res = await fetch('/api/v1/blob/upload', {
           method: 'POST',
-          headers: { 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content },
           body: form,
         })
 

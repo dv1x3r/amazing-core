@@ -24,10 +24,8 @@
       "secure": false
     },
     "csrf": {
-      "key": "openssl rand -hex 32",
-      "secure": false,
       "trustedOrigins": [
-        "localhost:3000"
+        "http://localhost:3000"
       ]
     }
   }

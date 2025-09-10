@@ -65,10 +65,7 @@ const dashboardSidebar = new w2sidebar({
           type: 'button', id: 'logout', text: 'Log out', icon: 'fa fa-right-from-bracket', onClick: async () => {
             const res = await fetch('/logout', {
               method: 'POST',
-              headers: {
-                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
-                'Content-Type': 'application/json'
-              },
+              headers: { 'Content-Type': 'application/json' },
             })
 
             if (res.status != 200) {
