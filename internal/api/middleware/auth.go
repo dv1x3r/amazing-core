@@ -11,7 +11,8 @@ func Protected(service *auth.Service) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if _, ok := service.GetSessionUsername(w, r); !ok {
-				w2.NewErrorResponse(http.StatusText(http.StatusUnauthorized)).Write(w, http.StatusUnauthorized)
+				res := w2.NewErrorResponse(http.StatusText(http.StatusUnauthorized))
+				res.Write(w, http.StatusUnauthorized)
 				return
 			}
 

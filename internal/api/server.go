@@ -4,28 +4,29 @@ import (
 	"context"
 	"errors"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/dv1x3r/amazing-core/internal/api/admin"
 	"github.com/dv1x3r/amazing-core/internal/api/middleware"
 	"github.com/dv1x3r/amazing-core/internal/config"
-	"github.com/dv1x3r/amazing-core/internal/lib/logger"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/amazing-core/web"
+	"github.com/dv1x3r/w2go/w2"
 
 	"github.com/dv1x3r/amazing-core/internal/services/auth"
 	"github.com/dv1x3r/amazing-core/internal/services/blob"
 	"github.com/dv1x3r/amazing-core/internal/services/randomnames"
-
-	"github.com/dv1x3r/w2go/w2"
 )
 
 type Server struct {
+	logger *slog.Logger
 	server *http.Server
 }
 
 func NewServer(
+	logger *slog.Logger,
 	authService *auth.Service,
 	blobService *blob.Service,
 	randomNamesService *randomnames.Service,
@@ -70,12 +71,11 @@ func NewServer(
 	}
 
 	stack := middleware.CreateStack(
-		middleware.Gzip(),
 		middleware.Secure(),
 		middleware.IPExtractor(),
-		middleware.Logger(logger.Get()),
+		middleware.Logger(logger),
 		middleware.Recover(),
-		middleware.RateLimiter(50, 50, 3*time.Minute),
+		middleware.RateLimiter(50, 100, 3*time.Minute),
 		cop.Handler,
 	)
 
@@ -86,23 +86,26 @@ func NewServer(
 		WriteTimeout: 30 * time.Second,
 	}
 
-	return &Server{server: server}
+	return &Server{
+		logger: logger,
+		server: server,
+	}
 }
 
 func (s *Server) ListenAndServe(address string) {
 	s.server.Addr = address
-	logger.Get().Info("starting the api server on " + address)
+	s.logger.Info("starting the api server on " + address)
 	if err := s.server.ListenAndServe(); err != nil {
 		if !errors.Is(err, http.ErrServerClosed) {
-			logger.Get().Error("[api]" + err.Error())
+			s.logger.Error(err.Error())
 		}
 	}
 }
 
 func (s *Server) Shutdown(ctx context.Context) {
-	logger.Get().Info("shutting down the api server")
+	s.logger.Info("shutting down the api server")
 	if err := s.server.Shutdown(ctx); err != nil {
-		logger.Get().Error("[api]" + err.Error())
+		s.logger.Error(err.Error())
 	}
 }
 
@@ -127,12 +130,13 @@ func errorHandler(handler func(http.ResponseWriter, *http.Request) error) http.H
 		}
 
 		if errors.Is(err, context.Canceled) {
-			w2.NewErrorResponse("Client Closed Request").Write(w, 499)
+			res := w2.NewErrorResponse("Client Closed Request")
+			res.Write(w, 499)
 			return
 		}
 
-		if ctxe, ok := r.Context().Value("err").(*error); ok {
-			*ctxe = err
+		if e, ok := r.Context().Value("err").(*error); ok {
+			*e = err
 		}
 
 		status := wrap.HTTPStatus(err)
@@ -141,6 +145,7 @@ func errorHandler(handler func(http.ResponseWriter, *http.Request) error) http.H
 			message = http.StatusText(status)
 		}
 
-		w2.NewErrorResponse(message).Write(w, status)
+		res := w2.NewErrorResponse(message)
+		res.Write(w, status)
 	}
 }

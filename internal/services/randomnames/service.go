@@ -8,9 +8,9 @@ import (
 
 	"github.com/dv1x3r/amazing-core/internal/lib/db"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
-
 	"github.com/dv1x3r/w2go/w2"
 	"github.com/dv1x3r/w2go/w2sql/w2sqlbuilder"
+
 	"github.com/huandu/go-sqlbuilder"
 )
 
@@ -52,11 +52,11 @@ func (s *Service) GetNStringsByType(ctx context.Context, namePartType string, am
 	defer rows.Close()
 
 	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
+		var record string
+		if err := rows.Scan(&record); err != nil {
 			return nil, wrap.IfErr(op, err)
 		}
-		records = append(records, name)
+		records = append(records, record)
 	}
 
 	if err := rows.Err(); err != nil {
@@ -69,17 +69,17 @@ func (s *Service) GetNStringsByType(ctx context.Context, namePartType string, am
 func (s *Service) GetByID(ctx context.Context, id int) (RandomName, error) {
 	const op = "randomnames.Service.GetByID"
 
-	var name RandomName
+	var record RandomName
 
 	const query = "select id, part_type, name from random_name where id = ?;"
 	row := s.store.DB().QueryRowContext(ctx, query, id)
-	if err := name.ScanRow(row.Scan); err == sql.ErrNoRows {
-		return name, ErrNameNotFound
+	if err := record.ScanRow(row.Scan); err == sql.ErrNoRows {
+		return record, ErrNameNotFound
 	} else if err != nil {
-		return name, wrap.IfErr(op, err)
+		return record, wrap.IfErr(op, err)
 	}
 
-	return name, nil
+	return record, nil
 }
 
 func (s *Service) Insert(ctx context.Context, name RandomName) (int, error) {
@@ -163,11 +163,11 @@ func (s *Service) GetList(ctx context.Context, r w2.GridDataRequest) ([]RandomNa
 	defer rows.Close()
 
 	for rows.Next() {
-		var name RandomName
-		if err := name.ScanRow(rows.Scan); err != nil {
+		var record RandomName
+		if err := record.ScanRow(rows.Scan); err != nil {
 			return nil, 0, wrap.IfErr(op, err)
 		}
-		records = append(records, name)
+		records = append(records, record)
 	}
 
 	if err := rows.Err(); err != nil {

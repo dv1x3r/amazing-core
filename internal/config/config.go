@@ -12,6 +12,10 @@ var (
 )
 
 type Config struct {
+	Logger struct {
+		Level   string `json:"level"`
+		Handler string `json:"handler"`
+	} `json:"logger"`
 	Servers struct {
 		API  string `json:"api"`
 		Game string `json:"game"`

@@ -29,7 +29,8 @@ func (h *APIHandler) GetForm(w http.ResponseWriter, r *http.Request) error {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 
-	return w2.NewFormGetResponse(record).Write(w)
+	res := w2.NewFormGetResponse(record)
+	return res.Write(w)
 }
 
 func (h *APIHandler) PostForm(w http.ResponseWriter, r *http.Request) error {
@@ -52,7 +53,8 @@ func (h *APIHandler) PostForm(w http.ResponseWriter, r *http.Request) error {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 
-	return w2.NewFormSaveResponse(req.RecID).Write(w)
+	res := w2.NewFormSaveResponse(req.RecID)
+	return res.Write(w)
 }
 
 func (h *APIHandler) GetRecords(w http.ResponseWriter, r *http.Request) error {
@@ -66,7 +68,8 @@ func (h *APIHandler) GetRecords(w http.ResponseWriter, r *http.Request) error {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 
-	return w2.NewGridDataResponse(records, total).Write(w)
+	res := w2.NewGridDataResponse(records, total)
+	return res.Write(w)
 }
 
 func (h *APIHandler) PostRemove(w http.ResponseWriter, r *http.Request) error {
@@ -79,5 +82,6 @@ func (h *APIHandler) PostRemove(w http.ResponseWriter, r *http.Request) error {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 
-	return w2.NewSuccessResponse().Write(w, http.StatusOK)
+	res := w2.NewSuccessResponse()
+	return res.Write(w, http.StatusOK)
 }
