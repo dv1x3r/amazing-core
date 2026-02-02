@@ -18,7 +18,6 @@ import (
 
 	"github.com/dv1x3r/amazing-core/internal/lib/db"
 	"github.com/dv1x3r/amazing-core/internal/lib/logger"
-	"github.com/dv1x3r/amazing-core/internal/lib/prettyslog"
 
 	"github.com/dv1x3r/amazing-core/internal/services/auth"
 	"github.com/dv1x3r/amazing-core/internal/services/blob"
@@ -45,8 +44,31 @@ const AMAZING_CORE = `
 func main() {
 	cfg := config.Get()
 
-	logger.Set(slog.New(prettyslog.NewHandler(&slog.HandlerOptions{Level: slog.LevelDebug})))
-	logger.Get().Info(fmt.Sprintf(AMAZING_CORE, version), "config", cfg)
+	switch cfg.Logger.Level {
+	case "debug":
+		logger.SetLevel(slog.LevelDebug)
+	case "info":
+		logger.SetLevel(slog.LevelInfo)
+	case "error":
+		logger.SetLevel(slog.LevelError)
+	case "warn":
+		logger.SetLevel(slog.LevelWarn)
+	default:
+		logger.SetLevel(slog.LevelDebug)
+	}
+
+	switch cfg.Logger.Handler {
+	case "text":
+		logger.Create(logger.TextHandler)
+	case "json":
+		logger.Create(logger.JsonHandler)
+	case "pretty":
+		logger.Create(logger.PrettyHandler)
+		logger.Get().Info(fmt.Sprintf(AMAZING_CORE, version), "config", cfg)
+	default:
+		logger.Create(logger.PrettyHandler)
+		logger.Get().Info(fmt.Sprintf(AMAZING_CORE, version), "config", cfg)
+	}
 
 	if cfg.Servers.API == "" || cfg.Servers.Game == "" {
 		logger.Get().Error("missing server configuration", "api", cfg.Servers.API, "game", cfg.Servers.Game)
@@ -105,12 +127,14 @@ func main() {
 	randomNamesService := randomnames.NewService(coreStore)
 
 	apiServer := api.NewServer(
+		logger.Get(),
 		authService,
 		blobService,
 		randomNamesService,
 	)
 
 	gameServer := game.NewServer(
+		logger.Get(),
 		randomNamesService,
 	)
 

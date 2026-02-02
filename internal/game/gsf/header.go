@@ -3,6 +3,12 @@ package gsf
 import (
 	"fmt"
 
+	"github.com/dv1x3r/amazing-core/internal/game/types/appcode"
+	"github.com/dv1x3r/amazing-core/internal/game/types/clientmessagetype"
+	"github.com/dv1x3r/amazing-core/internal/game/types/resultcode"
+	"github.com/dv1x3r/amazing-core/internal/game/types/serviceclass"
+	"github.com/dv1x3r/amazing-core/internal/game/types/syncmessagetype"
+	"github.com/dv1x3r/amazing-core/internal/game/types/usermessagetype"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 )
 
@@ -66,6 +72,30 @@ func (h *Header) SetDiscardable(value bool) {
 	} else {
 		h.Flags &= -17
 	}
+}
+
+func (h *Header) ServiceClassText() string {
+	return serviceclass.ServiceClass(h.SvcClass).String()
+}
+
+func (h *Header) MessageTypeText() string {
+	switch h.SvcClass {
+	case int32(serviceclass.USER_SERVER):
+		return usermessagetype.UserMessageType(h.MsgType).String()
+	case int32(serviceclass.SYNC_SERVER):
+		return syncmessagetype.SyncMessageType(h.MsgType).String()
+	case int32(serviceclass.CLIENT):
+		return clientmessagetype.ClientMessageType(h.MsgType).String()
+	}
+	return fmt.Sprintf("MessageType(%d)", h.MsgType)
+}
+
+func (h *Header) ResultCodeText() string {
+	return resultcode.ResultCode(h.ResultCode).String()
+}
+
+func (h *Header) AppCodeText() string {
+	return appcode.AppCode(h.AppCode).String()
 }
 
 func (h *Header) Serialize(writer ProtocolWriter) {

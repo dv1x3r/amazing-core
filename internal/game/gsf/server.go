@@ -7,23 +7,27 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log/slog"
 	"net"
 	"sync"
 	"time"
-
-	"github.com/dv1x3r/amazing-core/internal/lib/logger"
 )
 
 type Server struct {
 	Addr   string
 	Router Router
 	Codec  ProtocolCodec
+	Hooks  ServerHooks
 
 	listener net.Listener
 	cancel   context.CancelFunc
 	conns    sync.Map
 	wg       sync.WaitGroup
+}
+
+type ServerHooks struct {
+	OnConnect    func(remoteIP string)
+	OnDisconnect func(remoteIP string, reason string)
+	OnUnhandled  func(remoteIP string, header *Header, data []byte)
 }
 
 func (s *Server) ListenAndServe() error {
@@ -48,14 +52,11 @@ func (s *Server) ListenAndServe() error {
 		}
 
 		s.conns.Store(conn, struct{}{})
-		s.wg.Add(1)
-
-		go func() {
-			defer s.wg.Done()
+		s.wg.Go(func() {
 			defer s.conns.Delete(conn)
 			defer conn.Close()
 			s.handleConn(ctx, conn)
-		}()
+		})
 	}
 }
 
@@ -94,7 +95,9 @@ func (s *Server) Shutdown(ctx context.Context) error {
 func (s *Server) handleConn(ctx context.Context, conn net.Conn) {
 	stream := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
 	remoteAddr, _, _ := net.SplitHostPort(conn.RemoteAddr().String())
-	logger.Get().Info(fmt.Sprintf("[gsf] %s connected", remoteAddr))
+	if s.Hooks.OnConnect != nil {
+		s.Hooks.OnConnect(remoteAddr)
+	}
 
 	for {
 		err := s.processRequest(ctx, stream, remoteAddr)
@@ -103,17 +106,23 @@ func (s *Server) handleConn(ctx context.Context, conn net.Conn) {
 		}
 
 		if errors.Is(err, io.EOF) {
-			logger.Get().Info(fmt.Sprintf("[gsf] %s disconnected: eof", remoteAddr))
+			if s.Hooks.OnDisconnect != nil {
+				s.Hooks.OnDisconnect(remoteAddr, "eof")
+			}
 			break
 		}
 
 		var netErr net.Error
 		if errors.As(err, &netErr) && netErr.Timeout() {
-			logger.Get().Warn(fmt.Sprintf("[gsf] %s disconnected: timeout", remoteAddr))
+			if s.Hooks.OnDisconnect != nil {
+				s.Hooks.OnDisconnect(remoteAddr, "timeout")
+			}
 			break
 		}
 
-		logger.Get().Error(fmt.Sprintf("[gsf] %s disconnected: "+err.Error(), remoteAddr))
+		if s.Hooks.OnDisconnect != nil {
+			s.Hooks.OnDisconnect(remoteAddr, err.Error())
+		}
 		break
 	}
 }
@@ -134,15 +143,15 @@ func (s *Server) processRequest(ctx context.Context, stream *bufio.ReadWriter, r
 
 	handler, ok := s.Router.Lookup(requestHeader.SvcClass, requestHeader.MsgType)
 	if !ok {
-		logger.Get().Warn(fmt.Sprintf("[gsf] %s Unhandled: %+v", remoteAddr, requestHeader),
-			slog.Any("hex", fmt.Sprintf("%x", data)),
-		)
+		if s.Hooks.OnUnhandled != nil {
+			s.Hooks.OnUnhandled(remoteAddr, requestHeader, data)
+		}
 		return nil
 	}
 
 	req := NewRequest(ctx, requestHeader, codecReader)
 	res := NewResponse(requestHeader, codecWriter)
-	req.RemoteAddr = remoteAddr
+	req.RemoteIP = remoteAddr
 
 	if err = handler(res, req); err != nil {
 		return err

@@ -3,7 +3,6 @@ import { w2ui, w2layout, w2sidebar, w2toolbar, w2utils } from './lib/w2ui.es6.mi
 window.w2ui = w2ui
 
 w2utils.settings.dataType = 'JSON'
-
 w2utils.formatters['safe'] = (_, extra) => w2utils.encodeTags(extra.value)
 
 window.dashboardSidebarSearch = function(value) {

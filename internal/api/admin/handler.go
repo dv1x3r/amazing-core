@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/dv1x3r/amazing-core/internal/services/auth"
-
 	"github.com/dv1x3r/w2go/w2"
 )
 

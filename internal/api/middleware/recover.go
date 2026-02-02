@@ -16,9 +16,10 @@ func Recover() Middleware {
 			})
 
 			if err != nil {
-				w2.NewErrorResponse(http.StatusText(http.StatusInternalServerError)).Write(w, http.StatusInternalServerError)
-				if ctxe, ok := r.Context().Value("err").(*error); ok {
-					*ctxe = err
+				res := w2.NewErrorResponse(http.StatusText(http.StatusInternalServerError))
+				res.Write(w, http.StatusInternalServerError)
+				if e, ok := r.Context().Value("err").(*error); ok {
+					*e = err
 				}
 			}
 		})

@@ -12,7 +12,7 @@ type Request struct {
 	reader ProtocolReader
 	ctx    context.Context
 
-	RemoteAddr string
+	RemoteIP string
 }
 
 func NewRequest(ctx context.Context, header *Header, reader ProtocolReader) *Request {

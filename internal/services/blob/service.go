@@ -11,14 +11,14 @@ import (
 	"mime/multipart"
 	"net/url"
 
-	"github.com/dustin/go-humanize"
 	"github.com/dv1x3r/amazing-core/internal/config"
 	"github.com/dv1x3r/amazing-core/internal/lib/db"
 	"github.com/dv1x3r/amazing-core/internal/lib/logger"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
-
 	"github.com/dv1x3r/w2go/w2"
 	"github.com/dv1x3r/w2go/w2sql/w2sqlbuilder"
+
+	"github.com/dustin/go-humanize"
 	"github.com/huandu/go-sqlbuilder"
 )
 
@@ -52,14 +52,18 @@ func NewService(store db.Store) *Service {
 
 func (s *Service) FetchFileBlob(ctx context.Context, cdnid string) ([]byte, error) {
 	const op = "blob.Service.FetchFileBlob"
-	const query = "select blob from asset_file where cdnid = ?;"
 
 	var blob []byte
-	err := s.store.DB().QueryRowContext(ctx, query, cdnid).Scan(&blob)
-	if err == sql.ErrNoRows {
+
+	const query = "select blob from asset_file where cdnid = ?;"
+	row := s.store.DB().QueryRowContext(ctx, query, cdnid)
+	if err := row.Scan(&blob); err == sql.ErrNoRows {
 		return nil, ErrFileNotFound
+	} else if err != nil {
+		return nil, wrap.IfErr(op, err)
 	}
-	return blob, wrap.IfErr(op, err)
+
+	return blob, nil
 }
 
 func (s *Service) FetchFilesList(ctx context.Context, r w2.GridDataRequest) ([]FileInfo, int, error) {
@@ -109,11 +113,11 @@ func (s *Service) FetchFilesList(ctx context.Context, r w2.GridDataRequest) ([]F
 	defer rows.Close()
 
 	for rows.Next() {
-		var info FileInfo
-		if err := info.ScanRow(rows.Scan); err != nil {
+		var record FileInfo
+		if err := record.ScanRow(rows.Scan); err != nil {
 			return nil, 0, wrap.IfErr(op, err)
 		}
-		records = append(records, info)
+		records = append(records, record)
 	}
 
 	if err := rows.Err(); err != nil {

@@ -1,51 +1,56 @@
 package middleware
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"time"
 
 	"github.com/dv1x3r/amazing-core/internal/game/gsf"
-	"github.com/dv1x3r/amazing-core/internal/game/types/clientmessagetype"
-	"github.com/dv1x3r/amazing-core/internal/game/types/serviceclass"
-	"github.com/dv1x3r/amazing-core/internal/game/types/syncmessagetype"
-	"github.com/dv1x3r/amazing-core/internal/game/types/usermessagetype"
 )
 
 func Logger(logger *slog.Logger) gsf.Middleware {
 	return func(next gsf.HandlerFunc) gsf.HandlerFunc {
 		return func(w gsf.ResponseWriter, r *gsf.Request) error {
+			debug := logger.Handler().Enabled(context.TODO(), slog.LevelDebug)
+
 			startTime := time.Now()
 			err := next(w, r)
-			took := fmt.Sprintf("%.2fms", float64(time.Since(startTime).Microseconds())/1000)
+			latency := fmt.Sprintf("%.2fms", float64(time.Since(startTime).Microseconds())/1000)
 
 			logFn := logger.Info
+			if err != nil {
+				logFn = logger.Error
+			} else if debug {
+				logFn = logger.Debug
+			}
+
 			attrs := []any{
-				slog.Any("request", r.Body()),
-				slog.Any("response", w.Body()),
-				slog.String("took", took),
+				slog.String("remote_ip", r.RemoteIP),
+				slog.Int("result_code", int(w.Header().ResultCode)),
+				slog.Int("app_code", int(w.Header().AppCode)),
+				slog.Int("request_id", int(r.Header().RequestID)),
+				slog.Int("req_flags", int(r.Header().Flags)),
+				slog.Int("res_flags", int(w.Header().Flags)),
+				slog.Int("svc_class", int(r.Header().SvcClass)),
+				slog.Int("msg_type", int(r.Header().MsgType)),
+				slog.String("latency", latency),
+			}
+
+			if debug {
+				attrs = append(attrs, slog.String("result_code_text", w.Header().ResultCodeText()))
+				attrs = append(attrs, slog.String("app_code_text", w.Header().AppCodeText()))
+				attrs = append(attrs, slog.String("svc_class_text", r.Header().ServiceClassText()))
+				attrs = append(attrs, slog.String("msg_type_text", r.Header().MessageTypeText()))
+				attrs = append(attrs, slog.Any("request", r.Body()))
+				attrs = append(attrs, slog.Any("response", w.Body()))
 			}
 
 			if err != nil {
-				logFn = logger.Error
 				attrs = append(attrs, slog.String("error", err.Error()))
 			}
 
-			svcClass := serviceclass.ServiceClass(w.Header().SvcClass).String()
-			msgType := fmt.Sprint(w.Header().MsgType)
-
-			switch w.Header().SvcClass {
-			case int32(serviceclass.USER_SERVER):
-				msgType = usermessagetype.UserMessageType(w.Header().MsgType).String()
-			case int32(serviceclass.SYNC_SERVER):
-				msgType = syncmessagetype.SyncMessageType(w.Header().MsgType).String()
-			case int32(serviceclass.CLIENT):
-				msgType = clientmessagetype.ClientMessageType(w.Header().MsgType).String()
-			}
-
-			message := fmt.Sprintf("[gsf] %s %s.%s %+v", r.RemoteAddr, svcClass, msgType, w.Header())
-
-			logFn(message, attrs...)
+			logFn("gsf", attrs...)
 			return err
 		}
 	}

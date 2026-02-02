@@ -1,4 +1,8 @@
 {
+  "logger": {
+    "level": "debug",
+    "handler": "pretty"
+  },
   "servers": {
     "api": "localhost:3000",
     "game": "localhost:8182"

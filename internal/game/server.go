@@ -3,6 +3,8 @@ package game
 import (
 	"context"
 	"errors"
+	"fmt"
+	"log/slog"
 	"net"
 
 	"github.com/dv1x3r/amazing-core/internal/game/dummy"
@@ -12,21 +14,22 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/game/types/serviceclass"
 	"github.com/dv1x3r/amazing-core/internal/game/types/syncmessagetype"
 	"github.com/dv1x3r/amazing-core/internal/game/types/usermessagetype"
-	"github.com/dv1x3r/amazing-core/internal/lib/logger"
 	"github.com/dv1x3r/amazing-core/internal/services/randomnames"
 )
 
 type Server struct {
+	logger *slog.Logger
 	server *gsf.Server
 }
 
 func NewServer(
+	logger *slog.Logger,
 	randomNamesService *randomnames.Service,
 ) *Server {
 	router := gsf.NewRouter()
 
 	router.Use(
-		middleware.Logger(logger.Get()),
+		middleware.Logger(logger),
 		middleware.Recover(),
 	)
 
@@ -59,24 +62,42 @@ func NewServer(
 	server := &gsf.Server{
 		Router: router,
 		Codec:  bitprotocol.NewBitCodec(),
+		Hooks: gsf.ServerHooks{
+			OnConnect: func(remoteIP string) {
+				logger.Info(fmt.Sprintf("tcp %s connected", remoteIP))
+			},
+			OnDisconnect: func(remoteIP string, reason string) {
+				logger.Info(fmt.Sprintf("tcp %s disconnected: %s", remoteIP, reason))
+			},
+			OnUnhandled: func(remoteIP string, header *gsf.Header, data []byte) {
+				logger.Warn(fmt.Sprintf("gsf %s unhandled: %+v", remoteIP, header),
+					slog.String("service_class", header.ServiceClassText()),
+					slog.String("message_type", header.MessageTypeText()),
+					slog.Any("hex", fmt.Sprintf("%x", data)),
+				)
+			},
+		},
 	}
 
-	return &Server{server: server}
+	return &Server{
+		logger: logger,
+		server: server,
+	}
 }
 
 func (s *Server) ListenAndServe(address string) {
 	s.server.Addr = address
-	logger.Get().Info("starting the game server on " + address)
+	s.logger.Info("starting the game server on " + address)
 	if err := s.server.ListenAndServe(); err != nil {
 		if !errors.Is(err, net.ErrClosed) {
-			logger.Get().Error("[gsf]" + err.Error())
+			s.logger.Error(err.Error())
 		}
 	}
 }
 
 func (s *Server) Shutdown(ctx context.Context) {
-	logger.Get().Info("shutting down the game server")
+	s.logger.Info("shutting down the game server")
 	if err := s.server.Shutdown(ctx); err != nil {
-		logger.Get().Error("[gsf]" + err.Error())
+		s.logger.Error(err.Error())
 	}
 }
