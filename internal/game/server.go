@@ -8,13 +8,13 @@ import (
 	"net"
 
 	"github.com/dv1x3r/amazing-core/internal/game/dummy"
-	"github.com/dv1x3r/amazing-core/internal/game/gsf"
-	"github.com/dv1x3r/amazing-core/internal/game/gsf/bitprotocol"
-	"github.com/dv1x3r/amazing-core/internal/game/middleware"
 	"github.com/dv1x3r/amazing-core/internal/game/types/serviceclass"
 	"github.com/dv1x3r/amazing-core/internal/game/types/syncmessagetype"
 	"github.com/dv1x3r/amazing-core/internal/game/types/usermessagetype"
-	"github.com/dv1x3r/amazing-core/internal/services/randomnames"
+	"github.com/dv1x3r/amazing-core/internal/network/bitprotocol"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf"
+	"github.com/dv1x3r/amazing-core/internal/network/middleware"
+	"github.com/dv1x3r/amazing-core/internal/services/randname"
 )
 
 type Server struct {

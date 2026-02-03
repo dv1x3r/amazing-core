@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"github.com/dv1x3r/amazing-core/internal/game/gsf"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf"
 )
 
 func Recover() gsf.Middleware {

@@ -22,6 +22,7 @@ type ProtocolCodec interface {
 
 type ProtocolReader interface {
 	ReadObject(Deserializable)
+	GetByte() byte
 	ReadBool() bool
 	ReadInt16() int16
 	ReadInt32() int32
@@ -37,6 +38,7 @@ type ProtocolReader interface {
 type ProtocolWriter interface {
 	CommitTo(io.Writer)
 	WriteObject(Serializable)
+	PutByte(byte)
 	WriteBool(bool)
 	WriteInt16(int16)
 	WriteInt32(int32)

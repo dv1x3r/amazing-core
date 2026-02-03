@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dv1x3r/amazing-core/internal/game/gsf/bitprotocol"
+	"github.com/dv1x3r/amazing-core/internal/network/bitprotocol"
 )
 
 func TestLength(t *testing.T) {
