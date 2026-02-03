@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/dv1x3r/amazing-core/internal/game/gsf"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf"
 )
 
 func Logger(logger *slog.Logger) gsf.Middleware {

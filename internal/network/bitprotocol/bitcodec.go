@@ -6,7 +6,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/dv1x3r/amazing-core/internal/game/gsf"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf"
 )
 
 var epochUnix = time.Date(1, 3, 1, 0, 0, 0, 0, time.UTC).Unix()
@@ -100,6 +100,10 @@ func (br *BitReader) ReadObject(value gsf.Deserializable) {
 	}
 }
 
+func (br *BitReader) GetByte() byte {
+	return br.stream.GetByte()
+}
+
 func (br *BitReader) ReadBool() bool {
 	return br.stream.Get()
 }
@@ -146,10 +150,7 @@ func (br *BitReader) ReadUtcDate() time.Time {
 	if br.stream.Get() {
 		return time.Time{}
 	}
-	seconds := br.stream.GetInt(8) - 31_622_400
-	if seconds < 0 {
-		seconds = 0
-	}
+	seconds := max(br.stream.GetInt(8)-31_622_400, 0)
 	return time.Unix(seconds+epochUnix, 0).In(time.UTC)
 }
 
@@ -171,6 +172,10 @@ func (bw *BitWriter) WriteObject(value gsf.Serializable) {
 	if !bw.stream.Put(value == nil) {
 		value.Serialize(bw)
 	}
+}
+
+func (bw *BitWriter) PutByte(value byte) {
+	bw.stream.PutByte(value)
 }
 
 func (bw *BitWriter) WriteBool(value bool) {

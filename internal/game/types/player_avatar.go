@@ -3,7 +3,7 @@ package types
 import (
 	"time"
 
-	"github.com/dv1x3r/amazing-core/internal/game/gsf"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf"
 )
 
 type PlayerAvatar struct {
@@ -20,30 +20,30 @@ type PlayerAvatar struct {
 	LastPlay             time.Time
 }
 
-func (ap *PlayerAvatar) Serialize(writer gsf.ProtocolWriter) {
-	writer.WriteObject(&ap.OID)
-	writer.WriteObject(&ap.Avatar)
-	writer.WriteObject(&ap.PlayerID)
-	writer.WriteString(ap.Name)
-	writer.WriteString(ap.Bio)
-	writer.WriteString(ap.SecretCode)
-	writer.WriteUtcDate(ap.CreateTS)
-	writer.WriteObject(&ap.PlayerAvatarOutfitID)
-	writer.WriteInt16(ap.OutfitNo)
-	gsf.WriteNullable(writer, ap.PlayTime, writer.WriteInt64)
-	writer.WriteUtcDate(ap.LastPlay)
+func (pa *PlayerAvatar) Serialize(writer gsf.ProtocolWriter) {
+	writer.WriteObject(&pa.OID)
+	writer.WriteObject(&pa.Avatar)
+	writer.WriteObject(&pa.PlayerID)
+	writer.WriteString(pa.Name)
+	writer.WriteString(pa.Bio)
+	writer.WriteString(pa.SecretCode)
+	writer.WriteUtcDate(pa.CreateTS)
+	writer.WriteObject(&pa.PlayerAvatarOutfitID)
+	writer.WriteInt16(pa.OutfitNo)
+	gsf.WriteNullable(writer, pa.PlayTime, writer.WriteInt64)
+	writer.WriteUtcDate(pa.LastPlay)
 }
 
-func (ap *PlayerAvatar) Deserialize(reader gsf.ProtocolReader) {
-	reader.ReadObject(&ap.OID)
-	reader.ReadObject(&ap.Avatar)
-	reader.ReadObject(&ap.PlayerID)
-	ap.Name = reader.ReadString()
-	ap.Bio = reader.ReadString()
-	ap.SecretCode = reader.ReadString()
-	ap.CreateTS = reader.ReadUtcDate()
-	reader.ReadObject(&ap.PlayerAvatarOutfitID)
-	ap.OutfitNo = reader.ReadInt16()
-	ap.PlayTime = gsf.ReadNullable(reader, reader.ReadInt64)
-	ap.LastPlay = reader.ReadUtcDate()
+func (pa *PlayerAvatar) Deserialize(reader gsf.ProtocolReader) {
+	reader.ReadObject(&pa.OID)
+	reader.ReadObject(&pa.Avatar)
+	reader.ReadObject(&pa.PlayerID)
+	pa.Name = reader.ReadString()
+	pa.Bio = reader.ReadString()
+	pa.SecretCode = reader.ReadString()
+	pa.CreateTS = reader.ReadUtcDate()
+	reader.ReadObject(&pa.PlayerAvatarOutfitID)
+	pa.OutfitNo = reader.ReadInt16()
+	pa.PlayTime = gsf.ReadNullable(reader, reader.ReadInt64)
+	pa.LastPlay = reader.ReadUtcDate()
 }
