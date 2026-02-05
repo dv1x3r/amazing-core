@@ -44,8 +44,15 @@ func (oid *OID) FromLong(value int) {
 	oid.Number = int64(value & 0xFFFFFFFFFF)
 }
 
-func (oid *OID) FromCDNID(cdnid string) {
-	str, _ := base64.RawStdEncoding.DecodeString(cdnid)
-	value, _ := strconv.Atoi(string(str))
-	oid.FromLong(value)
+func (oid *OID) FromCDNID(cdnid string) error {
+	str, err := base64.RawStdEncoding.DecodeString(cdnid)
+	if err != nil {
+		return err
+	}
+	long, err := strconv.Atoi(string(str))
+	if err != nil {
+		return err
+	}
+	oid.FromLong(long)
+	return nil
 }

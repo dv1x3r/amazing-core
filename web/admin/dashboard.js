@@ -36,18 +36,27 @@ const dashboardSidebar = new w2sidebar({
   bottomHTML: '<div id="logout-toolbar"></div>',
   nodes: [
     {
-      id: 'general', text: 'General', group: true, expanded: true, nodes: [
+      id: 'general',
+      text: 'General',
+      group: true,
+      expanded: true,
+      nodes: [
         {
-          id: 'blob-db', text: 'blob.db', icon: 'fa fa-database', selected: true,
+          id: 'blob-db',
+          text: 'blob.db',
+          icon: 'fa fa-database',
+          selected: true,
           onClick: async function() {
-            const module = await import('./widgets/blob_grid.js')
+            const module = await import('./widgets/blob_db.js')
             setDashboardWidget(module.createBlobGrid())
           },
         },
         {
-          id: 'random-names', text: 'Random Names', icon: 'fa fa-dice',
+          id: 'random-names',
+          text: 'Random Names',
+          icon: 'fa fa-dice',
           onClick: async function() {
-            const module = await import('./widgets/random_names_grid.js')
+            const module = await import('./widgets/random_names.js')
             setDashboardWidget(module.createRandomNamesGrid())
           },
         },
@@ -61,24 +70,30 @@ const dashboardSidebar = new w2sidebar({
       box: '#logout-toolbar',
       items: [
         {
-          type: 'button', id: 'logout', text: 'Log out', icon: 'fa fa-right-from-bracket', onClick: async () => {
-            const res = await fetch('/logout', {
+          type: 'button',
+          id: 'logout',
+          text: 'Log out',
+          icon: 'fa fa-right-from-bracket',
+          onClick: async () => {
+            await fetch('/logout', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
             })
-
-            if (res.status != 200) {
-              res.json()
-                .then(data => w2utils.notify(`${data?.message}, ${res.status}: ${res.statusText}`, { timeout: 4000, error: true }))
-                .catch(() => w2utils.notify(`Failed to logout, ${res.status}: ${res.statusText}`, { timeout: 4000, error: true }))
-              return
-            }
-
             window.location = '/'
           }
         },
-        { type: 'button', id: 'github', icon: 'fa-brands fa-github', onClick: () => window.open('https://github.com/dv1x3r/amazing-core', '_blank') },
-        { type: 'button', id: 'discord', icon: 'fa-brands fa-discord', onClick: () => window.open('https://discord.gg/TWfTBbfdA9', '_blank') },
+        {
+          type: 'button',
+          id: 'github',
+          icon: 'fa-brands fa-github',
+          onClick: () => window.open('https://github.com/dv1x3r/amazing-core', '_blank'),
+        },
+        {
+          type: 'button',
+          id: 'discord',
+          icon: 'fa-brands fa-discord',
+          onClick: () => window.open('https://discord.gg/TWfTBbfdA9', '_blank'),
+        },
       ],
     })
   },
@@ -100,7 +115,7 @@ function setDashboardWidget(widget) {
   dashboardLayout.html('main', widget)
 }
 
-import('./widgets/blob_grid.js').then(module => {
+import('./widgets/blob_db.js').then(module => {
   setDashboardWidget(module.createBlobGrid())
 })
 

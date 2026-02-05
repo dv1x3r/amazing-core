@@ -43,18 +43,22 @@ func NewServer(
 	router.Handle("GET /android-chrome-192x192.png", fsFileHandler(web.FS, "favicon_io/android-chrome-192x192.png"))
 	router.Handle("GET /android-chrome-512x512.png", fsFileHandler(web.FS, "favicon_io/android-chrome-512x512.png"))
 
-	blobHandler := blob.NewAPIHandler(blobService)
-	router.HandleFunc("GET /cdn/{cdnid}", errorHandler(blobHandler.GetBlob))
-
 	authHandler := auth.NewAPIHandler(authService)
 	router.HandleFunc("POST /login", errorHandler(authHandler.PostLogin))
 	router.HandleFunc("POST /logout", errorHandler(authHandler.PostLogout))
 
 	v1 := http.NewServeMux()
 
+	blobHandler := blob.NewAPIHandler(blobService)
 	v1.HandleFunc("GET /blob/records", errorHandler(blobHandler.GetRecords))
 	v1.HandleFunc("POST /blob/upload", errorHandler(blobHandler.PostUpload))
 	v1.HandleFunc("POST /blob/remove", errorHandler(blobHandler.PostRemove))
+	v1.HandleFunc("POST /blob/import", errorHandler(blobHandler.PostImport))
+	v1.HandleFunc("POST /blob/export", errorHandler(blobHandler.PostExport))
+	v1.HandleFunc("POST /blob/s3sync", errorHandler(blobHandler.PostS3Sync))
+	if config.Get().Settings.AssetDeliveryAPI {
+		router.HandleFunc("GET /cdn/{cdnid}", errorHandler(blobHandler.GetBlob))
+	}
 
 	randomNamesHandler := randomnames.NewAPIHandler(randomNamesService)
 	v1.HandleFunc("GET /randomnames/form", errorHandler(randomNamesHandler.GetForm))
@@ -141,9 +145,12 @@ func errorHandler(handler func(http.ResponseWriter, *http.Request) error) http.H
 
 		status := wrap.HTTPStatus(err)
 		message := err.Error()
-		if status >= 500 {
-			message = http.StatusText(status)
-		}
+
+		// do not expose details of 500 errors
+		// but I do not care about that right now
+		// if status >= 500 {
+		// 	message = http.StatusText(status)
+		// }
 
 		res := w2.NewErrorResponse(message)
 		res.Write(w, status)

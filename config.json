@@ -8,6 +8,7 @@
     "game": "localhost:8182"
   },
   "settings": {
+    "assetDeliveryAPI": true,
     "assetDeliveryURL": "http://localhost:3000/cdn/",
     "syncServerIP": "localhost",
     "syncServerPort": 8182
