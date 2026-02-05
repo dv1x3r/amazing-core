@@ -8,12 +8,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"mime/multipart"
 	"net/url"
 
 	"github.com/dv1x3r/amazing-core/internal/config"
 	"github.com/dv1x3r/amazing-core/internal/lib/db"
-	"github.com/dv1x3r/amazing-core/internal/lib/logger"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/w2go/w2"
 	"github.com/dv1x3r/w2go/w2sql/w2sqlbuilder"
@@ -23,7 +23,8 @@ import (
 )
 
 var (
-	ErrFileNotFound = errors.New("file not found")
+	ErrFileNotFound = errors.New("file is not found")
+	ErrFileTooLarge = errors.New("file is too large")
 	ErrFileExists   = errors.New("file with the same name already exists")
 )
 
@@ -41,12 +42,14 @@ func (i *FileInfo) ScanRow(scan func(dest ...any) error) error {
 }
 
 type Service struct {
-	store db.Store
+	logger *slog.Logger
+	store  db.Store
 }
 
-func NewService(store db.Store) *Service {
+func NewService(logger *slog.Logger, store db.Store) *Service {
 	return &Service{
-		store: store,
+		logger: logger,
+		store:  store,
 	}
 }
 
@@ -138,6 +141,7 @@ func (s *Service) FetchFilesList(ctx context.Context, r w2.GridDataRequest) ([]F
 
 func (s *Service) SaveFiles(ctx context.Context, files []*multipart.FileHeader) error {
 	const op = "blob.Service.SaveFiles"
+	const maxUploadSize = 32 << 20 // 32 MB
 
 	tx, err := s.store.DB().Begin()
 	if err != nil {
@@ -145,9 +149,13 @@ func (s *Service) SaveFiles(ctx context.Context, files []*multipart.FileHeader) 
 	}
 	defer tx.Rollback()
 
-	logger.Get().Debug(op, "files", files)
+	s.logger.Debug(op, "files", files)
 
 	for _, header := range files {
+		if header.Size > maxUploadSize {
+			return wrap.IfErr(op, fmt.Errorf("%w: %s", ErrFileTooLarge, header.Filename))
+		}
+
 		file, err := header.Open()
 		if err != nil {
 			return wrap.IfErr(op, err)
@@ -165,7 +173,7 @@ func (s *Service) SaveFiles(ctx context.Context, files []*multipart.FileHeader) 
 		const query = "insert into asset_file (cdnid, blob, hash) values (?, ?, ?);"
 		_, err = tx.ExecContext(ctx, query, header.Filename, blob, blobHash)
 		if s.store.IsErrConstraintUnique(err) {
-			return fmt.Errorf("%w: %s", ErrFileExists, header.Filename)
+			return wrap.IfErr(op, fmt.Errorf("%w: %s", ErrFileExists, header.Filename))
 		} else if err != nil {
 			return wrap.IfErr(op, err)
 		}

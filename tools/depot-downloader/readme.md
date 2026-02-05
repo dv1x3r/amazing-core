@@ -4,19 +4,19 @@
 
 This CLI tool downloads all Amazing World depot files available on Steam.
 
-### 🔧 Features
+## 🔧 Features
 
 - Uses [**SteamRE/DepotDownloader**](https://github.com/SteamRE/DepotDownloader) CLI.
 
-### 📦 Usage
+## 📦 Usage
 
-#### Download Steam depots
+### Download Steam depots
 
 ```bash
 go run main.go --username <steam username> --password <steam password>
 ```
 
-### ⚙️ Parameters
+## ⚙️ Parameters
 
 | Parameter    | Description                                                     |
 | ------------ | --------------------------------------------------------------- |

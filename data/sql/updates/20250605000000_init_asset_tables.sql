@@ -70,9 +70,11 @@ insert into asset_group ([id], [name]) values
 create table asset (
     [id] integer primary key,
     [cdnid] text not null unique collate nocase,
-    [oid] integer,
+    [oid] integer not null unique,
     [name] text,
+    [description] text,
     [size] integer not null,
+    [hash] text not null,
     [file_type_id] integer not null references file_type(id) on delete cascade,
     [asset_type_id] integer not null references asset_type(id) on delete cascade,
     [asset_group_id] integer not null references asset_group(id) on delete cascade

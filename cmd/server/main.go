@@ -80,19 +80,19 @@ func main() {
 		os.Exit(1)
 	}
 
+	// prepare database folders
+
 	if err := os.MkdirAll(path.Dir(cfg.Storage.Databases.Core), os.ModePerm); err != nil {
 		logger.Get().Error("unable to access the folder for the core database", "err", err)
 		os.Exit(1)
 	}
 
-	blobStore, err := db.NewSQLiteStore(cfg.Storage.Databases.Blob)
-	if err != nil {
-		logger.Get().Error("unable to connect to the blob database", "err", err)
+	if err := os.MkdirAll(path.Dir(cfg.Storage.Databases.Blob), os.ModePerm); err != nil {
+		logger.Get().Error("unable to access the folder for the blob database", "err", err)
 		os.Exit(1)
 	}
-	defer blobStore.DB().Close()
 
-	logger.Get().Info(fmt.Sprintf("connected to the %s using the %s driver", cfg.Storage.Databases.Blob, blobStore.DriverName()))
+	// connect to the databases
 
 	coreStore, err := db.NewSQLiteStore(cfg.Storage.Databases.Core)
 	if err != nil {
@@ -103,27 +103,45 @@ func main() {
 
 	logger.Get().Info(fmt.Sprintf("connected to the %s using the %s driver", cfg.Storage.Databases.Core, coreStore.DriverName()))
 
+	blobStore, err := db.NewSQLiteStore(cfg.Storage.Databases.Blob)
+	if err != nil {
+		logger.Get().Error("unable to connect to the blob database", "err", err)
+		os.Exit(1)
+	}
+	defer blobStore.DB().Close()
+
+	logger.Get().Info(fmt.Sprintf("connected to the %s using the %s driver", cfg.Storage.Databases.Blob, blobStore.DriverName()))
+
+	// apply base migrations
+
 	if err := db.MigrateBase(logger.Get(), coreStore.DB(), sqldata.FS, "base/core_db.sql"); err != nil {
 		logger.Get().Error("unable to initialize the core database", "err", err)
 		os.Exit(1)
 	}
+
+	if err := db.MigrateBase(logger.Get(), blobStore.DB(), sqldata.FS, "base/blob_db.sql"); err != nil {
+		logger.Get().Error("unable to initialize the blob database", "err", err)
+		os.Exit(1)
+	}
+
+	// apply update migrations
 
 	if err := db.MigrateUp(logger.Get(), coreStore.DB(), sqldata.FS, "updates"); err != nil {
 		logger.Get().Error("unable to migrate the core database", "err", err)
 		os.Exit(1)
 	}
 
-	session := sessions.NewCookieStore([]byte(config.Get().Secure.Session.Key))
+	session := sessions.NewCookieStore([]byte(cfg.Secure.Session.Key))
 	session.Options = &sessions.Options{
 		Path:     "/",
 		MaxAge:   86400 * 14,
-		Secure:   config.Get().Secure.Session.Secure,
+		Secure:   cfg.Secure.Session.Secure,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	}
 
 	authService := auth.NewService(session)
-	blobService := blob.NewService(blobStore)
+	blobService := blob.NewService(logger.Get(), blobStore)
 	randomNamesService := randomnames.NewService(coreStore)
 
 	apiServer := api.NewServer(

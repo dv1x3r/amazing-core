@@ -59,6 +59,10 @@ func Logger(logger *slog.Logger) Middleware {
 				slog.String("latency", latency),
 			}
 
+			if err != nil {
+				attrs = append(attrs, slog.String("error", err.Error()))
+			}
+
 			logFn("http", attrs...)
 		})
 	}

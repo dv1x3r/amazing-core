@@ -21,6 +21,7 @@ type Config struct {
 		Game string `json:"game"`
 	} `json:"servers"`
 	Settings struct {
+		AssetDeliveryAPI bool   `json:"assetDeliveryAPI"`
 		AssetDeliveryURL string `json:"assetDeliveryURL"`
 		SyncServerIP     string `json:"syncServerIP"`
 		SyncServerPort   int    `json:"syncServerPort"`
