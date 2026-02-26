@@ -2,13 +2,14 @@ package api
 
 import (
 	"context"
+	"embed"
 	"errors"
+	"html/template"
 	"io/fs"
 	"log/slog"
 	"net/http"
 	"time"
 
-	"github.com/dv1x3r/amazing-core/internal/api/admin"
 	"github.com/dv1x3r/amazing-core/internal/api/middleware"
 	"github.com/dv1x3r/amazing-core/internal/config"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
@@ -19,6 +20,15 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/services/blob"
 	"github.com/dv1x3r/amazing-core/internal/services/randomnames"
 )
+
+//go:embed *.gotmpl
+var templatesFS embed.FS
+
+var tmpl *template.Template
+
+func init() {
+	tmpl = template.Must(template.ParseFS(templatesFS, "*.gotmpl"))
+}
 
 type Server struct {
 	logger *slog.Logger
@@ -33,7 +43,7 @@ func NewServer(
 ) *Server {
 	router := http.NewServeMux()
 
-	router.Handle("GET /{$}", admin.Handler(authService))
+	router.Handle("GET /{$}", adminHandler(authService))
 	router.Handle("GET /admin/", fsFolderHandler(web.FS, "admin", "/admin"))
 	router.Handle("GET /favicon.ico", fsFileHandler(web.FS, "favicon_io/favicon.ico"))
 	router.Handle("GET /site.webmanifest", fsFileHandler(web.FS, "favicon_io/site.webmanifest"))
@@ -111,6 +121,23 @@ func (s *Server) Shutdown(ctx context.Context) {
 	if err := s.server.Shutdown(ctx); err != nil {
 		s.logger.Error(err.Error())
 	}
+}
+
+func adminHandler(authService *auth.Service) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		username, ok := authService.GetSessionUsername(w, r)
+		if ok {
+			if err := authService.RefreshSession(w, r); err != nil {
+				w2.NewErrorResponse(err.Error()).Write(w, http.StatusInternalServerError)
+				return
+			}
+		}
+
+		data := map[string]any{"username": username}
+		if err := tmpl.ExecuteTemplate(w, "admin.gotmpl", data); err != nil {
+			w2.NewErrorResponse(err.Error()).Write(w, http.StatusInternalServerError)
+		}
+	})
 }
 
 func fsFileHandler(fsys fs.FS, name string) http.HandlerFunc {
