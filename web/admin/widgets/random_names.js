@@ -1,13 +1,14 @@
-import { w2form, w2grid, w2popup, w2utils } from '../lib/w2ui.es6.min.js'
+import { w2form, w2grid, w2popup } from '/lib/w2ui.es6.min.js'
 
-export function createRandomNamesGrid() {
+export function createRandomNameGrid() {
   return new w2grid({
-    name: 'randomNamesGrid',
+    name: 'randomNameGrid',
     url: {
-      get: '/api/v1/randomnames/records',
-      remove: '/api/v1/randomnames/remove',
+      get: '/api/v1/randname/records',
+      remove: '/api/v1/randname/remove',
     },
     recid: 'id',
+    recordHeight: 28,
     multiSearch: true,
     show: {
       footer: true,
@@ -32,20 +33,18 @@ export function createRandomNamesGrid() {
         field: 'part_type',
         text: 'Part Type',
         size: '250px',
-        render: 'safe',
+        render: 'text',
         sortable: true,
+        searchable: 'text',
       },
       {
         field: 'name',
         text: 'Name',
         size: '250px',
-        render: 'safe',
+        render: 'text',
         sortable: true,
+        searchable: 'text',
       },
-    ],
-    searches: [
-      { field: 'part_type', label: 'Part Type', type: 'text' },
-      { field: 'name', label: 'Name', type: 'text' },
     ],
     defaultOperator: {
       'text': 'contains',
@@ -63,18 +62,44 @@ export function createRandomNamesGrid() {
 function openRandomNamePopup(event) {
   const randomNameForm = new w2form({
     name: `randomNameForm`,
-    url: '/api/v1/randomnames/form',
+    url: '/api/v1/randname/form',
     recid: event.detail.recid,
     fields: [
-      { field: 'id', type: 'text', html: { label: 'ID', attr: 'size="10" readonly', span: 4, column: 0 } },
-      { field: 'part_type', type: 'text', required: true, html: { label: 'Part Type', span: 4, column: 0 } },
-      { field: 'name', type: 'text', required: true, html: { label: 'Name', span: 4, column: 0 } },
+      {
+        field: 'id',
+        type: 'text',
+        html: {
+          label: 'ID',
+          attr: 'size="10" readonly',
+          span: 4,
+          column: 0,
+        },
+      },
+      {
+        field: 'part_type',
+        type: 'text',
+        required: true,
+        html: {
+          label: 'Part Type',
+          span: 4,
+          column: 0,
+        },
+      },
+      {
+        field: 'name',
+        type: 'text',
+        required: true,
+        html: {
+          label: 'Name',
+          span: 4,
+          column: 0,
+        },
+      },
     ],
     actions: {
       async Save() {
         const res = await this.save()
         if (res.status == 'success') {
-          w2utils.notify('Save completed!', { timeout: 6000 })
           event.owner.reload()
           w2popup.close()
         }

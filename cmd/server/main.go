@@ -10,7 +10,7 @@ import (
 	"path"
 	"time"
 
-	sqldata "github.com/dv1x3r/amazing-core/data/sql"
+	"github.com/dv1x3r/amazing-core/data"
 
 	"github.com/dv1x3r/amazing-core/internal/api"
 	"github.com/dv1x3r/amazing-core/internal/config"
@@ -19,9 +19,10 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/lib/db"
 	"github.com/dv1x3r/amazing-core/internal/lib/logger"
 
+	"github.com/dv1x3r/amazing-core/internal/services/asset"
 	"github.com/dv1x3r/amazing-core/internal/services/auth"
 	"github.com/dv1x3r/amazing-core/internal/services/blob"
-	"github.com/dv1x3r/amazing-core/internal/services/randomnames"
+	"github.com/dv1x3r/amazing-core/internal/services/randname"
 
 	"github.com/gorilla/sessions"
 )
@@ -96,7 +97,7 @@ func main() {
 
 	coreStore, err := db.NewSQLiteStore(cfg.Storage.Databases.Core)
 	if err != nil {
-		logger.Get().Error("unable to connect to the core database", "err", err)
+		logger.Get().Error("unable to connect to core.db", "err", err)
 		os.Exit(1)
 	}
 	defer coreStore.DB().Close()
@@ -105,7 +106,7 @@ func main() {
 
 	blobStore, err := db.NewSQLiteStore(cfg.Storage.Databases.Blob)
 	if err != nil {
-		logger.Get().Error("unable to connect to the blob database", "err", err)
+		logger.Get().Error("unable to connect to blob.db", "err", err)
 		os.Exit(1)
 	}
 	defer blobStore.DB().Close()
@@ -114,20 +115,30 @@ func main() {
 
 	// apply base migrations
 
-	if err := db.MigrateBase(logger.Get(), coreStore.DB(), sqldata.FS, "base/core_db.sql"); err != nil {
-		logger.Get().Error("unable to initialize the core database", "err", err)
+	if err := coreStore.MigrateBaseFile(logger.Get(), data.FS, "sql/core_db/base.sql"); err != nil {
+		logger.Get().Error("unable to initialize core.db", "err", err)
 		os.Exit(1)
 	}
 
-	if err := db.MigrateBase(logger.Get(), blobStore.DB(), sqldata.FS, "base/blob_db.sql"); err != nil {
-		logger.Get().Error("unable to initialize the blob database", "err", err)
+	if err := blobStore.MigrateBaseFile(logger.Get(), data.FS, "sql/blob_db/base.sql"); err != nil {
+		logger.Get().Error("unable to initialize blob.db", "err", err)
 		os.Exit(1)
 	}
 
 	// apply update migrations
 
-	if err := db.MigrateUp(logger.Get(), coreStore.DB(), sqldata.FS, "updates"); err != nil {
-		logger.Get().Error("unable to migrate the core database", "err", err)
+	if err := coreStore.MigrateUp(logger.Get(), data.FS, "sql/core_db/updates"); err != nil {
+		logger.Get().Error("unable to apply core.db updates", "err", err)
+		os.Exit(1)
+	}
+
+	if err := coreStore.RecreateTableFromFile(logger.Get(), data.FS, "sql/core_db/assets.sql", "asset", false); err != nil {
+		logger.Get().Error("unable to apply assets.sql", "err", err)
+		os.Exit(1)
+	}
+
+	if _, err := asset.ImportCacheJSON(logger.Get(), coreStore.DB(), data.FS, "cache.json", false); err != nil {
+		logger.Get().Error("unable to import cache.json", "err", err)
 		os.Exit(1)
 	}
 
@@ -142,18 +153,21 @@ func main() {
 
 	authService := auth.NewService(session)
 	blobService := blob.NewService(logger.Get(), blobStore)
-	randomNamesService := randomnames.NewService(coreStore)
+	assetService := asset.NewService(logger.Get(), coreStore)
+	randnameService := randname.NewService(coreStore)
 
 	apiServer := api.NewServer(
+		coreStore.DB(),
 		logger.Get(),
 		authService,
 		blobService,
-		randomNamesService,
+		assetService,
+		randnameService,
 	)
 
 	gameServer := game.NewServer(
 		logger.Get(),
-		randomNamesService,
+		randnameService,
 	)
 
 	interruptCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt)

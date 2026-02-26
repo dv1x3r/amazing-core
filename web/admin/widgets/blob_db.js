@@ -1,4 +1,5 @@
-import { w2confirm, w2form, w2grid, w2popup, w2utils } from '../lib/w2ui.es6.min.js'
+import { w2confirm, w2form, w2grid, w2popup } from '/lib/w2ui.es6.min.js'
+import { w2fetch, w2upload, searchAllFilter } from '/lib/w2ui.helpers.js'
 
 export function createBlobGrid() {
   return new w2grid({
@@ -8,6 +9,7 @@ export function createBlobGrid() {
       remove: '/api/v1/blob/remove',
     },
     recid: 'id',
+    recordHeight: 28,
     multiSearch: true,
     show: {
       footer: true,
@@ -37,24 +39,13 @@ export function createBlobGrid() {
               btn_no: { text: 'Cancel' },
             }).yes(async () => {
               await new Promise(r => setTimeout(r, 300));
-              this.owner.lock({ spinner: true, msg: 'Importing cache files...' })
-              try {
-                const res = await fetch('/api/v1/blob/import', { method: 'POST' })
-                if (!res.ok) {
-                  const err = await res.json().catch(() => {
-                    return { message: res.statusText }
-                  })
-                  throw new Error(err.message)
-                }
-                const result = await res.json()
-                w2utils.notify(result.message, { timeout: 6000 })
-              }
-              catch (err) {
-                this.owner.message(err.toString())
-              }
-              finally {
-                this.owner.unlock()
-              }
+              await w2fetch({
+                owner: this.owner,
+                reload: true,
+                lock: 'Importing cache files...',
+                url: '/api/v1/blob/import',
+                method: 'POST',
+              })
             })
           },
         },
@@ -72,24 +63,13 @@ export function createBlobGrid() {
               btn_no: { text: 'Cancel' },
             }).yes(async () => {
               await new Promise(r => setTimeout(r, 300));
-              this.owner.lock({ spinner: true, msg: 'Exporting cache files...' })
-              try {
-                const res = await fetch('/api/v1/blob/export', { method: 'POST' })
-                if (!res.ok) {
-                  const err = await res.json().catch(() => {
-                    return { message: res.statusText }
-                  })
-                  throw new Error(err.message)
-                }
-                const result = await res.json()
-                w2utils.notify(result.message, { timeout: 6000 })
-              }
-              catch (err) {
-                this.owner.message(err.toString())
-              }
-              finally {
-                this.owner.unlock()
-              }
+              await w2fetch({
+                owner: this.owner,
+                reload: false,
+                lock: 'Exporting cache files...',
+                url: '/api/v1/blob/export',
+                method: 'POST',
+              })
             })
           },
         },
@@ -113,45 +93,46 @@ export function createBlobGrid() {
       {
         field: 'cdnid',
         text: 'CDN ID',
-        render: 'safe',
-        size: '250px',
+        render: 'text',
+        size: '200px',
         sortable: true,
+        searchAll: true,
+        searchable: 'text',
         clipboardCopy: row => row.cdnid,
       },
       {
         field: 'url',
         text: 'File URL',
-        render: 'safe',
-        size: '450px',
+        render: 'text',
+        size: '400px',
         sortable: true,
         clipboardCopy: row => row.url,
       },
       {
         field: 'hash',
         text: 'File Hash',
-        render: 'safe',
-        size: '370px',
+        render: 'text',
+        size: '350px',
         sortable: true,
+        searchAll: true,
+        searchable: 'text',
         clipboardCopy: row => row.hash,
       },
       {
         field: 'size',
         text: 'Size Bytes',
-        render: 'safe',
-        size: '88px',
+        render: 'text',
+        size: '80px',
         sortable: true,
+        searchable: 'int',
       },
       {
         field: 'size_str',
         text: 'Size',
-        render: 'safe',
-        size: '88px',
+        render: 'text',
+        size: '80px',
         sortable: true,
       },
-    ],
-    searches: [
-      { field: 'cdnid', label: 'CDN ID', type: 'text' },
-      { field: 'hash', label: 'File Hash', type: 'text' },
     ],
     defaultOperator: {
       'text': 'contains',
@@ -160,44 +141,16 @@ export function createBlobGrid() {
       { field: 'id', direction: 'desc' },
     ],
     onAdd: function() {
-      const input = document.createElement('input')
-      input.type = 'file'
-      input.multiple = true
-
-      input.onchange = async event => {
-        const form = new FormData()
-        for (const file of event.target.files) {
-          form.append('files[]', file)
-        }
-
-        this.lock({ spinner: true, msg: 'Uploading files...' })
-
-        try {
-          const res = await fetch('/api/v1/blob/upload', {
-            method: 'POST',
-            body: form,
-          })
-
-          if (!res.ok) {
-            const err = await res.json().catch(() => {
-              return { message: res.statusText }
-            })
-            throw new Error(err.message)
-          }
-
-          w2utils.notify('Upload completed!', { timeout: 6000 })
-          this.reload()
-        }
-        catch (err) {
-          this.message(err.toString())
-        }
-        finally {
-          this.unlock()
-        }
-      }
-
-      input.click()
+      w2upload({
+        owner: this,
+        reload: true,
+        lock: 'Uploading files...',
+        url: '/api/v1/blob/upload',
+        method: 'POST',
+        multiple: true,
+      })
     },
+    onSearch: function(event) { searchAllFilter(event) },
   })
 }
 
@@ -271,47 +224,20 @@ function openS3SyncPopup() {
       },
     ],
     actions: {
-      async Upload() {
+      async Sync() {
         const errors = this.validate()
         if (errors.length > 0) {
           return
         }
-
-        const record = this.record
-        const payload = {
-          endpoint: record.endpoint,
-          region: record.region,
-          bucket: record.bucket,
-          path_prefix: record.path_prefix,
-          access_key_id: record.access_key_id,
-          secret_access_key: record.secret_access_key,
-        }
-
-        this.lock({ spinner: true, msg: 'Syncing to S3...' })
-
-        try {
-          const res = await fetch('/api/v1/blob/s3sync', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-          })
-
-          if (!res.ok) {
-            const err = await res.json().catch(() => {
-              return { message: res.statusText }
-            })
-            throw new Error(err.message)
-          }
-
-          const result = await res.json()
-          w2utils.notify(result.message, { timeout: 6000 })
-        }
-        catch (err) {
-          this.message(err.toString())
-        }
-        finally {
-          this.unlock()
-        }
+        await w2fetch({
+          owner: this,
+          reload: false,
+          lock: 'Syncing to S3...',
+          url: '/api/v1/blob/s3sync',
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(this.record),
+        })
       },
       Cancel() { w2popup.close() },
     },

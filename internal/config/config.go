@@ -27,6 +27,7 @@ type Config struct {
 		SyncServerPort   int    `json:"syncServerPort"`
 	} `json:"settings"`
 	Storage struct {
+		Explorer  bool `json:"explorer"`
 		Databases struct {
 			Core string `json:"core"`
 			Blob string `json:"blob"`

@@ -16,7 +16,7 @@ func NewAPIHandler(service *Service) *APIHandler {
 }
 
 func (h *APIHandler) PostLogin(w http.ResponseWriter, r *http.Request) error {
-	form, err := w2.ParseFormSaveRequest[AdminLoginForm](r.Body)
+	form, err := w2.ParseSaveFormRequest[AdminLoginForm](r.Body)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}

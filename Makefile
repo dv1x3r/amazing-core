@@ -1,3 +1,5 @@
+export CGO_ENABLED?=0
+
 .PHONY: build
 build:
 	go build -o ./build/server ./cmd/server/main.go
@@ -8,13 +10,26 @@ run:
 
 .PHONY: test
 test:
-	go test -v ./...
+	CGO_ENABLED=1 go test -v -race ./...
+
+.PHONY: vet
+vet:
+	go vet ./...
 
 .PHONY: generate
 generate:
 	go generate ./...
 
-GOOSE=go tool goose -dir=./data/sql/updates sqlite ./data_db/core.db
+.PHONY: fmt
+fmt:
+	go fmt ./...
+
+.PHONY: clean
+clean:
+	rm -rf ./build
+	find . -name ".DS_Store" -type f -print -delete
+
+GOOSE=go tool goose -dir=./data/sql/core_db/updates sqlite ./data_db/core.db
 
 .PHONY: db-up
 db-up:

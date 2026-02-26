@@ -66,19 +66,23 @@ Once started:
 To build the server from source, you will need **Go 1.25** or newer:
 
 ```sh
+make
+# or
 go build -o ./build/server ./cmd/server/main.go
 ```
 
 To build and run with a single command:
 
 ```sh
+make run
+# or
 go run ./cmd/server/main.go
 ```
 
 You can choose between SQLite drivers by setting the `CGO_ENABLED` environment variable:
 
-- Build with `CGO_ENABLED=0` to use `modernc.org/sqlite` driver (release version);
-- Build with `CGO_ENABLED=1` to use `github.com/mattn/go-sqlite3` driver (default);
+- Build with `CGO_ENABLED=0` to use `modernc.org/sqlite` driver (default);
+- Build with `CGO_ENABLED=1` to use `github.com/mattn/go-sqlite3` driver;
 
 ## 📁 Structure
 
