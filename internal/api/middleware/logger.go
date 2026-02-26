@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -11,11 +10,16 @@ import (
 type loggerResponseWriter struct {
 	http.ResponseWriter
 	statusCode int
+	err        error
 }
 
 func (w *loggerResponseWriter) WriteHeader(statusCode int) {
 	w.statusCode = statusCode
 	w.ResponseWriter.WriteHeader(statusCode)
+}
+
+func (w *loggerResponseWriter) SetError(err error) {
+	w.err = err
 }
 
 func Logger(logger *slog.Logger) Middleware {
@@ -25,11 +29,6 @@ func Logger(logger *slog.Logger) Middleware {
 				ResponseWriter: w,
 				statusCode:     http.StatusOK,
 			}
-
-			var err error
-			r = r.WithContext(
-				context.WithValue(r.Context(), "err", &err),
-			)
 
 			startTime := time.Now()
 			next.ServeHTTP(lw, r)
@@ -43,11 +42,7 @@ func Logger(logger *slog.Logger) Middleware {
 			}
 
 			remoteIP := r.Context().Value(IPExtractorKey).(string)
-
 			statusText := http.StatusText(lw.statusCode)
-			if lw.statusCode == 499 {
-				statusText = "Client Closed Request"
-			}
 
 			attrs := []any{
 				slog.String("remote_ip", remoteIP),
@@ -59,8 +54,8 @@ func Logger(logger *slog.Logger) Middleware {
 				slog.String("latency", latency),
 			}
 
-			if err != nil {
-				attrs = append(attrs, slog.String("error", err.Error()))
+			if lw.err != nil {
+				attrs = append(attrs, slog.String("error", lw.err.Error()))
 			}
 
 			logFn("http", attrs...)

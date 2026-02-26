@@ -1,7 +1,6 @@
-import { w2ui, w2form, w2toolbar, w2utils } from './lib/w2ui.es6.min.js'
+import { w2ui, w2form, w2toolbar, w2utils } from '/lib/w2ui.es6.min.js'
 
 window.w2ui = w2ui
-
 w2utils.settings.dataType = 'JSON'
 
 new w2form({

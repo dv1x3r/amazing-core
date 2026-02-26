@@ -55,7 +55,7 @@ func (s *Service) SyncToS3(ctx context.Context, cfg S3Config) (*S3SyncResult, er
 	client := newS3Client(cfg)
 
 	// Step 1: List all existing S3 objects with their sizes
-	existing := make(map[string]int64) // key -> size
+	existing := map[string]int64{} // key -> size
 	paginator := s3.NewListObjectsV2Paginator(client, &s3.ListObjectsV2Input{
 		Bucket: aws.String(cfg.Bucket),
 		Prefix: aws.String(cfg.PathPrefix),
@@ -73,7 +73,7 @@ func (s *Service) SyncToS3(ctx context.Context, cfg S3Config) (*S3SyncResult, er
 		}
 	}
 
-	// logger.Get().Debug("s3sync", "existing_objects", len(existing))
+	// s.logger.Debug(op, "existing", len(existing))
 
 	// Step 2: Query files from database
 	const query = "SELECT cdnid, blob FROM asset_file;"
@@ -99,9 +99,9 @@ func (s *Service) SyncToS3(ctx context.Context, cfg S3Config) (*S3SyncResult, er
 		}
 
 		var cdnid string
-		var blob []byte
+		var data []byte
 
-		if err := rows.Scan(&cdnid, &blob); err != nil {
+		if err := rows.Scan(&cdnid, &data); err != nil {
 			return nil, wrap.IfErr(op, err)
 		}
 
@@ -111,9 +111,9 @@ func (s *Service) SyncToS3(ctx context.Context, cfg S3Config) (*S3SyncResult, er
 		}
 
 		// Check if file exists with same size
-		if existingSize, exists := existing[s3Key]; exists && existingSize == int64(len(blob)) {
+		if existingSize, exists := existing[s3Key]; exists && existingSize == int64(len(data)) {
 			skipped := skippedFiles.Add(1)
-			s.logger.Debug("s3sync", "cdnid", cdnid, "status", "skipped", "synced", syncedFiles.Load(), "skipped", skipped)
+			s.logger.Debug(op, "cdnid", cdnid, "status", "skipped", "synced", syncedFiles.Load(), "skipped", skipped)
 			continue
 		}
 
@@ -121,7 +121,7 @@ func (s *Service) SyncToS3(ctx context.Context, cfg S3Config) (*S3SyncResult, er
 			_, err := client.PutObject(gctx, &s3.PutObjectInput{
 				Bucket:      aws.String(cfg.Bucket),
 				Key:         aws.String(s3Key),
-				Body:        bytes.NewReader(blob),
+				Body:        bytes.NewReader(data),
 				ContentType: aws.String("application/octet-stream"),
 			})
 			if err != nil {
@@ -129,7 +129,7 @@ func (s *Service) SyncToS3(ctx context.Context, cfg S3Config) (*S3SyncResult, er
 			}
 
 			synced := syncedFiles.Add(1)
-			s.logger.Debug("s3sync", "cdnid", cdnid, "status", "synced", "synced", synced, "skipped", skippedFiles.Load())
+			s.logger.Debug(op, "cdnid", cdnid, "status", "synced", "synced", synced, "skipped", skippedFiles.Load())
 			return nil
 		})
 	}
@@ -147,7 +147,8 @@ func (s *Service) SyncToS3(ctx context.Context, cfg S3Config) (*S3SyncResult, er
 		SkippedFiles: int(skippedFiles.Load()),
 	}
 
-	s.logger.Info("s3sync", "status", "finished", "synced", result.SyncedFiles, "skipped", result.SkippedFiles)
-
+	s.logger.Info("sync cache files with s3: finished",
+		"synced_files", result.SyncedFiles,
+		"skipped_files", result.SkippedFiles)
 	return result, nil
 }

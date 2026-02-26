@@ -19,7 +19,7 @@ func NewNullable[T any](value T) Null[T] {
 }
 
 func (n *Null[T]) UnmarshalJSON(data []byte) error {
-	if string(data) == "null" {
+	if string(data) == "null" || string(data) == `""` {
 		var zero T
 		n.V = zero
 		n.Valid = false

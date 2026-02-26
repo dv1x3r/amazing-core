@@ -51,7 +51,7 @@ func run(logger *slog.Logger, mode string, dbPath string, dir string, overwrite 
 		fmt.Printf("imported: %d, skipped: %d\n", result.ImportedFiles, result.SkippedFiles)
 
 	case "export":
-		result, err := service.ExportFromFolder(ctx, dir, overwrite)
+		result, err := service.ExportToFolder(ctx, dir, overwrite)
 		if err != nil {
 			return err
 		}

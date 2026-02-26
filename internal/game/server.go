@@ -24,7 +24,7 @@ type Server struct {
 
 func NewServer(
 	logger *slog.Logger,
-	randomNamesService *randomnames.Service,
+	randnameService *randname.Service,
 ) *Server {
 	router := gsf.NewRouter()
 
@@ -33,8 +33,8 @@ func NewServer(
 		middleware.Recover(),
 	)
 
-	randomNamesHandler := randomnames.NewGSFHandler(randomNamesService)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_RANDOM_NAMES), randomNamesHandler.GetRandomNames)
+	randnameHandler := randname.NewGSFHandler(randnameService)
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_RANDOM_NAMES), randnameHandler.GetRandomNames)
 
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_CLIENT_VERSION_INFO), dummy.GetClientVersionInfo)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_PUBLIC_ITEM_CATEGORIES), dummy.GetPublicItemCategories)
