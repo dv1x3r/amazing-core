@@ -26,6 +26,10 @@ type Config struct {
 		SyncServerIP     string `json:"syncServerIP"`
 		SyncServerPort   int    `json:"syncServerPort"`
 	} `json:"settings"`
+	Blob struct {
+		Download    bool   `json:"download"`
+		DownloadURL string `json:"downloadURL"`
+	} `json:"blob"`
 	Storage struct {
 		Explorer  bool `json:"explorer"`
 		Databases struct {

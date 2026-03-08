@@ -3,8 +3,6 @@ version: 2
 before:
   hooks:
     - go mod tidy
-    - mkdir -p data_db
-    - touch data_db/PLACE_DB_HERE
 
 builds:
   - main: ./cmd/server
@@ -36,7 +34,6 @@ archives:
       - 'README.md'
       - 'LICENSE'
       - 'config.json'
-      - 'data_db'
 
 changelog:
   sort: asc
