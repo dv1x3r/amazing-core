@@ -1,0 +1,8 @@
+[book]
+title = "Amazing Core mdBook"
+authors = ["dv1x3r"]
+description = "Open source server for Amazing World"
+language = "en"
+
+[output.html]
+git-repository-url = "https://github.com/dv1x3r/amazing-core"

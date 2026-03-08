@@ -58,6 +58,7 @@ Use this section if you want to download and run the prebuilt server - no setup 
 Once started:
 
 - The API server will be available at http://localhost:3000
+  - Use `admin / admin` to log in to the configuration dashboard
 - The Game server will listen on `localhost:8182`
 - You can customize server settings using the `config.json`.
 
