@@ -125,6 +125,12 @@ const dashboardSidebar = new w2sidebar({
         },
         {
           type: 'button',
+          id: 'website',
+          icon: 'fa fa-globe',
+          onClick: () => window.open('https://amazingcore.org', '_blank')
+        },
+        {
+          type: 'button',
           id: 'github',
           icon: 'fa-brands fa-github',
           onClick: () => window.open('https://github.com/dv1x3r/amazing-core', '_blank'),
