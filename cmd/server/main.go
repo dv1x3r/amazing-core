@@ -17,6 +17,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/game"
 
 	"github.com/dv1x3r/amazing-core/internal/lib/db"
+	"github.com/dv1x3r/amazing-core/internal/lib/downloader"
 	"github.com/dv1x3r/amazing-core/internal/lib/logger"
 
 	"github.com/dv1x3r/amazing-core/internal/services/asset"
@@ -79,6 +80,14 @@ func main() {
 	if cfg.Storage.Databases.Core == "" || cfg.Storage.Databases.Blob == "" {
 		logger.Get().Error("missing database configuration", "core", cfg.Storage.Databases.Core, "blob", cfg.Storage.Databases.Blob)
 		os.Exit(1)
+	}
+
+	// prepare blob.db if missing & download is enabled
+	if cfg.Blob.Download {
+		if err := downloader.DownloadIfNotExists(logger.Get(), cfg.Storage.Databases.Blob, cfg.Blob.DownloadURL); err != nil {
+			logger.Get().Error("unable to download blob.db", "err", err)
+			os.Exit(1)
+		}
 	}
 
 	// prepare database folders
