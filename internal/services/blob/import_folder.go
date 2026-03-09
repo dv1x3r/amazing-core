@@ -78,6 +78,7 @@ func (s *Service) ImportFromFolder(ctx context.Context, dir string) (*ImportResu
 		"imported_files", result.ImportedFiles,
 		"skipped_files", result.SkippedFiles,
 	)
+
 	return result, nil
 }
 

@@ -87,8 +87,6 @@ func NewServer(
 	v1.HandleFunc("GET /asset/assettypes", errorHandler(assetHandler.GetAssetTypeDropdown))
 	v1.HandleFunc("GET /asset/assetgroups", errorHandler(assetHandler.GetAssetGroupDropdown))
 	v1.HandleFunc("POST /asset/cache.json", errorHandler(assetHandler.PostCacheJSON))
-	v1.HandleFunc("POST /asset/assets.sql", errorHandler(assetHandler.PostAssetsSQL))
-	v1.HandleFunc("GET /asset/assets.sql", errorHandler(assetHandler.GetAssetsSQL))
 
 	randnameHandler := randname.NewAPIHandler(randnameService)
 	v1.HandleFunc("GET /randname/form", errorHandler(randnameHandler.GetForm))

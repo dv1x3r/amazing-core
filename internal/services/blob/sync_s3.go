@@ -149,6 +149,8 @@ func (s *Service) SyncToS3(ctx context.Context, cfg S3Config) (*S3SyncResult, er
 
 	s.logger.Info("sync cache files with s3: finished",
 		"synced_files", result.SyncedFiles,
-		"skipped_files", result.SkippedFiles)
+		"skipped_files", result.SkippedFiles,
+	)
+
 	return result, nil
 }
