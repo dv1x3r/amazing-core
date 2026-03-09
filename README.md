@@ -50,15 +50,15 @@ ServerIP = 'localhost'
 Use this section if you want to download and run the prebuilt server - no setup or compilation required.
 
 1. **Download** the latest [server release](https://github.com/dv1x3r/amazing-core/releases):
-   - For regular Windows just use `amazing-core_Windows_x86_64.zip`
 2. **Extract** the archive to a folder of your choice;
-3. **Download** the game assets database [blob.db](https://drive.google.com/drive/folders/1K7k7ZHrL5KZTdsa5_BblgafPgeGWwKRc?usp=share_link) and place it inside the `data_db` folder;
-4. **Run** the server binary;
+3. **Run** the server binary;
 
-Once started:
+Once started, it will download the `blob.db` file (~2 GB).
 
-- The API server will be available at http://localhost:3000
-  - Use `admin / admin` to log in to the configuration dashboard
+When the download is finished, you can start the game.
+
+- The API server will be available at [http://localhost:3000](http://localhost:3000)
+- Use `admin / admin` to log in to the dashboard
 - The Game server will listen on `localhost:8182`
 - You can customize server settings using the `config.json`.
 

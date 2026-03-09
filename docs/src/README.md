@@ -32,8 +32,8 @@ But you can check out the work-in-progress prototype and join our community!
     <div style="display:flex; flex-direction:column; gap:15px; padding:20px;">
       <div style="background:#151b23; color:#8b949e; border:1px solid #30363d; border-radius:16px; overflow:hidden; font-size:13px;">
         <div style="display:flex; justify-content:space-between; padding:8px 12px; font-weight:600; border-bottom:1px solid #30363d;">
-          <span>Latest release binaries</span>
-          <span style="background:#0a241b; border:1px solid #08872b; color:#0fbf3e; font-size:10px; font-weight:700; font-family:monospace; padding:2px 7px; border-radius:20px;">{{#include vars/version.md}}</span>
+          <span>Latest server binaries</span>
+          <span style="background:#0a241b; border:1px solid #08872b; color:#0fbf3e; font-size:11px; font-weight:700; font-family:monospace; padding:2px 7px; border-radius:20px;">{{#include vars/version.md}}</span>
         </div>
         <a href="https://github.com/dv1x3r/amazing-core/releases/download/{{#include vars/version.md}}/amazing-core_Windows_x86_64.zip" style="display:flex; align-items:center; gap:8px; padding:8px 12px; color:#58a6ff; text-decoration:none; border-bottom:1px solid #30363d;">
           <i class="fa-brands fa-microsoft" style="color:#e6edf3;"></i>
@@ -94,43 +94,57 @@ Now you can start the game.
 
 ## Host your own server
 
-With your own server, you can access the configuration dashboard to configure skins, maps, NPCs, and other features (work in progress).
+With your own server, you can access the admin dashboard to configure skins, maps, NPCs, and other features (work in progress).
+
+Modify the server address value as shown below:
+
+```xml
+ServerIP = 'localhost'
+```
 
 ### Pre-compiled binaries
 
-1. **Download** the latest [server release](#) from GitHub.
+1. **Download** the latest [server release](#) from the GitHub section.
 2. **Extract** the archive to a folder of your choice;
 3. **Run** the server binary;
 
-Once started:
+Once started, it will download the `blob.db` file (~2 GB).
+
+When the download is finished, you can start the game.
 
 - The API server will be available at [http://localhost:3000](http://localhost:3000)
-  - Use `admin / admin` to log in to the configuration dashboard
+- Use `admin / admin` to log in to the dashboard
 - The Game server will listen on `localhost:8182`
-- You can customize server settings using the `config.json`
+- You can customize server settings using the `config.json`.
 
-### Build from source using Go
+### Configuration
 
-To build the server from source, you will need **Go 1.25** or newer:
+You can customize server settings using the `config.json` file.
 
-```sh
-make
-# or
-go build -o ./build/server ./cmd/server/main.go
-```
+| Key                          | Description                                               |
+| ---------------------------- | --------------------------------------------------------- |
+| `logger.level`               | Log verbosity: `debug`, `info`, `warn`, `error`           |
+| `logger.handler`             | Log format: `pretty` (colored, formatted), `text`, `json` |
+| `servers.api`                | HTTP API bind address (e.g. `localhost:3000`)             |
+| `servers.game`               | TCP game server bind address (e.g. `localhost:8182`)      |
+| `settings.assetDeliveryAPI`  | Expose `/cdn/{cdnid}` endpoint - serves `blob.db` files   |
+| `settings.assetDeliveryURL`  | Base CDN URL sent to game clients                         |
+| `settings.syncServerIP`      | Sync server IP sent in `InitLocation` responses           |
+| `settings.syncServerPort`    | Sync server port sent in `InitLocation` responses         |
+| `blob.download`              | Auto-download `blob.db` on first start if missing         |
+| `blob.downloadURL`           | URL to fetch `blob.db` from                               |
+| `storage.explorer`           | Enable the dashboard SQL explorer - **only for testing!** |
+| `storage.databases.core`     | Path to `core.db` - main SQLite database                  |
+| `storage.databases.blob`     | Path to `blob.db` - assets SQLite database                |
+| `secure.auth.username`       | Dashboard admin username                                  |
+| `secure.auth.password`       | Dashboard admin password                                  |
+| `secure.session.key`         | Cookie session signing key                                |
+| `secure.session.secure`      | Set `Secure` flag on session cookie (enable behind HTTPS) |
+| `secure.csrf.trustedOrigins` | Origins allowed to make cross-site requests               |
 
-To build and run with a single command:
+## Running the game on macOS
 
-```sh
-make run
-# or
-go run ./cmd/server/main.go
-```
-
-You can choose between SQLite drivers by setting the `CGO_ENABLED` environment variable:
-
-- Build with `CGO_ENABLED=0` to use `modernc.org/sqlite` driver (default);
-- Build with `CGO_ENABLED=1` to use `github.com/mattn/go-sqlite3` driver;
+The Steam version of the game is not compatible with modern macOS (Apple Silicon), but you can try following [this guide](https://github.com/boggydigital/mac-gaming-guides/blob/main/common/unity-porting.md#from-32-bits-to-64-bits-macos).
 
 ## License
 

@@ -9,7 +9,7 @@ type EnterBuildingRequest struct {
 	LocID       types.OID
 	BuildingID  types.OID
 	Pos         types.Position
-	Orientation types.Qth
+	Orientation types.QTH
 }
 
 func (req *EnterBuildingRequest) Deserialize(reader gsf.ProtocolReader) {

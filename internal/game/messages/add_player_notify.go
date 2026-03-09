@@ -14,8 +14,8 @@ type AddPlayerNotify struct {
 	TimeOffset       int64
 	Pos              types.Position
 	WPos             []types.Position
-	Qth              types.Qth
-	SecondQth        types.Qth
+	QTH              types.QTH
+	SecondQTH        types.QTH
 	Weight           int32
 	Seq              byte
 	Type             int32
@@ -33,8 +33,8 @@ func (apn *AddPlayerNotify) Serialize(writer gsf.ProtocolWriter) {
 	gsf.WriteSlice(writer, apn.WPos, func(value types.Position) {
 		writer.WriteObject(&value)
 	})
-	writer.WriteObject(&apn.Qth)
-	writer.WriteObject(&apn.SecondQth)
+	writer.WriteObject(&apn.QTH)
+	writer.WriteObject(&apn.SecondQTH)
 	writer.WriteInt32(apn.Weight)
 	writer.PutByte(apn.Seq)
 	writer.WriteInt32(apn.Type)
@@ -56,8 +56,8 @@ func (apn *AddPlayerNotify) Deserialize(reader gsf.ProtocolReader) {
 		reader.ReadObject(&value)
 		return value
 	})
-	reader.ReadObject(&apn.Qth)
-	reader.ReadObject(&apn.SecondQth)
+	reader.ReadObject(&apn.QTH)
+	reader.ReadObject(&apn.SecondQTH)
 	apn.Weight = reader.ReadInt32()
 	apn.Seq = reader.GetByte()
 	apn.Type = reader.ReadInt32()
