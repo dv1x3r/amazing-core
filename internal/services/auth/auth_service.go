@@ -13,7 +13,15 @@ type Service struct {
 	session sessions.Store
 }
 
-func NewService(session sessions.Store) *Service {
+func NewService(cfg config.Config) *Service {
+	session := sessions.NewCookieStore([]byte(cfg.Secure.Session.Key))
+	session.Options = &sessions.Options{
+		Path:     "/",
+		MaxAge:   86400 * 14,
+		Secure:   cfg.Secure.Session.Secure,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	}
 	return &Service{session: session}
 }
 

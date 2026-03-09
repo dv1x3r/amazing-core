@@ -62,6 +62,7 @@ func (s *Service) ExportToFolder(ctx context.Context, dir string, overwrite bool
 		"exported_files", result.ExportedFiles,
 		"skipped_files", result.SkippedFiles,
 	)
+
 	return result, nil
 }
 

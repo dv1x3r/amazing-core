@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io/fs"
 	"log/slog"
 	"strings"
 
@@ -27,25 +26,24 @@ type CacheItem struct {
 	Bundle json.RawMessage `json:"bundle"`
 }
 
-func ImportCacheJSON(logger *slog.Logger, db *sql.DB, fsys fs.FS, fileName string, overwrite bool) (*ImportResult, error) {
-	const op = "asset.ImportCacheJSON"
-
-	file, err := fsys.Open(fileName)
-	if err != nil {
-		return nil, wrap.IfErr(op, err)
-	}
-	defer file.Close()
-
-	var items []CacheItem
-	if err := json.NewDecoder(file).Decode(&items); err != nil {
-		return nil, wrap.IfErr(op, err)
-	}
-
-	return ImportCacheItems(logger, db, items, overwrite)
-}
-
-func ImportCacheItems(logger *slog.Logger, db *sql.DB, items []CacheItem, overwrite bool) (*ImportResult, error) {
+func ImportCacheItems(logger *slog.Logger, db *sql.DB, items []CacheItem) (*ImportResult, error) {
 	const op = "asset.ImportCacheItems"
+
+	const assetSQL = `
+		insert into asset (cdnid, gsfoid, hash, size, file_type_id)
+		values (?, ?, ?, ?, ?)
+		on conflict(cdnid) do update set
+			gsfoid       = excluded.gsfoid,
+			hash         = excluded.hash,
+			size         = excluded.size,
+			file_type_id = excluded.file_type_id
+		returning id`
+
+	const metadataSQL = `
+		insert into asset_metadata (asset_id, metadata)
+		values (?, jsonb(?))
+		on conflict(asset_id) do update set
+			metadata = excluded.metadata`
 
 	tx, err := db.Begin()
 	if err != nil {
@@ -58,6 +56,7 @@ func ImportCacheItems(logger *slog.Logger, db *sql.DB, items []CacheItem, overwr
 	if err != nil {
 		return nil, wrap.IfErr(op, err)
 	}
+
 	for rows.Next() {
 		var id int
 		var name string
@@ -66,36 +65,9 @@ func ImportCacheItems(logger *slog.Logger, db *sql.DB, items []CacheItem, overwr
 		}
 		fileTypes[strings.ToLower(name)] = id
 	}
+
 	if err := rows.Close(); err != nil {
 		return nil, wrap.IfErr(op, err)
-	}
-
-	var assetSQL, bundleSQL string
-	if overwrite {
-		assetSQL = `
-			insert into asset (cdnid, gsfoid, hash, size, file_type_id)
-			values (?, ?, ?, ?, ?)
-			on conflict(cdnid) do update set
-				gsfoid       = excluded.gsfoid,
-				hash         = excluded.hash,
-				size         = excluded.size,
-				file_type_id = excluded.file_type_id
-			returning id`
-		bundleSQL = `
-			insert into asset_metadata (asset_id, metadata)
-			values (?, jsonb(?))
-			on conflict(asset_id) do update set
-				metadata = excluded.metadata`
-	} else {
-		assetSQL = `
-			insert into asset (cdnid, gsfoid, hash, size, file_type_id)
-			values (?, ?, ?, ?, ?)
-			on conflict(cdnid) do nothing
-			returning id`
-		bundleSQL = `
-			insert into asset_metadata (asset_id, metadata)
-			values (?, jsonb(?))
-			on conflict(asset_id) do nothing`
 	}
 
 	stmtAsset, err := tx.Prepare(assetSQL)
@@ -104,11 +76,11 @@ func ImportCacheItems(logger *slog.Logger, db *sql.DB, items []CacheItem, overwr
 	}
 	defer stmtAsset.Close()
 
-	stmtBundle, err := tx.Prepare(bundleSQL)
+	stmtMetadata, err := tx.Prepare(metadataSQL)
 	if err != nil {
 		return nil, wrap.IfErr(op, err)
 	}
-	defer stmtBundle.Close()
+	defer stmtMetadata.Close()
 
 	result := &ImportResult{}
 	for _, item := range items {
@@ -125,11 +97,7 @@ func ImportCacheItems(logger *slog.Logger, db *sql.DB, items []CacheItem, overwr
 			item.File.Size,
 			fileTypeID,
 		).Scan(&assetID)
-		if err == sql.ErrNoRows {
-			if err := tx.QueryRow(`select id from asset where cdnid = ?`, item.File.Name).Scan(&assetID); err != nil {
-				return nil, wrap.IfErr(op, err)
-			}
-		} else if err != nil {
+		if err != nil {
 			return nil, wrap.IfErr(op, err)
 		} else {
 			result.ImportedAssets++
@@ -139,7 +107,7 @@ func ImportCacheItems(logger *slog.Logger, db *sql.DB, items []CacheItem, overwr
 			continue
 		}
 
-		res, err := stmtBundle.Exec(assetID, item.Bundle)
+		res, err := stmtMetadata.Exec(assetID, item.Bundle)
 		if err != nil {
 			return nil, wrap.IfErr(op, err)
 		}
@@ -156,14 +124,10 @@ func ImportCacheItems(logger *slog.Logger, db *sql.DB, items []CacheItem, overwr
 		return nil, wrap.IfErr(op, err)
 	}
 
-	if result.ImportedAssets+result.ImportedMetadata == 0 {
-		logger.Info("cache.json import finished: no new items")
-	} else {
-		logger.Info("import cache.json assets and metadata finished",
-			"imported_assets", result.ImportedAssets,
-			"imported_metadata", result.ImportedMetadata,
-		)
-	}
+	logger.Info("import cache.json assets and metadata finished",
+		"imported_assets", result.ImportedAssets,
+		"imported_metadata", result.ImportedMetadata,
+	)
 
 	return result, nil
 }

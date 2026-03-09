@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"net/http"
 	"os"
 	"os/signal"
 	"path"
@@ -24,8 +23,6 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/services/auth"
 	"github.com/dv1x3r/amazing-core/internal/services/blob"
 	"github.com/dv1x3r/amazing-core/internal/services/randname"
-
-	"github.com/gorilla/sessions"
 )
 
 var (
@@ -122,7 +119,7 @@ func main() {
 
 	logger.Get().Info(fmt.Sprintf("connected to the %s using the %s driver", cfg.Storage.Databases.Blob, blobStore.DriverName()))
 
-	// apply base migrations
+	// apply database migrations
 
 	if err := coreStore.MigrateBaseFile(logger.Get(), data.FS, "sql/core_db/base.sql"); err != nil {
 		logger.Get().Error("unable to initialize core.db", "err", err)
@@ -134,33 +131,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	// apply update migrations
-
 	if err := coreStore.MigrateUp(logger.Get(), data.FS, "sql/core_db/updates"); err != nil {
 		logger.Get().Error("unable to apply core.db updates", "err", err)
 		os.Exit(1)
 	}
 
-	if err := coreStore.RecreateTableFromFile(logger.Get(), data.FS, "sql/core_db/assets.sql", "asset", false); err != nil {
-		logger.Get().Error("unable to apply assets.sql", "err", err)
-		os.Exit(1)
-	}
-
-	if _, err := asset.ImportCacheJSON(logger.Get(), coreStore.DB(), data.FS, "cache.json", false); err != nil {
-		logger.Get().Error("unable to import cache.json", "err", err)
-		os.Exit(1)
-	}
-
-	session := sessions.NewCookieStore([]byte(cfg.Secure.Session.Key))
-	session.Options = &sessions.Options{
-		Path:     "/",
-		MaxAge:   86400 * 14,
-		Secure:   cfg.Secure.Session.Secure,
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-	}
-
-	authService := auth.NewService(session)
+	authService := auth.NewService(cfg)
 	blobService := blob.NewService(logger.Get(), blobStore)
 	assetService := asset.NewService(logger.Get(), coreStore)
 	randnameService := randname.NewService(coreStore)

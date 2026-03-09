@@ -31,7 +31,7 @@ export function createAssetGrid() {
           type: 'button',
           id: 'import-json',
           text: 'Import cache.json',
-          tooltip: 'Import and update assets from cache.json',
+          tooltip: 'Import and merge base asset data from cache.json',
           icon: 'fa fa-code',
           onClick: function() {
             w2upload({
@@ -42,33 +42,6 @@ export function createAssetGrid() {
               method: 'POST',
               accept: '.json,application/json',
             })
-          },
-        },
-        {
-          type: 'button',
-          id: 'import-sql',
-          text: 'Import assets.sql',
-          tooltip: 'Replace your current asset table with the selected SQL dump (overwrites existing data)',
-          icon: 'fa fa-database',
-          onClick: function() {
-            w2upload({
-              owner: this.owner,
-              reload: true,
-              lock: 'Uploading sql...',
-              url: '/api/v1/asset/assets.sql',
-              method: 'POST',
-              accept: '.sql',
-            })
-          },
-        },
-        {
-          type: 'button',
-          id: 'export-sql',
-          text: 'Export assets.sql',
-          tooltip: 'Export your asset table to an SQL file for backup, sharing, or creating a new Git version',
-          icon: 'fa fa-database',
-          onClick: function() {
-            window.location.href = '/api/v1/asset/assets.sql'
           },
         },
       ],

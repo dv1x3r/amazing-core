@@ -78,7 +78,5 @@ values
 ('Family_3', 'stormer'),
 ('Family_3', 'tickle'),
 ('Family_3', 'trove'),
-('Family_3', 'well'),
-('second_name', 'ImJustZing'),
-('second_name', 'ImJustKen');
+('Family_3', 'well');
 -- +goose StatementEnd
