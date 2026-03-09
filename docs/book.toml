@@ -1,8 +1,14 @@
 [book]
 title = "Amazing Core mdBook"
 authors = ["dv1x3r"]
-description = "Open source server for Amazing World"
+description = "Docs for open source Amazing World game server written in Go"
 language = "en"
 
 [output.html]
+no-section-label = true
 git-repository-url = "https://github.com/dv1x3r/amazing-core"
+edit-url-template = "https://github.com/dv1x3r/amazing-core/edit/master/docs/{path}"
+
+[output.html.fold]
+enable = true
+level = 1

@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-type Qth struct {
+type QTH struct {
 	SW bool
 	SX bool
 	SY bool
@@ -12,7 +12,7 @@ type Qth struct {
 	CZ rune
 }
 
-func (qth *Qth) Serialize(writer gsf.ProtocolWriter) {
+func (qth *QTH) Serialize(writer gsf.ProtocolWriter) {
 	writer.WriteBool(qth.SW)
 	writer.WriteBool(qth.SX)
 	writer.WriteBool(qth.SY)
@@ -22,7 +22,7 @@ func (qth *Qth) Serialize(writer gsf.ProtocolWriter) {
 	writer.WriteChar(qth.CZ)
 }
 
-func (qth *Qth) Deserialize(reader gsf.ProtocolReader) {
+func (qth *QTH) Deserialize(reader gsf.ProtocolReader) {
 	qth.SW = reader.ReadBool()
 	qth.SX = reader.ReadBool()
 	qth.SY = reader.ReadBool()

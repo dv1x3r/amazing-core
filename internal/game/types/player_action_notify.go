@@ -10,7 +10,7 @@ type PlayerActionNotify struct {
 	ActionType byte
 	Parameters string
 	Pos        Position
-	Qth        Qth
+	QTH        QTH
 	IsState    bool
 	ClearState bool
 	StateIndex int32
@@ -24,7 +24,7 @@ func (pan *PlayerActionNotify) Serialize(writer gsf.ProtocolWriter) {
 	writer.PutByte(pan.ActionType)
 	writer.WriteString(pan.Parameters)
 	writer.WriteObject(&pan.Pos)
-	writer.WriteObject(&pan.Qth)
+	writer.WriteObject(&pan.QTH)
 	writer.WriteBool(pan.IsState)
 	writer.WriteBool(pan.ClearState)
 	writer.WriteInt32(pan.StateIndex)
@@ -38,7 +38,7 @@ func (pan *PlayerActionNotify) Deserialize(reader gsf.ProtocolReader) {
 	pan.ActionType = reader.GetByte()
 	pan.Parameters = reader.ReadString()
 	reader.ReadObject(&pan.Pos)
-	reader.ReadObject(&pan.Qth)
+	reader.ReadObject(&pan.QTH)
 	pan.IsState = reader.ReadBool()
 	pan.ClearState = reader.ReadBool()
 	pan.StateIndex = reader.ReadInt32()

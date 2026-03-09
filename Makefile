@@ -73,4 +73,4 @@ docs:
 
 .PHONY: docs-run
 docs-run:
-	mdbook serve docs/
+	mdbook serve docs/ -p 8000
