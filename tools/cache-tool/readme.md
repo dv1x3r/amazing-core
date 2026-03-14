@@ -37,6 +37,8 @@ Flags can be combined, e.g. `--summaries-dir` and `--unpack-dir` together.
 | ----------------- | ---------------------------------------------------------------------------------------------- |
 | `path`            | Path to a single cache file or a folder containing multiple files.                             |
 | `--parse-scene`   | Parse and include scene hierarchy in the summary. Can produce large output for complex scenes. |
+| `--ffmpeg-mp3`    | Convert audio to mp3 using ffmpeg (requires --unpack-dir).                                     |
+| `--zip`           | Zip unpacked assets (requires --unpack-dir).                                                   |
 | `--summary-file`  | File to write a single JSON summary file.                                                      |
 | `--summaries-dir` | Directory to write JSON summary files (one per input file).                                    |
 | `--unpack-dir`    | Directory to unpack assets (audio, images, models) into.                                       |
