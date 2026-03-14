@@ -3,6 +3,7 @@ import os
 import sys
 import json
 import base64
+import shutil
 import hashlib
 import argparse
 import subprocess
@@ -39,6 +40,7 @@ SIGNATURES = [
 ]
 
 UTF8_BOM = b"\xef\xbb\xbf"
+VISUAL_TYPES = {"MeshFilter", "MeshRenderer", "SkinnedMeshRenderer"}
 
 
 class UnitySceneParser:
@@ -92,6 +94,25 @@ class UnitySceneParser:
             node["file"] = os.path.basename(path)
         if components := self._get_components(game_object):
             node["components"] = components
+            if any(c["type"] in VISUAL_TYPES for c in components):
+                node["transform"] = {
+                    "position": {
+                        "x": tr.m_LocalPosition.x,
+                        "y": tr.m_LocalPosition.y,
+                        "z": tr.m_LocalPosition.z,
+                    },
+                    "rotation": {
+                        "x": tr.m_LocalRotation.x,
+                        "y": tr.m_LocalRotation.y,
+                        "z": tr.m_LocalRotation.z,
+                        "w": tr.m_LocalRotation.w,
+                    },
+                    "scale": {
+                        "x": tr.m_LocalScale.x,
+                        "y": tr.m_LocalScale.y,
+                        "z": tr.m_LocalScale.z,
+                    },
+                }
         children = []
         for child_id in self.children_dict.get(tid, []):
             child = self._build_tree(child_id, visited)
@@ -100,6 +121,13 @@ class UnitySceneParser:
         if children:
             node["children"] = children
         return node
+
+    def _has_visual_components(self, game_object):
+        for _, comp in game_object.m_Component:
+            comp_obj = self.object_dict.get(comp.m_PathID)
+            if comp_obj and comp_obj.type.name in VISUAL_TYPES:
+                return True
+        return False
 
     def _get_components(self, game_object):
         components = []
@@ -216,8 +244,10 @@ def get_bundle_containers(env):
     return {v.m_PathID: k for k, v in env.container.items()}
 
 
-def unpack_assets(env, unpack_dir):
+def unpack_assets(env, unpack_dir, ffmpeg_mp3, zip):
     base = os.path.join(unpack_dir, env.file.name)
+    unpacked_assets = 0
+
     for obj in env.objects:
         if obj.type.name == "AudioClip":
             clip = obj.parse_as_object()
@@ -226,10 +256,16 @@ def unpack_assets(env, unpack_dir):
                 tmp = os.path.join(base, "audio", sample_name)
                 with open(tmp, "wb") as f:
                     f.write(sample_data)
-                file_name = f"{obj.path_id}.{os.path.splitext(sample_name)[0]}.mp3"
-                out = os.path.join(base, "audio", file_name)
-                subprocess.run(["ffmpeg", "-y", "-i", tmp, out], capture_output=True)
-                os.remove(tmp)
+                if ffmpeg_mp3:
+                    print("    converting to mp3:", sample_name, file=sys.stderr)
+                    file_name = f"{obj.path_id}.{os.path.splitext(sample_name)[0]}.mp3"
+                    out = os.path.join(base, "audio", file_name)
+                    subprocess.run(
+                        ["ffmpeg", "-y", "-i", tmp, out],
+                        capture_output=True,
+                    )
+                    os.remove(tmp)
+                unpacked_assets += 1
 
         elif obj.type.name == "Mesh":
             data = obj.parse_as_object()
@@ -239,6 +275,7 @@ def unpack_assets(env, unpack_dir):
                 os.makedirs(os.path.join(base, "models"), exist_ok=True)
                 with open(out, "wt", newline="") as f:
                     f.write(wavefront)
+                unpacked_assets += 1
             else:
                 print("    invalid mesh:", data.m_Name, file=sys.stderr)
 
@@ -249,8 +286,17 @@ def unpack_assets(env, unpack_dir):
             os.makedirs(os.path.join(base, "images"), exist_ok=True)
             try:
                 data.image.save(out)
+                unpacked_assets += 1
             except IsADirectoryError:
                 print("    no image data:", data.m_Name, file=sys.stderr)
+
+    if zip and unpacked_assets > 0:
+        zip_path = f"{base}.zip"
+        print("    compressing to zip:", zip_path, file=sys.stderr)
+        shutil.make_archive(base, "zip", unpack_dir, env.file.name)
+        shutil.rmtree(base)
+
+    return unpacked_assets
 
 
 def get_file_info(file_path):
@@ -288,7 +334,9 @@ def cdnid_to_oid(cdnid):
         return 0
 
 
-def process_file(file_path, parse_scene=None, unpack_dir=None):
+def process_file(
+    file_path, parse_scene=None, unpack_dir=None, ffmpeg_mp3=None, zip=None
+):
     file_info = get_file_info(file_path)
     summary = {"file": file_info}
     if file_info["type"] in ["AssetBundle/UnityFS", "AssetBundle/UnityWeb"]:
@@ -306,7 +354,9 @@ def process_file(file_path, parse_scene=None, unpack_dir=None):
                 bundle["scene"] = scene.parse()
             if unpack_dir:
                 print("    unpacking assets...", file=sys.stderr)
-                unpack_assets(env, unpack_dir)
+                bundle["unpacked_assets"] = unpack_assets(
+                    env, unpack_dir, ffmpeg_mp3, zip
+                )
             summary["bundle"] = bundle
     return summary
 
@@ -324,6 +374,16 @@ def main():
         "--parse-scene",
         action="store_true",
         help="Parse and include scene hierarchy in the summary. Can produce large output for complex scenes.",
+    )
+    parser.add_argument(
+        "--ffmpeg-mp3",
+        action="store_true",
+        help="Convert audio to mp3 using ffmpeg (requires --unpack-dir).",
+    )
+    parser.add_argument(
+        "--zip",
+        action="store_true",
+        help="Zip unpacked assets (requires --unpack-dir).",
     )
     parser.add_argument(
         "--summary-file",
@@ -366,7 +426,11 @@ def main():
         print(f"processing file {i}/{len(files)}: {file_path}", file=sys.stderr)
 
         summary = process_file(
-            file_path, parse_scene=args.parse_scene, unpack_dir=args.unpack_dir
+            file_path,
+            parse_scene=args.parse_scene,
+            unpack_dir=args.unpack_dir,
+            ffmpeg_mp3=args.ffmpeg_mp3,
+            zip=args.zip,
         )
         summaries.append(summary)
 
