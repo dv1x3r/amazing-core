@@ -37,7 +37,7 @@ const AMAZING_CORE = `
                         / ___/ __ \/ _ \/ __/   
                        / /__/ /_/ / , _/ _/     
                        \___/\____/_/|_/___/     
-  %s - github.com/dv1x3r/amazing-core
+  Amazing Core %s - https://amazingcore.org/
 `
 
 func main() {
