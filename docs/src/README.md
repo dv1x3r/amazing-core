@@ -15,7 +15,7 @@ This project provides a modular, configurable framework with tools for server ma
 
 But you can check out the work-in-progress prototype and join our community!
 
-<div style="display:flex; flex-wrap:wrap; justify-content:space-between; gap:16px;">
+<div id="community-links" style="display:flex; flex-wrap:wrap; justify-content:space-between; gap:16px;">
   <div style="border-radius:16px; overflow:hidden; margin:0 auto;">
     <iframe src="https://discord.com/widget?id=822788246973972510&theme=dark" width="350" height="340" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
   </div>
@@ -77,6 +77,8 @@ You can install the latest published version with the following Steam link:
 
 The game has its page on [SteamDB](https://steamdb.info/app/293500/), where you can also see additional information.
 
+It is also possible to find an Android version on the internet.
+
 ## Connect to the demo server
 
 After installation, navigate to the game folder and open the `ServerConfig.xml` file in a text editor.
@@ -94,7 +96,9 @@ Now you can start the game.
 
 ## Host your own server
 
-With your own server, you can access the admin dashboard to configure skins, maps, NPCs, and other features (work in progress).
+With your own server, you can access the admin dashboard to configure skins, maps, NPCs, and other features (work in progress)\*.
+
+> \* starting from `0.2.0`, which is probably not released yet.
 
 Modify the server address value as shown below:
 
@@ -104,18 +108,19 @@ ServerIP = 'localhost'
 
 ### Pre-compiled binaries
 
-1. **Download** the latest [server release](#) from the GitHub section.
+1. **Download** the latest [server release](#community-links) from the GitHub section.
 2. **Extract** the archive to a folder of your choice;
 3. **Run** the server binary;
 
-Once started, it will download the `blob.db` file (~2 GB).
+Once started, it will download the `blob.db` file (~2 GB).\*
+
+> \* starting from `0.2.0`, which is probably not released yet.
 
 When the download is finished, you can start the game.
 
 - The API server will be available at [http://localhost:3000](http://localhost:3000)
 - Use `admin / admin` to log in to the dashboard
-- The Game server will listen on `localhost:8182`
-- You can customize server settings using the `config.json`.
+- The game server will listen on `localhost:8182`
 
 ### Configuration
 
