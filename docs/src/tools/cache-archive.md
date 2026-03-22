@@ -3,6 +3,25 @@
 <script src="//unpkg.com/alpinejs" defer></script>
 <script src="//unpkg.com/jszip@3.10.1/dist/jszip.min.js"></script>
 
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.183.2/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+  import * as THREE from 'three';
+  import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+  import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+  window.THREE = THREE;
+  window.OBJLoader = OBJLoader;
+  window.OrbitControls = OrbitControls;
+</script>
+
 <script>
   function cacheList() {
     return {
@@ -321,8 +340,6 @@
           canvas.height = img.naturalHeight
           canvas.style.maxWidth = '100%'
           canvas.style.height = 'auto'
-          //ctx.fillStyle = '#ffffff'
-          ctx.fillRect(0, 0, canvas.width, canvas.height)
           ctx.drawImage(img, 0, 0)
           this.loading = false
         };
@@ -332,6 +349,81 @@
         };
         img.src = url
       }
+    }
+  }
+
+  function threeViewer(models) {
+    return {
+      _renderer: null,
+      _controls: null,
+      _resizeObserver: null,
+
+      init() {
+        const THREE = window.THREE
+        const container = this.$el
+
+        const w = container.clientWidth || 400
+        const h = container.clientHeight || 300
+
+        const scene = new THREE.Scene()
+        scene.background = new THREE.Color(0x333333)
+
+        var grid = new THREE.GridHelper(100, 10);
+        scene.add(grid);
+
+        const camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000)
+        camera.position.y = 2.5
+        camera.position.z = 5
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true })
+        renderer.setPixelRatio(window.devicePixelRatio)
+        renderer.setSize(w, h)
+        this._renderer = renderer
+
+        container.appendChild(renderer.domElement)
+
+        const controls = new OrbitControls(camera, renderer.domElement)
+        controls.enableDamping = true
+        controls.autoRotateSpeed = 1
+        controls.autoRotate = true
+        this._controls = controls
+
+        const geometry = new THREE.BoxGeometry(1, 1, 1)
+        const material = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true })
+        const cube = new THREE.Mesh(geometry, material)
+        scene.add(cube)
+
+        const light = new THREE.AmbientLight(0xffffff, 0.8)
+        scene.add(light)
+
+        const resizeObserver = new ResizeObserver(() => {
+          const w = container.clientWidth
+          const h = container.clientHeight
+          if (w !== 0 && h !== 0) {
+            renderer.setSize(w, h)
+            camera.aspect = w / h
+            camera.updateProjectionMatrix()
+          }
+        })
+
+        resizeObserver.observe(container);
+        this._resizeObserver = resizeObserver
+
+        function render(time) {
+          controls.update()
+          renderer.render(scene, camera)
+        }
+
+        renderer.setAnimationLoop(render)
+      },
+
+      destroy() {
+        this._resizeObserver?.disconnect()
+        this._controls?.dispose()
+        this._renderer?.setAnimationLoop(null)
+        this._renderer?.domElement.remove()
+        this._renderer?.dispose()
+      },
     }
   }
 </script>
@@ -344,8 +436,8 @@
     <template x-if="view === 'list'">
       <div>
         <div style="margin-bottom:8px;">
-          <input type="text"
-            x-model="search" @input="page=1, _refilter()" @keydown.stop=""
+          <input type="text" x-model="search"
+            @input="page=1, _refilter()" @keydown.stop=""
             placeholder="Search by name, type, oid or asset…"
             style="font-family:monospace; padding:3px 6px; width:300px;">
           <span style="margin-left:10px; font-size:1.25rem;" x-text="_filtered.length + ' items'"></span>
@@ -354,20 +446,16 @@
           <thead>
             <tr>
               <th style="width:25%; text-align:left; padding:4px 8px; cursor:pointer;"
-                @click="toggleListSort('name')">
-                Name<span x-text="listSortIndicator('name')"></span>
+                @click="toggleListSort('name')">Name<span x-text="listSortIndicator('name')"></span>
               </th>
               <th style="width:20%; text-align:left; padding:4px 8px; cursor:pointer;"
-                @click="toggleListSort('type')">
-                Type<span x-text="listSortIndicator('type')"></span>
+                @click="toggleListSort('type')">Type<span x-text="listSortIndicator('type')"></span>
               </th>
               <th style="width:45%; text-align:left; padding:4px 8px; cursor:pointer;"
-                @click="toggleListSort('asset')">
-                Asset<span x-text="listSortIndicator('asset')"></span>
+                @click="toggleListSort('asset')">Asset<span x-text="listSortIndicator('asset')"></span>
               </th>
               <th style="width:10%; text-align:right; padding:4px 8px; cursor:pointer;"
-                @click="toggleListSort('size')">
-                Size<span x-text="listSortIndicator('size')"></span>
+                @click="toggleListSort('size')">Size<span x-text="listSortIndicator('size')"></span>
               </th>
             </tr>
           </thead>
@@ -392,20 +480,19 @@
           </tbody>
         </table>
         <!-- List Pagination -->
-        <div x-show="listTotalPages > 1" style="margin-top:10px;">
-          <button @click="page--" :disabled="page===1"
-            :style="{ cursor: page === 1 ? 'auto' : 'pointer' }"
-            style="font-family:monospace; font-size:1.25rem; margin-right:4px; cursor:pointer;">&#8249; Prev</button>
+        <div x-show="listTotalPages > 1" style="font-size:1.25rem; margin-top:10px;">
+          <button @click="page--" :disabled="page === 1"
+            :style="page > 1 ? { cursor: 'pointer' } : {}"
+            style="font-family:monospace; margin-right:4px;">&#8249; Prev</button>
           <template x-for="p in listPageRange" :key="p">
-            <button @click="page = p"
+            <button @click="page = p" x-text="p"
               :style="p === page ? { fontWeight: 'bold', textDecoration: 'underline' } : {}"
-              style="font-family:monospace; font-size:1.25rem; margin-right:4px; cursor:pointer;"
-              x-text="p"></button>
+              style="font-family:monospace; margin-right:4px; cursor:pointer;"></button>
           </template>
           <button @click="page++" :disabled="page === listTotalPages"
-            :style="{ cursor: page === listTotalPages ? 'auto' : 'pointer' }"
-            style="font-family:monospace; font-size:1.25rem;">Next &#8250;</button>
-          <span style="font-size:1.25rem; margin-left:10px;" x-text="'Page ' + page + ' of ' + listTotalPages"></span>
+            :style="page < listTotalPages ? { cursor: 'pointer' } : {}"
+            style="font-family:monospace;">Next &#8250;</button>
+          <span style="margin-left:10px;" x-text="'Page ' + page + ' of ' + listTotalPages"></span>
         </div>
       </div>
     </template>
@@ -413,21 +500,21 @@
     <template x-if="view === 'detail' && current">
       <div>
         <!-- Tabs -->
-        <div style="margin-bottom:10px;">
+        <div style="font-size:1.25rem; margin-bottom:10px;">
           <button @click="goBack()"
-            style="font-family:monospace; font-size:1.25rem; margin-right:4px; cursor:pointer;">&#8592; Back</button>
+            style="font-family:monospace; margin-right:4px; cursor:pointer;">&#8592; Back</button>
           <button @click="detailTab = 'info'"
             x-show="current.file.type.startsWith('AssetBundle/')"
             :style="detailTab === 'info' ? { fontWeight: 'bold', textDecoration: 'underline' } : {}"
-            style="font-family:monospace; font-size:1.25rem; margin-right:4px; cursor:pointer;">Info</button>
+            style="font-family:monospace; margin-right:4px; cursor:pointer;">Info</button>
           <button @click="detailTab = 'counts'"
             x-show="current.file.type.startsWith('AssetBundle/')"
             :style="detailTab === 'counts' ? { fontWeight: 'bold', textDecoration: 'underline' } : {}"
-            style="font-family:monospace; font-size:1.25rem; margin-right:4px; cursor:pointer;">Object Counts</button>
+            style="font-family:monospace; margin-right:4px; cursor:pointer;">Object Counts</button>
           <button @click="detailTab = 'containers'"
             x-show="current.file.type.startsWith('AssetBundle/')"
             :style="detailTab === 'containers' ? { fontWeight: 'bold', textDecoration: 'underline' } : {}"
-            style="font-family:monospace; font-size:1.25rem; margin-right:4px; cursor:pointer;">Containers</button>
+            style="font-family:monospace; margin-right:4px; cursor:pointer;">Containers</button>
         </div>
         <!-- Info tab -->
         <template x-if="detailTab === 'info'">
@@ -543,7 +630,9 @@
             <div x-data="fileLoader({url: base + '/cache/' + current.file.name})">
               <p x-show="loading">Loading file...</p>
               <p x-show="error" x-text="error" style="color:red"></p>
-              <pre x-show="content && !loading"><code class="hljs" style="font-size:1.25rem; max-height:400px;" x-text="content"></code></pre>
+              <div x-show="content && !loading">
+                <pre><code class="hljs" style="font-size:1.25rem; max-height:400px;" x-text="content"></code></pre>
+              </div>
             </div>
           </template>
           <!-- Preview asset bundle -->
@@ -562,10 +651,6 @@
                     x-show="content?.bundle.unpacked_assets > 0"
                     :style="bundleTab === 'files' ? { fontWeight: 'bold', textDecoration: 'underline' } : {}"
                     style="font-family:monospace; font-size:1.25rem; margin-right:4px; cursor:pointer;">Files</button>
-                  <button @click="bundleTab = 'scene'"
-                    x-show="content?.bundle.scene.length > 0 && content?.bundle.counts.types.MeshFilter > 0"
-                    :style="bundleTab === 'scene' ? { fontWeight: 'bold', textDecoration: 'underline' } : {}"
-                    style="font-family:monospace; font-size:1.25rem; margin-right:4px; cursor:pointer;">Scene</button>
                 </div>
                 <!-- Summary -->
                 <template x-if="bundleTab === 'summary'">
@@ -577,6 +662,11 @@
                     <p x-show="loading">Loading archive...</p>
                     <p x-show="error" x-text="error" style="color:red"></p>
                     <div x-show="!loading && !error">
+                      <!-- Scene -->
+                      <div x-show="content?.bundle.scene.length > 0 && content?.bundle.counts.types.MeshFilter > 0">
+                        <h3>Scene</h3>
+                        <div x-data="threeViewer(files.models)"></div>
+                      </div>
                       <!-- Audio files -->
                       <div x-show="files.audio.length > 0" style="margin-top:16px;">
                         <h3>Audio</h3>
@@ -643,10 +733,6 @@
                     </div>
                   </div>
                 </template>
-                <!-- Scene -->
-                <template x-if="bundleTab === 'scene'">
-                  <div></div>
-                </template>
               </div>
             </div>
           </template>
@@ -659,6 +745,5 @@
 <h2>Notice</h2>
 
 <p>
-  This site and its contents are intended strictly to be used for non-commercial, personal, and educational purposes only.
-  To analyze individual files in detail, you must have your own copy.
+  This website and its contents are intended strictly to be used for non-commercial, personal, and educational purposes only.
 </p>
