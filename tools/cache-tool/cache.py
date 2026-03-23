@@ -94,7 +94,7 @@ class UnitySceneParser:
             node["file"] = os.path.basename(path)
         if components := self._get_components(game_object):
             node["components"] = components
-            if any(c["type"] in VISUAL_TYPES for c in components):
+            if self._is_nonzero_transform(tr):
                 node["transform"] = {
                     "position": {
                         "x": tr.m_LocalPosition.x,
@@ -122,6 +122,22 @@ class UnitySceneParser:
             node["children"] = children
         return node
 
+    def _is_nonzero_transform(self, tr):
+        return any(
+            [
+                tr.m_LocalPosition.x,
+                tr.m_LocalPosition.y,
+                tr.m_LocalPosition.z,
+                tr.m_LocalRotation.x,
+                tr.m_LocalRotation.y,
+                tr.m_LocalRotation.z,
+                tr.m_LocalRotation.w,
+                tr.m_LocalScale.x,
+                tr.m_LocalScale.y,
+                tr.m_LocalScale.z,
+            ]
+        )
+
     def _has_visual_components(self, game_object):
         for _, comp in game_object.m_Component:
             comp_obj = self.object_dict.get(comp.m_PathID)
@@ -133,6 +149,8 @@ class UnitySceneParser:
         components = []
         for _, comp in game_object.m_Component:
             comp_obj = self.object_dict.get(comp.m_PathID)
+            if comp_obj.type.name == "GameObject" or comp_obj.type.name == "Transform":
+                continue
             component = {"type": comp_obj.type.name}
             if comp_obj.type.name == "AudioSource":
                 data = comp_obj.parse_as_object()
