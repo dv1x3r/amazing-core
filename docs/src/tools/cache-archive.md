@@ -1,5 +1,10 @@
 # Cache Archive
 
+Amazing World used Unity Streaming Assets, meaning things like images, audio, and asset bundles were stored on official servers and loaded by the game whenever they were needed.
+These files were also cached locally. Below is a list of known assets that have been found and shared by members of the community.
+
+<br>
+
 <script src="//unpkg.com/alpinejs" defer></script>
 <script src="//unpkg.com/jszip@3.10.1/dist/jszip.min.js"></script>
 
@@ -352,8 +357,9 @@
     }
   }
 
-  function threeViewer(models) {
+  function threeViewer() {
     return {
+      _scene: null,
       _renderer: null,
       _controls: null,
       _resizeObserver: null,
@@ -367,13 +373,14 @@
 
         const scene = new THREE.Scene()
         scene.background = new THREE.Color(0x333333)
+        this._scene = scene
 
-        var grid = new THREE.GridHelper(100, 10);
+        var grid = new THREE.GridHelper(100, 100);
         scene.add(grid);
 
         const camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000)
-        camera.position.y = 2.5
-        camera.position.z = 5
+        camera.position.y = 0.8
+        camera.position.z = 1
 
         const renderer = new THREE.WebGLRenderer({ antialias: true })
         renderer.setPixelRatio(window.devicePixelRatio)
@@ -384,14 +391,15 @@
 
         const controls = new OrbitControls(camera, renderer.domElement)
         controls.enableDamping = true
-        controls.autoRotateSpeed = 1
-        controls.autoRotate = true
+        //controls.autoRotate = true
+        //controls.autoRotateSpeed = 1
+        //controls.listenToKeyEvents(window)
         this._controls = controls
 
-        const geometry = new THREE.BoxGeometry(1, 1, 1)
-        const material = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true })
-        const cube = new THREE.Mesh(geometry, material)
-        scene.add(cube)
+        //const geometry = new THREE.BoxGeometry(1, 1, 1)
+        //const material = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true })
+        //const cube = new THREE.Mesh(geometry, material)
+        //scene.add(cube)
 
         const light = new THREE.AmbientLight(0xffffff, 0.8)
         scene.add(light)
@@ -415,6 +423,7 @@
         }
 
         renderer.setAnimationLoop(render)
+        this.$watch('files', async () => await this.load())
       },
 
       destroy() {
@@ -424,11 +433,111 @@
         this._renderer?.domElement.remove()
         this._renderer?.dispose()
       },
+
+      async load() {
+        const meshMap = {}
+        for (const model of this.files.models) {
+          const id = parseInt(model.name.split('.')[0])
+          meshMap[id] = model.url
+        }
+
+        const textureMap = {}
+        for (const image of this.files.images) {
+          const id = parseInt(image.name.split('.')[0])
+          textureMap[id] = image.url
+        }
+
+        const textureNameMap = {}
+        for (const image of this.files.images) {
+          const name = image.name.toLowerCase()
+          textureNameMap[name] = image.url
+        }
+
+        //console.log('models', meshMap)
+        //console.log('images', textureMap)
+        //console.log('scene', this.content.bundle.scene)
+
+        const results = []
+
+        const walkNode = (node, parentMatrix) => {
+          console.log('walkNode', node.name)
+
+          let worldMatrix = parentMatrix
+          if (node.transform) {
+            const tr = node.transform
+            const localMatrix = new THREE.Matrix4().compose(
+              new THREE.Vector3(tr.position.x, tr.position.y, -tr.position.z),
+              new THREE.Quaternion(tr.rotation.x, -tr.rotation.y, -tr.rotation.z, tr.rotation.w),
+              new THREE.Vector3(tr.scale.x, tr.scale.y, tr.scale.z)
+            )
+            worldMatrix = parentMatrix ? parentMatrix.clone().multiply(localMatrix) : localMatrix
+            // center single object
+            if (this.files.models.length == 1) {
+              worldMatrix = localMatrix
+            }
+          }
+
+          for (const comp of node.components ?? []) {
+            if (comp.type === 'MeshFilter' || comp.type === 'SkinnedMeshRenderer') {
+              const mesh_url = meshMap[comp.mesh?.id]
+              if (!mesh_url) {
+                continue
+              }
+              const materials = comp.materials ?? node.components.find(c => c.type === 'MeshRenderer')?.materials ?? []
+              const texture_urls = materials.map(mat => {
+                const textureId = mat.textures?.[0]?.id
+                return textureId ? textureMap[textureId] : null
+              })
+              results.push({ name: node.name, mesh_url, texture_urls, worldMatrix })
+            }
+          }
+
+          for (const child of node.children ?? []) {
+            walkNode(child, worldMatrix)
+          }
+        }
+
+        for (const root of this.content.bundle.scene) {
+          walkNode(root, new THREE.Matrix4())
+        }
+
+        for (const result of results) {
+          const loader = new OBJLoader()
+          const object = await loader.loadAsync(result.mesh_url)
+          const textures = await Promise.all(
+            result.texture_urls.map(url => url ? new THREE.TextureLoader().loadAsync(url) : Promise.resolve(null))
+          )
+
+          let meshIndex = 0
+          object.traverse(child => {
+            if (!child.isMesh) {
+              return
+            }
+            const texture = textures[meshIndex++]
+            child.material = new THREE.MeshBasicMaterial({
+              map: texture ?? null,
+              transparent: true,
+              side: THREE.DoubleSide,
+            })
+            if (texture) {
+              texture.wrapS = THREE.RepeatWrapping
+              texture.wrapT = THREE.RepeatWrapping
+            }
+          })
+
+          if (result.worldMatrix) {
+            object.applyMatrix4(result.worldMatrix)
+          }
+
+          this._scene.add(object)
+        }
+
+      },
     }
   }
 </script>
 
-<div x-data="cacheList()">
+<div id="cache-archive" x-data="cacheList()" @keydown.stop @keyup.stop @keypress.stop>
   <p x-show="loading">Loading cache list...</p>
   <p x-show="error" x-text="error" style="color:red"></p>
   <div x-show="!loading && !error">
@@ -437,7 +546,7 @@
       <div>
         <div style="margin-bottom:8px;">
           <input type="text" x-model="search"
-            @input="page=1, _refilter()" @keydown.stop=""
+            @input="page=1, _refilter()"
             placeholder="Search by name, type, oid or asset…"
             style="font-family:monospace; padding:3px 6px; width:300px;">
           <span style="margin-left:10px; font-size:1.25rem;" x-text="_filtered.length + ' items'"></span>
@@ -648,7 +757,7 @@
                     :style="bundleTab === 'summary' ? { fontWeight: 'bold', textDecoration: 'underline' } : {}"
                     style="font-family:monospace; font-size:1.25rem; margin-right:4px; cursor:pointer;">Summary</button>
                   <button @click="bundleTab = 'files'"
-                    x-show="content?.bundle.unpacked_assets > 0"
+                    x-show="content?.bundle.counts.types.Mesh > 0 || content?.bundle.counts.types.AudioClip > 0 || content?.bundle.counts.types.Texture2D > 0"
                     :style="bundleTab === 'files' ? { fontWeight: 'bold', textDecoration: 'underline' } : {}"
                     style="font-family:monospace; font-size:1.25rem; margin-right:4px; cursor:pointer;">Files</button>
                 </div>
@@ -663,9 +772,9 @@
                     <p x-show="error" x-text="error" style="color:red"></p>
                     <div x-show="!loading && !error">
                       <!-- Scene -->
-                      <div x-show="content?.bundle.scene.length > 0 && content?.bundle.counts.types.MeshFilter > 0">
+                      <div x-show="content?.bundle.scene.length > 0 && content?.bundle.counts.types.Mesh > 0">
                         <h3>Scene</h3>
-                        <div x-data="threeViewer(files.models)"></div>
+                        <div x-data="threeViewer()"></div>
                       </div>
                       <!-- Audio files -->
                       <div x-show="files.audio.length > 0" style="margin-top:16px;">
