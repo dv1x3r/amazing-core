@@ -369,7 +369,7 @@ These files were also cached locally. Below is a list of known assets that have 
         const container = this.$el
 
         const w = container.clientWidth || 400
-        const h = container.clientHeight || 300
+        const h = container.clientHeight || 400
 
         const scene = new THREE.Scene()
         scene.background = new THREE.Color(0x333333)
