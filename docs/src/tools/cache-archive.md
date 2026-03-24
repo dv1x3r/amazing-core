@@ -775,6 +775,9 @@ These files were also cached locally. Below is a list of known assets that have 
                       <div x-show="content?.bundle.scene.length > 0 && content?.bundle.counts.types.Mesh > 0">
                         <h3>Scene</h3>
                         <div x-data="threeViewer()"></div>
+                        <p style="font-size:1.25rem;">
+                          Drag to rotate, right-click drag to pan, scroll to zoom. Some assets may not be centered.
+                        </p>
                       </div>
                       <!-- Audio files -->
                       <div x-show="files.audio.length > 0" style="margin-top:16px;">
