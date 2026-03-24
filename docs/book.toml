@@ -14,5 +14,5 @@ enable = true
 level = 1
 
 [output.html.search.chapter]
-"tools/cache-archive.md" = { enable = false }
-"tools/gsfoid-calculator.md" = { enable = false }
+"cache-archive/README.md" = { enable = false }
+"gsfoid-calculator/README.md" = { enable = false }

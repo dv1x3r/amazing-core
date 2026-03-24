@@ -1,8 +1,8 @@
 # Summary
 
 [Home Page](./README.md)
-[Cache Archive](./tools/cache-archive.md)
-[GSFOID Calculator](./tools/gsfoid-calculator.md)
+[Cache Archive](./cache-archive/README.md)
+[GSFOID Calculator](./gsfoid-calculator/README.md)
 
 ---
 
