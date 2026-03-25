@@ -5,7 +5,10 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/game/messages"
 	"github.com/dv1x3r/amazing-core/internal/game/types"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
+	"github.com/dv1x3r/amazing-core/internal/services/asset"
 )
+
+var AssetService *asset.Service
 
 /*
 GetClientVersionInfo returns the server version for a specific client.
@@ -157,6 +160,7 @@ Returns:
   - LoginResponse object.
 */
 func Login(w gsf.ResponseWriter, r *gsf.Request) error {
+	ctx := r.Context()
 	req := &messages.LoginRequest{}
 	if err := r.Read(req); err != nil {
 		return err
@@ -167,20 +171,19 @@ func Login(w gsf.ResponseWriter, r *gsf.Request) error {
 	// base url for downloadable assets
 	res.AssetDeliveryURL = config.Get().Settings.AssetDeliveryURL
 
-	// to pass AvatarAssembler.HandleBaseLoaded
-	// !(item.resName == "PF__Avatar.unity3d")
-	res.Player.ActivePlayerAvatar.Avatar.AssetMap = map[string][]types.Asset{
+	// CAB-cows007
+	cow, err := AssetService.GetGSFAssetByCDNID(ctx, "OTQ0NDE2MzMyMTg3MA")
+	if err != nil {
+		return err
+	}
+
+	activeAvatarAssetMap := map[string][]types.Asset{
 		"Prefab_Unity3D": {
-			{
-				OID:           types.OID{},
-				AssetTypeName: "asset_type",
-				CDNID:         "Player_Avatar.unity3d",
-				ResName:       "Player_Avatar.unity3d",
-				GroupName:     "asset_group",
-				FileSize:      59109,
-			},
+			cow,
 		},
 	}
+
+	res.Player.ActivePlayerAvatar.Avatar.AssetMap = activeAvatarAssetMap
 
 	return w.Write(res)
 }
@@ -223,6 +226,7 @@ Returns:
   - AssetDeliveryURL string.
 */
 func GetSiteFrame(w gsf.ResponseWriter, r *gsf.Request) error {
+	ctx := r.Context()
 	req := &messages.GetSiteFrameRequest{}
 	if err := r.Read(req); err != nil {
 		return err
@@ -230,42 +234,40 @@ func GetSiteFrame(w gsf.ResponseWriter, r *gsf.Request) error {
 
 	res := &messages.GetSiteFrameResponse{}
 
-	// base url for downloadable assets (site_frame)
-	res.AssetDeliveryURL = config.Get().Settings.AssetDeliveryURL // + cdn.cdn_id
+	// base url for downloadable assets (site_frame) + cdn.cdn_id
+	res.AssetDeliveryURL = config.Get().Settings.AssetDeliveryURL
+
+	// Player_Base.unity3d
+	playerBase, err := AssetService.GetGSFAssetByCDNID(ctx, "OTU2NTAzNTgyMzExOA")
+	if err != nil {
+		return err
+	}
+
+	// PlayerCamera.unity3d
+	playerCamera, err := AssetService.GetGSFAssetByCDNID(ctx, "OTQyNDc5ODIyMDMwMg")
+	if err != nil {
+		return err
+	}
+
+	// ShadersList.unity3d
+	shadersList, err := AssetService.GetGSFAssetByCDNID(ctx, "OTYyNDQwNDA5OTA4Ng")
+	if err != nil {
+		return err
+	}
 
 	res.SiteFrame.AssetMap = map[string][]types.Asset{
 		"Config_Text":           {}, // DressAvatarManager.cs -> LoadSlotIds -> ClientManager.Instance.configList
 		"Preload_PrefabUnity3D": {}, // OutdoorMazeLoader.cs -> LoadPreloadAssetsCommand() -> preloadList
 		"Audio":                 {}, // OutdoorMazeLoader.cs -> LoadPreloadAssetsCommand() -> audioClipList
 		// this is used to load hardcoded assets (instead of using Resources.Load())
-		"Amazing_Core": {
+		// "Amazing_Core": {
+		"Prefab_Unity3D": {
 			// LoadLoginScene.cs -> LoadAvatar -> DownloadManager.LoadAsset("Player_Base.unity3d")
-			{
-				OID:           types.OID{},
-				AssetTypeName: "asset_type",
-				CDNID:         "OTU2NTAzNTgyMzExOA",
-				ResName:       "Player_Base.unity3d",
-				GroupName:     "asset_group",
-				FileSize:      565066,
-			},
+			playerBase,
 			// OutdoorMazeLoader.cs -> LoadSharedPrefabsCommand -> DownloadManager.LoadAsset("PlayerCamera.unity3d")
-			{
-				OID:           types.OID{},
-				AssetTypeName: "asset_type",
-				CDNID:         "OTQyNDc5ODIyMDMwMg",
-				ResName:       "PlayerCamera.unity3d",
-				GroupName:     "asset_group",
-				FileSize:      1878,
-			},
+			playerCamera,
 			// ClientManager.cs -> LoadPreloadAssetsCommand -> DownloadManager.LoadAsset("ShadersList.unity3d")
-			{
-				OID:           types.OID{},
-				AssetTypeName: "asset_type",
-				CDNID:         "OTYyNDQwNDA5OTA4Ng",
-				ResName:       "ShadersList.unity3d",
-				GroupName:     "asset_group",
-				FileSize:      91142,
-			},
+			shadersList,
 		},
 	}
 
@@ -305,29 +307,10 @@ func GetAvatars(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
-
 	res := &messages.GetAvatarsResponse{}
-
-	// activePlayerAvatar should be in AvatarManager.Instance.GSFPlayerAvatars: LoadAvatarsCommand.cs -> Step2()
-	// PlayerAvatar.Avatar.assetmap = {'Prefab_Unity3D': [Asset(Player_Avatar.unity3d)\]}
-	// !(item.resName == "PF__Avatar.unity3d"
-
 	avatar := types.Avatar{}
-	avatar.AssetMap = map[string][]types.Asset{
-		"Prefab_Unity3D": {
-			{
-				OID:           types.OID{},
-				AssetTypeName: "asset_type",
-				CDNID:         "Player_Avatar.unity3d",
-				ResName:       "Player_Avatar.unity3d",
-				GroupName:     "asset_group",
-				FileSize:      59109,
-			},
-		},
-	}
-
+	avatar.AssetMap = map[string][]types.Asset{}
 	res.Avatars = []types.PlayerAvatar{{Avatar: avatar}}
-
 	return w.Write(res)
 }
 
@@ -391,6 +374,7 @@ Returns:
   - Village object.
 */
 func InitLocation(w gsf.ResponseWriter, r *gsf.Request) error {
+	ctx := r.Context()
 	req := &messages.InitLocationRequest{}
 	if err := r.Read(req); err != nil {
 		return err
@@ -401,19 +385,29 @@ func InitLocation(w gsf.ResponseWriter, r *gsf.Request) error {
 	res.SyncServerIP = config.Get().Settings.SyncServerIP
 	res.SyncServerPort = int32(config.Get().Settings.SyncServerPort)
 
+	// ResName:       "Springtime003.unity3d",
+	scene, err := AssetService.GetGSFAssetByCDNID(ctx, "OTYwOTUyODk5OTk1MA")
+	if err != nil {
+		return err
+	}
+
+	// ResName:       "HomeLotSmall.unity3d",
+	_, err = AssetService.GetGSFAssetByCDNID(ctx, "OTYxMTQ4NDU5NDE5MA")
+	if err != nil {
+		return err
+	}
+
+	// ResName:       "HomeLot_Winter.unity3d",
+	scene, err = AssetService.GetGSFAssetByCDNID(ctx, "OTQ1MDc3NTY0MjEyNg")
+	if err != nil {
+		return err
+	}
+
 	// LoadMazeCommand.cs -> LoadMainScene() -> AssetDownloadManager.cs -> LoadMainScene()
 	homeTheme := types.AssetContainer{
 		AssetMap: map[string][]types.Asset{
 			"Scene_Unity3D": {
-				{
-					OID:           types.OID{},
-					AssetTypeName: "asset_type",
-					CDNID:         "non_existing_cdn_id",
-					ResName:       "Springtime003.unity3d",
-					// ResName:       "HomeLotSmall.unity3d",
-					GroupName: "Main_Scene",
-					FileSize:  0,
-				},
+				scene,
 			},
 		},
 	}

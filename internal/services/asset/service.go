@@ -3,6 +3,7 @@ package asset
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log/slog"
 	"net/url"
 
@@ -12,6 +13,8 @@ import (
 	"github.com/dv1x3r/w2go/w2"
 	"github.com/dv1x3r/w2go/w2db"
 	"github.com/dv1x3r/w2go/w2sql"
+
+	gsftypes "github.com/dv1x3r/amazing-core/internal/game/types"
 
 	"github.com/dustin/go-humanize"
 	"github.com/huandu/go-sqlbuilder"
@@ -221,4 +224,27 @@ func (s *Service) GetAssetGroupDropdownRecords(ctx context.Context, req w2.GetDr
 		Flavor:       sqlbuilder.SQLite,
 	})
 	return res, wrap.IfErr(op, err)
+}
+
+func (s *Service) GetGSFAssetByCDNID(ctx context.Context, cdnid string) (gsftypes.Asset, error) {
+	const op = "asset.Service.GetGSFAssetByCDNID"
+	a := gsftypes.Asset{}
+	row := s.store.DB().QueryRow(`
+			select
+				a.gsfoid,
+				coalesce(at.name, 'Undefined') as asset_type,
+				a.cdnid,
+				a.res_name,
+				coalesce(ag.name, 'Undefined') as asset_group,
+				a.size
+			from asset as a
+			left join asset_type as at on at.id = a.asset_type_id
+			left join asset_group as ag on ag.id = a.asset_group_id
+			where a.cdnid = ?;
+		`, cdnid)
+	err := row.Scan(&a.OID, &a.AssetTypeName, &a.CDNID, &a.ResName, &a.GroupName, &a.FileSize)
+	if err != nil {
+		return a, wrap.IfErr(op, fmt.Errorf("cdnid %s: %w", cdnid, err))
+	}
+	return a, nil
 }
