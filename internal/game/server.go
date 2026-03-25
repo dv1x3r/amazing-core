@@ -14,6 +14,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/bitprotocol"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
 	"github.com/dv1x3r/amazing-core/internal/network/middleware"
+	"github.com/dv1x3r/amazing-core/internal/services/asset"
 	"github.com/dv1x3r/amazing-core/internal/services/randname"
 )
 
@@ -24,6 +25,7 @@ type Server struct {
 
 func NewServer(
 	logger *slog.Logger,
+	assetService *asset.Service,
 	randnameService *randname.Service,
 ) *Server {
 	router := gsf.NewRouter()
@@ -32,6 +34,8 @@ func NewServer(
 		middleware.Logger(logger),
 		middleware.Recover(),
 	)
+
+	dummy.AssetService = assetService
 
 	randnameHandler := randname.NewGSFHandler(randnameService)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_RANDOM_NAMES), randnameHandler.GetRandomNames)
