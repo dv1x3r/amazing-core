@@ -84,3 +84,7 @@
     - [Village](./documentation/gsf-classes/types/village.md)
     - [Zone](./documentation/gsf-classes/types/zone.md)
     - [ZoneInstance](./documentation/gsf-classes/types/zone-instance.md)
+
+---
+
+[This website and its contents are intended strictly to be used for non-commercial, personal, and educational purposes only.]()
