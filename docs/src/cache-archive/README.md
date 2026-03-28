@@ -105,6 +105,13 @@ These files were also cached locally. Below is a list of known assets that have 
         return {name: shortest.name, platform: shortest.target_platform || ''}
       },
 
+      sceneFlag(item) {
+        if (item.bundle && item.bundle.roots.length > 0 && item.bundle.counts.types.Mesh > 0) {
+          return '✅'
+        }
+        return ''
+      },
+
       selectItem(idx) {
         this._selected = idx
         this.view = 'detail'
@@ -379,8 +386,7 @@ These files were also cached locally. Below is a list of known assets that have 
         scene.add(grid);
 
         const camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000)
-        camera.position.y = 0.8
-        camera.position.z = 1
+        camera.position.set(0.50, 0.70, 0.70)
 
         const renderer = new THREE.WebGLRenderer({ antialias: true })
         renderer.setPixelRatio(window.devicePixelRatio)
@@ -391,6 +397,7 @@ These files were also cached locally. Below is a list of known assets that have 
 
         const controls = new OrbitControls(camera, renderer.domElement)
         controls.enableDamping = true
+        controls.target.set(0, 0.2, 0)
         //controls.autoRotate = true
         //controls.autoRotateSpeed = 1
         //controls.listenToKeyEvents(window)
@@ -423,32 +430,57 @@ These files were also cached locally. Below is a list of known assets that have 
         }
 
         renderer.setAnimationLoop(render)
-        this.$watch('files', async () => await this.load())
       },
 
       destroy() {
-        this._resizeObserver?.disconnect()
-        this._controls?.dispose()
+        // 1. Stop animation loop first
         this._renderer?.setAnimationLoop(null)
-        this._renderer?.domElement.remove()
+
+        // 2. Dispose all scene objects
+        this._scene?.traverse(obj => {
+          if (!obj.isMesh) return
+
+          obj.geometry?.dispose()
+
+          const mats = Array.isArray(obj.material) ? obj.material : [obj.material]
+          mats.forEach(mat => {
+            Object.values(mat).forEach(val => val?.isTexture && val.dispose())
+            mat.dispose()
+          })
+        })
+
+        // 3. Clear scene graph
+        this._scene?.clear()
+
+        // 4. Dispose controls and renderer
+        this._controls?.dispose()
         this._renderer?.dispose()
+
+        // 5. Disconnect resize observer
+        this._resizeObserver?.disconnect()
       },
 
-      async load() {
+      async load(files, content) {
+        if (!files?.models?.length) return
+
         const meshMap = {}
-        for (const model of this.files.models) {
+        for (const model of files.models) {
+          // do not render ugly white colliders
+          if (model.name.includes('.COLLIDER')) {
+            continue
+          }
           const id = parseInt(model.name.split('.')[0])
           meshMap[id] = model.url
         }
 
         const textureMap = {}
-        for (const image of this.files.images) {
+        for (const image of files.images) {
           const id = parseInt(image.name.split('.')[0])
           textureMap[id] = image.url
         }
 
         const textureNameMap = {}
-        for (const image of this.files.images) {
+        for (const image of files.images) {
           const name = image.name.toLowerCase()
           textureNameMap[name] = image.url
         }
@@ -497,8 +529,8 @@ These files were also cached locally. Below is a list of known assets that have 
           }
         }
 
-        for (const root of this.content.bundle.scene) {
-          walkNode(root, new THREE.Matrix4(), this.content.bundle.scene.length)
+        for (const root of content.bundle.scene) {
+          walkNode(root, new THREE.Matrix4(), content.bundle.scene.length)
         }
 
         for (const result of results) {
@@ -560,9 +592,10 @@ These files were also cached locally. Below is a list of known assets that have 
               <th style="width:20%; text-align:left; padding:4px 8px; cursor:pointer;"
                 @click="toggleListSort('type')">Type<span x-text="listSortIndicator('type')"></span>
               </th>
-              <th style="width:45%; text-align:left; padding:4px 8px; cursor:pointer;"
+              <th style="width:40%; text-align:left; padding:4px 8px; cursor:pointer;"
                 @click="toggleListSort('asset')">Asset<span x-text="listSortIndicator('asset')"></span>
               </th>
+              <th style="width:5%; text-align:left; padding:4px 8px;">3D</th>
               <th style="width:10%; text-align:right; padding:4px 8px; cursor:pointer;"
                 @click="toggleListSort('size')">Size<span x-text="listSortIndicator('size')"></span>
               </th>
@@ -579,6 +612,9 @@ These files were also cached locally. Below is a list of known assets that have 
                   <span style="color:#888; font-size:0.85em;"
                     x-show="shortestAsset(entry.item).platform"
                     x-text="' (' + shortestAsset(entry.item).platform + ')'"></span>
+                </td>
+                <td style="padding:3px 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                  <span x-text="sceneFlag(entry.item)"></span>
                 </td>
                 <td style="padding:3px 8px; text-align:right; white-space:nowrap;" x-text="formatSize(entry.item.file.size)"></td>
               </tr>
@@ -607,24 +643,30 @@ These files were also cached locally. Below is a list of known assets that have 
     </template>
     <!-- Detail View -->
     <template x-if="view === 'detail' && current">
-      <div>
+      <div x-data="fileLoader({url: base + '/unpacked/' + current.file.name + '.json', type: 'json'})">
         <!-- Tabs -->
         <div style="font-size:1.25rem; margin-bottom:10px;">
           <button @click="goBack()"
             style="font-family:monospace; margin-right:4px; cursor:pointer;">&#8592; Back</button>
           <button @click="detailTab = 'info'"
-            x-show="current.file.type.startsWith('AssetBundle/')"
             :style="detailTab === 'info' ? { fontWeight: 'bold', textDecoration: 'underline' } : {}"
             style="font-family:monospace; margin-right:4px; cursor:pointer;">Info</button>
           <button @click="detailTab = 'counts'"
             x-show="current.file.type.startsWith('AssetBundle/')"
             :style="detailTab === 'counts' ? { fontWeight: 'bold', textDecoration: 'underline' } : {}"
-            style="font-family:monospace; margin-right:4px; cursor:pointer;">Object Counts</button>
+            style="font-family:monospace; margin-right:4px; cursor:pointer;">Counts</button>
           <button @click="detailTab = 'containers'"
             x-show="current.file.type.startsWith('AssetBundle/')"
             :style="detailTab === 'containers' ? { fontWeight: 'bold', textDecoration: 'underline' } : {}"
             style="font-family:monospace; margin-right:4px; cursor:pointer;">Containers</button>
+          <button @click="detailTab = 'json'"
+            :style="detailTab === 'json' ? { fontWeight: 'bold', textDecoration: 'underline' } : {}"
+            style="font-family:monospace; margin-right:4px; cursor:pointer;">
+            <span x-show="!loading && !error">JSON</span>
+            <span x-show="loading">Loading JSON...</span>
+          </button>
         </div>
+        <p x-show="error" x-text="error" style="color:red"></p>
         <!-- Info tab -->
         <template x-if="detailTab === 'info'">
           <div>
@@ -647,6 +689,12 @@ These files were also cached locally. Below is a list of known assets that have 
                 </tr>
               </tbody>
             </table>
+          </div>
+        </template>
+        <!-- json tab -->
+        <template x-if="detailTab === 'json'">
+          <div>
+            <pre><code class="hljs" style="font-size:1.25rem; max-height:400px;" x-text="JSON.stringify(content, null, 2)"></code></pre>
           </div>
         </template>
         <!-- Object Counts tab -->
@@ -746,105 +794,81 @@ These files were also cached locally. Below is a list of known assets that have 
           </template>
           <!-- Preview asset bundle -->
           <template x-if="current.file.type.startsWith('AssetBundle/')">
-            <div x-data="fileLoader({url: base + '/unpacked/' + current.file.name + '.json', type: 'json'})">
-              <p x-show="loading">Loading summary...</p>
+            <div x-data="zipLoader({url: base + '/unpacked/' + current.file.name + '.zip'})">
+              <p x-show="loading">Loading archive...</p>
               <p x-show="error" x-text="error" style="color:red"></p>
-              <div x-data="{ bundleTab: 'summary' }" x-show="!loading && !error">
-                <!-- Tabs -->
-                <div style="margin-bottom:10px;">
-                  <button @click="bundleTab = 'summary'"
-                    x-show="current.file.type.startsWith('AssetBundle/')"
-                    :style="bundleTab === 'summary' ? { fontWeight: 'bold', textDecoration: 'underline' } : {}"
-                    style="font-family:monospace; font-size:1.25rem; margin-right:4px; cursor:pointer;">Summary</button>
-                  <button @click="bundleTab = 'files'"
-                    x-show="content?.bundle.counts.types.Mesh > 0 || content?.bundle.counts.types.AudioClip > 0 || content?.bundle.counts.types.Texture2D > 0"
-                    :style="bundleTab === 'files' ? { fontWeight: 'bold', textDecoration: 'underline' } : {}"
-                    style="font-family:monospace; font-size:1.25rem; margin-right:4px; cursor:pointer;">Files</button>
+              <div x-show="!loading && !error">
+                <!-- Scene -->
+                <div x-show="content?.bundle.scene.length > 0 && content?.bundle.counts.types.Mesh > 0">
+                  <h3>Scene</h3>
+                  <div x-data="threeViewer()" x-effect="if(files && content) load(files, content)"></div>
+                  <p style="font-size:1.25rem;">
+                    Drag to rotate, right-click drag to pan, scroll to zoom. Some assets may not be centered.
+                  </p>
                 </div>
-                <!-- Summary -->
-                <template x-if="bundleTab === 'summary'">
-                  <pre><code class="hljs" style="font-size:1.25rem; max-height:400px;" x-text="JSON.stringify(content, null, 2)"></code></pre>
-                </template>
-                <!-- Files -->
-                <template x-if="bundleTab === 'files'">
-                  <div x-data="zipLoader({url: base + '/unpacked/' + current.file.name + '.zip'})">
-                    <p x-show="loading">Loading archive...</p>
-                    <p x-show="error" x-text="error" style="color:red"></p>
-                    <div x-show="!loading && !error">
-                      <!-- Scene -->
-                      <div x-show="content?.bundle.scene.length > 0 && content?.bundle.counts.types.Mesh > 0">
-                        <h3>Scene</h3>
-                        <div x-data="threeViewer()"></div>
-                        <p style="font-size:1.25rem;">
-                          Drag to rotate, right-click drag to pan, scroll to zoom. Some assets may not be centered.
-                        </p>
-                      </div>
-                      <!-- Audio files -->
-                      <div x-show="files.audio.length > 0" style="margin-top:16px;">
-                        <h3>Audio</h3>
-                        <table style="width:100%; font-size:1.25rem; table-layout:fixed;">
-                          <thead>
-                            <tr>
-                              <th style="width:50%; text-align:left;">File</th>
-                              <th style="width:25%; text-align:left;">Duration</th>
-                              <th style="width:25%; text-align:left;">Controls</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <template x-for="aud in files.audio">
-                              <tr x-data="audioPlayer({url: aud.url})">
-                                <td x-text="aud.name"></td>
-                                <td x-text="duration"></td>
-                                <td>
-                                  <span x-show="loading">Loading...</span>
-                                  <span x-show="error" x-text="error" style="color:red;"></span>
-                                  <template x-if="!loading && !error">
-                                    <button @click="play()"
-                                      x-text="playing ? 'Stop' : 'Play'"
-                                      style="font-family:monospace; cursor:pointer;"></button>
-                                  </template>
-                                </td>
-                              </tr>
+                <!-- Audio files -->
+                <div x-show="files.audio.length > 0" style="margin-top:16px;">
+                  <h3>Audio</h3>
+                  <table style="width:100%; font-size:1.25rem; table-layout:fixed;">
+                    <thead>
+                      <tr>
+                        <th style="width:50%; text-align:left;">File</th>
+                        <th style="width:25%; text-align:left;">Duration</th>
+                        <th style="width:25%; text-align:left;">Controls</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <template x-for="aud in files.audio">
+                        <tr x-data="audioPlayer({url: aud.url})">
+                          <td x-text="aud.name"></td>
+                          <td x-text="duration"></td>
+                          <td>
+                            <span x-show="loading">Loading...</span>
+                            <span x-show="error" x-text="error" style="color:red;"></span>
+                            <template x-if="!loading && !error">
+                              <button @click="play()"
+                                x-text="playing ? 'Stop' : 'Play'"
+                                style="font-family:monospace; cursor:pointer;"></button>
                             </template>
-                          </tbody>
-                        </table>
-                      </div>
-                      <!-- Image files -->
-                      <div x-show="files.images.length > 0" style="margin-top:16px;">
-                        <h3>Images</h3>
-                        <table style="width:100%; font-size:1.25rem; table-layout:fixed;">
-                          <thead>
-                            <tr>
-                              <th style="width:50%; text-align:left;">File</th>
-                              <th style="width:50%; text-align:left;">Image</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <template x-for="img in files.images">
-                              <tr x-data="imageCanvas({url: img.url})">
-                                <td x-text="img.name"></td>
-                                <td>
-                                  <span x-show="loading">Loading...</span>
-                                  <span x-show="error" x-text="error" style="color:red;"></span>
-                                  <canvas x-show="!loading && !error" x-init="draw($el)"></canvas>
-                                </td>
-                              </tr>
-                            </template>
-                          </tbody>
-                        </table>
-                      </div>
-                      <!-- Model files -->
-                      <div x-show="files.models.length > 0" style="margin-top:16px;">
-                        <h3>Models</h3>
-                        <ul style="font-size:1.25rem;">
-                          <template x-for="mod in files.models">
-                            <li x-text="mod.name"></li>
-                          </template>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </template>
+                          </td>
+                        </tr>
+                      </template>
+                    </tbody>
+                  </table>
+                </div>
+                <!-- Image files -->
+                <div x-show="files.images.length > 0" style="margin-top:16px;">
+                  <h3>Images</h3>
+                  <table style="width:100%; font-size:1.25rem; table-layout:fixed;">
+                    <thead>
+                      <tr>
+                        <th style="width:50%; text-align:left;">File</th>
+                        <th style="width:50%; text-align:left;">Image</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <template x-for="img in files.images">
+                        <tr x-data="imageCanvas({url: img.url})">
+                          <td x-text="img.name"></td>
+                          <td>
+                            <span x-show="loading">Loading...</span>
+                            <span x-show="error" x-text="error" style="color:red;"></span>
+                            <canvas x-show="!loading && !error" x-init="draw($el)"></canvas>
+                          </td>
+                        </tr>
+                      </template>
+                    </tbody>
+                  </table>
+                </div>
+                <!-- Model files -->
+                <div x-show="files.models.length > 0" style="margin-top:16px;">
+                  <h3>Models</h3>
+                  <ul style="font-size:1.25rem;">
+                    <template x-for="mod in files.models">
+                      <li x-text="mod.name"></li>
+                    </template>
+                  </ul>
+                </div>
               </div>
             </div>
           </template>
@@ -853,9 +877,3 @@ These files were also cached locally. Below is a list of known assets that have 
     </template>
   </div>
 </div>
-
-<h2>Notice</h2>
-
-<p>
-  This website and its contents are intended strictly to be used for non-commercial, personal, and educational purposes only.
-</p>
