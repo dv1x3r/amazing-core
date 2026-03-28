@@ -459,22 +459,22 @@ These files were also cached locally. Below is a list of known assets that have 
 
         const results = []
 
-        const walkNode = (node, parentMatrix) => {
-          console.log('walkNode', node.name)
+        const walkNode = (node, parentMatrix, rootsLength) => {
+          //console.log('walkNode', node.name)
+          //console.log('rootsLength', rootsLength)
 
           let worldMatrix = parentMatrix
           if (node.transform) {
             const tr = node.transform
-            const localMatrix = new THREE.Matrix4().compose(
-              new THREE.Vector3(tr.position.x, tr.position.y, -tr.position.z),
-              new THREE.Quaternion(tr.rotation.x, -tr.rotation.y, -tr.rotation.z, tr.rotation.w),
-              new THREE.Vector3(tr.scale.x, tr.scale.y, tr.scale.z)
-            )
+            // some root objects are not centered, so we reset the position if scene has only one object
+            const isSingleRootNode = rootsLength !== undefined && rootsLength === 1
+            const position = isSingleRootNode
+              ? new THREE.Vector3(0, 0, 0)
+              : new THREE.Vector3(tr.position.x, tr.position.y, -tr.position.z)
+            const rotation = new THREE.Quaternion(tr.rotation.x, -tr.rotation.y, -tr.rotation.z, tr.rotation.w)
+            const scale = new THREE.Vector3(tr.scale.x, tr.scale.y, tr.scale.z)
+            const localMatrix = new THREE.Matrix4().compose(position, rotation, scale)
             worldMatrix = parentMatrix ? parentMatrix.clone().multiply(localMatrix) : localMatrix
-            // center single object
-            if (this.files.models.length == 1) {
-              worldMatrix = localMatrix
-            }
           }
 
           for (const comp of node.components ?? []) {
@@ -498,7 +498,7 @@ These files were also cached locally. Below is a list of known assets that have 
         }
 
         for (const root of this.content.bundle.scene) {
-          walkNode(root, new THREE.Matrix4())
+          walkNode(root, new THREE.Matrix4(), this.content.bundle.scene.length)
         }
 
         for (const result of results) {
