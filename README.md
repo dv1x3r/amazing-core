@@ -5,6 +5,8 @@ This project provides a modular, configurable framework with tools for server ma
 
 👉 Feel free to join our [Discord server!](https://discord.com/invite/TWfTBbfdA9)
 
+We also have a [website](https://amazingcore.org) with guides, docs and cache archive!
+
 ## ⚠️ Warning!
 
 Amazing Core is still in development and **not yet in a playable state** - _many_ message handlers currently return placeholder responses.
