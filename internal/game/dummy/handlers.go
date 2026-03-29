@@ -177,10 +177,9 @@ func Login(w gsf.ResponseWriter, r *gsf.Request) error {
 		return err
 	}
 
-	activeAvatarAssetMap := map[string][]types.Asset{
-		"Prefab_Unity3D": {
-			cow,
-		},
+	activeAvatarAssetMap := map[string][]types.Asset{}
+	activeAvatarAssetMap["Prefab_Unity3D"] = []types.Asset{
+		cow,
 	}
 
 	res.Player.ActivePlayerAvatar.Avatar.AssetMap = activeAvatarAssetMap
@@ -255,20 +254,25 @@ func GetSiteFrame(w gsf.ResponseWriter, r *gsf.Request) error {
 		return err
 	}
 
-	res.SiteFrame.AssetMap = map[string][]types.Asset{
-		"Config_Text":           {}, // DressAvatarManager.cs -> LoadSlotIds -> ClientManager.Instance.configList
-		"Preload_PrefabUnity3D": {}, // OutdoorMazeLoader.cs -> LoadPreloadAssetsCommand() -> preloadList
-		"Audio":                 {}, // OutdoorMazeLoader.cs -> LoadPreloadAssetsCommand() -> audioClipList
-		// this is used to load hardcoded assets (instead of using Resources.Load())
-		// "Amazing_Core": {
-		"Prefab_Unity3D": {
-			// LoadLoginScene.cs -> LoadAvatar -> DownloadManager.LoadAsset("Player_Base.unity3d")
-			playerBase,
-			// OutdoorMazeLoader.cs -> LoadSharedPrefabsCommand -> DownloadManager.LoadAsset("PlayerCamera.unity3d")
-			playerCamera,
-			// ClientManager.cs -> LoadPreloadAssetsCommand -> DownloadManager.LoadAsset("ShadersList.unity3d")
-			shadersList,
-		},
+	res.SiteFrame.AssetMap = map[string][]types.Asset{}
+
+	// DressAvatarManager.cs -> LoadSlotIds -> ClientManager.Instance.configList
+	res.SiteFrame.AssetMap["Config_Text"] = []types.Asset{}
+
+	// OutdoorMazeLoader.cs -> LoadPreloadAssetsCommand() -> preloadList
+	res.SiteFrame.AssetMap["Preload_PrefabUnity3D"] = []types.Asset{}
+
+	// OutdoorMazeLoader.cs -> LoadPreloadAssetsCommand() -> audioClipList
+	res.SiteFrame.AssetMap["Audio"] = []types.Asset{}
+
+	// this is used to load hardcoded assets (instead of using Resources.Load()) "Amazing_Core": {
+	res.SiteFrame.AssetMap["Prefab_Unity3D"] = []types.Asset{
+		// LoadLoginScene.cs -> LoadAvatar -> DownloadManager.LoadAsset("Player_Base.unity3d")
+		playerBase,
+		// OutdoorMazeLoader.cs -> LoadSharedPrefabsCommand -> DownloadManager.LoadAsset("PlayerCamera.unity3d")
+		playerCamera,
+		// ClientManager.cs -> LoadPreloadAssetsCommand -> DownloadManager.LoadAsset("ShadersList.unity3d")
+		shadersList,
 	}
 
 	return w.Write(res)
@@ -404,13 +408,9 @@ func InitLocation(w gsf.ResponseWriter, r *gsf.Request) error {
 	}
 
 	// LoadMazeCommand.cs -> LoadMainScene() -> AssetDownloadManager.cs -> LoadMainScene()
-	homeTheme := types.AssetContainer{
-		AssetMap: map[string][]types.Asset{
-			"Scene_Unity3D": {
-				scene,
-			},
-		},
-	}
+	homeTheme := types.AssetContainer{}
+	homeTheme.AssetMap = map[string][]types.Asset{}
+	homeTheme.AssetMap["Scene_Unity3D"] = []types.Asset{scene}
 
 	playerMaze := types.PlayerMaze{
 		Name:       "coremaze",
