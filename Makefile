@@ -74,3 +74,7 @@ docs:
 .PHONY: docs-run
 docs-run:
 	mdbook serve docs/ -p 8000
+
+.PHONY: docs-cache-serve
+docs-cache-serve:
+	bunx serve -l 8080 --cors data_db/
