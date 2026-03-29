@@ -586,17 +586,17 @@ These files were also cached locally. Below is a list of known assets that have 
         <table style="width:100%; font-size:1.25rem; table-layout:fixed;">
           <thead>
             <tr>
-              <th style="width:25%; text-align:left; padding:4px 8px; cursor:pointer;"
+              <th style="width:25%; text-align:left; padding:4px 8px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:1rem;"
                 @click="toggleListSort('name')">Name<span x-text="listSortIndicator('name')"></span>
               </th>
-              <th style="width:20%; text-align:left; padding:4px 8px; cursor:pointer;"
+              <th style="width:20%; text-align:left; padding:4px 8px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:1rem;"
                 @click="toggleListSort('type')">Type<span x-text="listSortIndicator('type')"></span>
               </th>
-              <th style="width:40%; text-align:left; padding:4px 8px; cursor:pointer;"
+              <th style="width:40%; text-align:left; padding:4px 8px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:1rem;"
                 @click="toggleListSort('asset')">Asset<span x-text="listSortIndicator('asset')"></span>
               </th>
-              <th style="width:5%; text-align:left; padding:4px 8px;">3D</th>
-              <th style="width:10%; text-align:right; padding:4px 8px; cursor:pointer;"
+              <th style="width:5%; text-align:left; padding:4px 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:1rem;">3D</th>
+              <th style="width:10%; text-align:right; padding:4px 8px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:1rem;"
                 @click="toggleListSort('size')">Size<span x-text="listSortIndicator('size')"></span>
               </th>
             </tr>
@@ -613,10 +613,9 @@ These files were also cached locally. Below is a list of known assets that have 
                     x-show="shortestAsset(entry.item).platform"
                     x-text="' (' + shortestAsset(entry.item).platform + ')'"></span>
                 </td>
-                <td style="padding:3px 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                  <span x-text="sceneFlag(entry.item)"></span>
-                </td>
-                <td style="padding:3px 8px; text-align:right; white-space:nowrap;" x-text="formatSize(entry.item.file.size)"></td>
+                <td style="padding:3px 8px; overflow:hidden; font-size:1rem;" x-text="sceneFlag(entry.item)"></td>
+                <td style="padding:3px 8px; text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:1rem;"
+                  x-text="formatSize(entry.item.file.size)"></td>
               </tr>
             </template>
             <tr x-show="listPaged.length === 0">
