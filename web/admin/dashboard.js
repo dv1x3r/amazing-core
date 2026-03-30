@@ -58,6 +58,15 @@ const dashboardSidebar = new w2sidebar({
             setDashboardWidget(module.createRandomNameGrid)
           },
         },
+        {
+          id: 'dummy-form',
+          text: 'Dummy Parameters',
+          icon: 'fa fa-person-digging',
+          onClick: async function() {
+            const module = await import('./widgets/dummy_form.js')
+            setDashboardWidget(module.createDummyForm)
+          },
+        },
       ]
     },
     {
@@ -127,18 +136,21 @@ const dashboardSidebar = new w2sidebar({
           type: 'button',
           id: 'website',
           icon: 'fa fa-globe',
+          tooltip: 'Website',
           onClick: () => window.open('https://amazingcore.org', '_blank')
         },
         {
           type: 'button',
           id: 'github',
           icon: 'fa-brands fa-github',
+          tooltip: 'GitHub',
           onClick: () => window.open('https://github.com/dv1x3r/amazing-core', '_blank'),
         },
         {
           type: 'button',
           id: 'discord',
           icon: 'fa-brands fa-discord',
+          tooltip: 'Discord',
           onClick: () => window.open('https://discord.gg/TWfTBbfdA9', '_blank'),
         },
       ],

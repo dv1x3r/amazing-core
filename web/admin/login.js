@@ -39,8 +39,26 @@ new w2toolbar({
   name: 'loginToolbar',
   box: '#login-toolbar',
   items: [
-    { type: 'button', id: 'website', icon: 'fa fa-globe', onClick: () => window.open('https://amazingcore.org', '_blank') },
-    { type: 'button', id: 'github', icon: 'fa-brands fa-github', onClick: () => window.open('https://github.com/dv1x3r/amazing-core', '_blank') },
-    { type: 'button', id: 'discord', icon: 'fa-brands fa-discord', onClick: () => window.open('https://discord.gg/TWfTBbfdA9', '_blank') },
+    {
+      type: 'button',
+      id: 'website',
+      icon: 'fa fa-globe',
+      tooltip: 'Website',
+      onClick: () => window.open('https://amazingcore.org', '_blank'),
+    },
+    {
+      type: 'button',
+      id: 'github',
+      icon: 'fa-brands fa-github',
+      tooltip: 'GitHub',
+      onClick: () => window.open('https://github.com/dv1x3r/amazing-core', '_blank'),
+    },
+    {
+      type: 'button',
+      id: 'discord',
+      icon: 'fa-brands fa-discord',
+      tooltip: 'Discord',
+      onClick: () => window.open('https://discord.gg/TWfTBbfdA9', '_blank'),
+    },
   ],
 })
