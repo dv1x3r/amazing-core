@@ -13,6 +13,7 @@ import (
 
 	"github.com/dv1x3r/amazing-core/internal/api"
 	"github.com/dv1x3r/amazing-core/internal/config"
+	"github.com/dv1x3r/amazing-core/internal/dummy"
 	"github.com/dv1x3r/amazing-core/internal/game"
 
 	"github.com/dv1x3r/amazing-core/internal/lib/db"
@@ -136,15 +137,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	authService := auth.NewService(cfg)
-	blobService := blob.NewService(logger.Get(), blobStore)
-	assetService := asset.NewService(logger.Get(), coreStore)
+	authService := auth.NewService(cfg.Secure.Session.Secure, cfg.Secure.Session.Key, cfg.Secure.Auth.Username, cfg.Secure.Auth.Password)
+	dummyService := dummy.NewService(coreStore)
+	blobService := blob.NewService(logger.Get(), blobStore, cfg.Settings.AssetDeliveryURL)
+	assetService := asset.NewService(logger.Get(), coreStore, cfg.Settings.AssetDeliveryURL)
 	randnameService := randname.NewService(coreStore)
 
 	apiServer := api.NewServer(
 		coreStore.DB(),
 		logger.Get(),
 		authService,
+		dummyService,
 		blobService,
 		assetService,
 		randnameService,

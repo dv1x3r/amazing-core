@@ -12,7 +12,6 @@ import (
 	"mime/multipart"
 	"net/url"
 
-	"github.com/dv1x3r/amazing-core/internal/config"
 	"github.com/dv1x3r/amazing-core/internal/lib/db"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/w2go/w2"
@@ -37,14 +36,16 @@ type AssetFile struct {
 }
 
 type Service struct {
-	logger *slog.Logger
-	store  db.Store
+	logger      *slog.Logger
+	store       db.Store
+	deliveryURL string
 }
 
-func NewService(logger *slog.Logger, store db.Store) *Service {
+func NewService(logger *slog.Logger, store db.Store, deliveryURL string) *Service {
 	return &Service{
-		logger: logger,
-		store:  store,
+		logger:      logger,
+		store:       store,
+		deliveryURL: deliveryURL,
 	}
 }
 
@@ -66,7 +67,6 @@ func (s *Service) FetchFileBlob(ctx context.Context, cdnid string) ([]byte, erro
 
 func (s *Service) FetchFilesList(ctx context.Context, req w2.GetGridRequest) (w2.GetGridResponse[AssetFile], error) {
 	const op = "blob.Service.FetchFilesList"
-	assetDeliveryURL := config.Get().Settings.AssetDeliveryURL
 	res, err := w2db.GetGridContext(ctx, s.store.DB(), req, w2db.GetGridOptions[AssetFile]{
 		From: "asset_file",
 		Select: []string{
@@ -100,7 +100,7 @@ func (s *Service) FetchFilesList(ctx context.Context, req w2.GetGridRequest) (w2
 				return record, err
 			}
 			record.SizeStr = humanize.Bytes(uint64(record.Size))
-			record.URL, _ = url.JoinPath(assetDeliveryURL, record.CDNID)
+			record.URL, _ = url.JoinPath(s.deliveryURL, record.CDNID)
 			return record, nil
 		},
 	})

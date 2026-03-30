@@ -82,8 +82,11 @@ Game server message routing:
 - Key subfolders and files:
   - `types/` — game domain object types and enums, used within messages
   - `messages/` — game domain message types that implement client-server interaction, may reference `types/`
-  - `dummy/` — placeholder handlers returning mock responses; used during development until real implementations are complete
 - Do not modify existing message structures unless verified in client code or explicitly instructed.
+
+### internal/dummy/
+
+Placeholder handlers returning mock responses; used during development until real implementations are complete.
 
 ### internal/network/
 

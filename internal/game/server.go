@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"net"
 
-	"github.com/dv1x3r/amazing-core/internal/game/dummy"
+	"github.com/dv1x3r/amazing-core/internal/dummy"
 	"github.com/dv1x3r/amazing-core/internal/game/types/serviceclass"
 	"github.com/dv1x3r/amazing-core/internal/game/types/syncmessagetype"
 	"github.com/dv1x3r/amazing-core/internal/game/types/usermessagetype"

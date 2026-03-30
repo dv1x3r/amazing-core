@@ -3,8 +3,8 @@ import { w2form } from '/lib/w2ui.es6.min.js'
 export function createDummyForm() {
   return new w2form({
     name: `dummyForm`,
-    url: '/dummy',
-    header: 'Dummy Parameters',
+    url: '/api/v1/dummy/form',
+    header: 'Dummy Config',
     recid: 1,
     toolbar: {
       items: [
@@ -13,7 +13,9 @@ export function createDummyForm() {
           type: 'button',
           text: 'Save',
           icon: 'fa fa-floppy-disk',
-          onClick: event => event.owner.owner.save(),
+          onClick: event => {
+            event.owner.owner.save()
+          },
         },
       ],
     },

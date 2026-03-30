@@ -4,21 +4,26 @@ import (
 	"crypto/subtle"
 	"net/http"
 
-	"github.com/dv1x3r/amazing-core/internal/config"
-
 	"github.com/gorilla/sessions"
 )
 
-type Service struct {
-	session sessions.Store
+type AdminLoginForm struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
-func NewService(cfg config.Config) *Service {
-	session := sessions.NewCookieStore([]byte(cfg.Secure.Session.Key))
+type Service struct {
+	session  sessions.Store
+	username string
+	password string
+}
+
+func NewService(secure bool, sessionKey string, username string, password string) *Service {
+	session := sessions.NewCookieStore([]byte(sessionKey))
 	session.Options = &sessions.Options{
 		Path:     "/",
 		MaxAge:   86400 * 14,
-		Secure:   cfg.Secure.Session.Secure,
+		Secure:   secure,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	}
@@ -26,8 +31,8 @@ func NewService(cfg config.Config) *Service {
 }
 
 func (s *Service) AuthenticateSession(w http.ResponseWriter, r *http.Request, form AdminLoginForm) (bool, error) {
-	validUsername := subtle.ConstantTimeCompare([]byte(form.Username), []byte(config.Get().Secure.Auth.Username)) == 1
-	validPassword := subtle.ConstantTimeCompare([]byte(form.Password), []byte(config.Get().Secure.Auth.Password)) == 1
+	validUsername := subtle.ConstantTimeCompare([]byte(form.Username), []byte(s.username)) == 1
+	validPassword := subtle.ConstantTimeCompare([]byte(form.Password), []byte(s.password)) == 1
 	if !validUsername || !validPassword {
 		return false, nil
 	}
