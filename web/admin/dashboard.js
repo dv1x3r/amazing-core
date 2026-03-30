@@ -59,11 +59,11 @@ const dashboardSidebar = new w2sidebar({
           },
         },
         {
-          id: 'dummy-form',
-          text: 'Dummy Parameters',
+          id: 'dummy-config',
+          text: 'Dummy Config',
           icon: 'fa fa-person-digging',
           onClick: async function() {
-            const module = await import('./widgets/dummy_form.js')
+            const module = await import('./widgets/dummy_config.js')
             setDashboardWidget(module.createDummyForm)
           },
         },

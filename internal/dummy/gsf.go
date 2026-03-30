@@ -8,7 +8,10 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/services/asset"
 )
 
-var AssetService *asset.Service
+var (
+	DummyService *Service
+	AssetService *asset.Service
+)
 
 /*
 GetClientVersionInfo returns the server version for a specific client.

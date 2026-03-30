@@ -14,6 +14,7 @@ import (
 	"github.com/dv1x3r/amazing-core/data"
 	"github.com/dv1x3r/amazing-core/internal/api/middleware"
 	"github.com/dv1x3r/amazing-core/internal/config"
+	"github.com/dv1x3r/amazing-core/internal/dummy"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/amazing-core/web"
 	"github.com/dv1x3r/w2go/w2"
@@ -44,6 +45,7 @@ func NewServer(
 	db *sql.DB,
 	logger *slog.Logger,
 	authService *auth.Service,
+	dummyService *dummy.Service,
 	blobService *blob.Service,
 	assetService *asset.Service,
 	randnameService *randname.Service,
@@ -68,6 +70,15 @@ func NewServer(
 
 	v1 := http.NewServeMux()
 
+	assetHandler := asset.NewAPIHandler(assetService)
+	v1.HandleFunc("GET /asset/records", errorHandler(assetHandler.GetRecords))
+	v1.HandleFunc("POST /asset/save", errorHandler(assetHandler.PostSave))
+	v1.HandleFunc("POST /asset/remove", errorHandler(assetHandler.PostRemove))
+	v1.HandleFunc("GET /asset/filetypes", errorHandler(assetHandler.GetFileTypeDropdown))
+	v1.HandleFunc("GET /asset/assettypes", errorHandler(assetHandler.GetAssetTypeDropdown))
+	v1.HandleFunc("GET /asset/assetgroups", errorHandler(assetHandler.GetAssetGroupDropdown))
+	v1.HandleFunc("POST /asset/cache.json", errorHandler(assetHandler.PostCacheJSON))
+
 	blobHandler := blob.NewAPIHandler(blobService)
 	v1.HandleFunc("GET /blob/records", errorHandler(blobHandler.GetRecords))
 	v1.HandleFunc("POST /blob/upload", errorHandler(blobHandler.PostUpload))
@@ -79,14 +90,8 @@ func NewServer(
 		router.HandleFunc("GET /cdn/{cdnid}", errorHandler(blobHandler.GetBlob))
 	}
 
-	assetHandler := asset.NewAPIHandler(assetService)
-	v1.HandleFunc("GET /asset/records", errorHandler(assetHandler.GetRecords))
-	v1.HandleFunc("POST /asset/save", errorHandler(assetHandler.PostSave))
-	v1.HandleFunc("POST /asset/remove", errorHandler(assetHandler.PostRemove))
-	v1.HandleFunc("GET /asset/filetypes", errorHandler(assetHandler.GetFileTypeDropdown))
-	v1.HandleFunc("GET /asset/assettypes", errorHandler(assetHandler.GetAssetTypeDropdown))
-	v1.HandleFunc("GET /asset/assetgroups", errorHandler(assetHandler.GetAssetGroupDropdown))
-	v1.HandleFunc("POST /asset/cache.json", errorHandler(assetHandler.PostCacheJSON))
+	dummyHandler := dummy.NewAPIHandler(dummyService)
+	v1.HandleFunc("GET /dummy/form", errorHandler(dummyHandler.GetForm))
 
 	randnameHandler := randname.NewAPIHandler(randnameService)
 	v1.HandleFunc("GET /randname/form", errorHandler(randnameHandler.GetForm))
