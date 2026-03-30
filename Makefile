@@ -69,12 +69,18 @@ db-create:
 
 .PHONY: docs
 docs:
+	@if [ -n "$$ARCHIVE_URL" ]; then \
+		echo "$$ARCHIVE_URL" > docs/src/vars/archive-url.md; \
+	fi
 	mdbook build docs/
+	# https://github.com/rust-lang/mdBook/pull/3028
+	find docs/book -name 'toc*.js' -print0 | xargs -0 \
+		sed -i 's@if (link.href === current_page@if (link.href.replace(/\.html$$/, "") === current_page.replace(/\.html$$/, "")@g'
 
-.PHONY: docs-run
-docs-run:
+.PHONY: docs-serve
+docs-serve:
 	mdbook serve docs/ -p 8000
 
-.PHONY: docs-cache-serve
-docs-cache-serve:
+.PHONY: docs-serve-data
+docs-serve-data:
 	bunx serve -l 8080 --cors data_db/

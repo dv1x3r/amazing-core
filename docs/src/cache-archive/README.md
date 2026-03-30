@@ -30,7 +30,7 @@ These files were also cached locally. Below is a list of known assets that have 
 <script>
   function cacheList() {
     return {
-      base: '{{#include ../vars/cache-url.md}}',
+      base: '{{#include ../vars/archive-url.md}}',
       loading: true,
       error: null,
 
