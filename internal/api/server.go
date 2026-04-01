@@ -92,6 +92,7 @@ func NewServer(
 
 	dummyHandler := dummy.NewAPIHandler(dummyService)
 	v1.HandleFunc("GET /dummy/form", errorHandler(dummyHandler.GetForm))
+	v1.HandleFunc("POST /dummy/form", errorHandler(dummyHandler.PostForm))
 
 	randnameHandler := randname.NewAPIHandler(randnameService)
 	v1.HandleFunc("GET /randname/form", errorHandler(randnameHandler.GetForm))
