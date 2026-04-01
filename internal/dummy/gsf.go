@@ -174,15 +174,20 @@ func Login(w gsf.ResponseWriter, r *gsf.Request) error {
 	// base url for downloadable assets
 	res.AssetDeliveryURL = config.Get().Settings.AssetDeliveryURL
 
-	// CAB-cows007
-	cow, err := AssetService.GetGSFAssetByCDNID(ctx, "OTQ0NDE2MzMyMTg3MA")
+	// dummyAvatar := "OTQ0NDE2MzMyMTg3MA" // CAB-cows007
+	dummyAvatar, err := DummyService.GetValue(ctx, "avatar")
+	if err != nil {
+		return err
+	}
+
+	avatarAsset, err := AssetService.GetGSFAssetByCDNID(ctx, dummyAvatar)
 	if err != nil {
 		return err
 	}
 
 	activeAvatarAssetMap := map[string][]types.Asset{}
 	activeAvatarAssetMap["Prefab_Unity3D"] = []types.Asset{
-		cow,
+		avatarAsset,
 	}
 
 	res.Player.ActivePlayerAvatar.Avatar.AssetMap = activeAvatarAssetMap
@@ -392,20 +397,16 @@ func InitLocation(w gsf.ResponseWriter, r *gsf.Request) error {
 	res.SyncServerIP = config.Get().Settings.SyncServerIP
 	res.SyncServerPort = int32(config.Get().Settings.SyncServerPort)
 
-	// ResName:       "Springtime003.unity3d",
-	scene, err := AssetService.GetGSFAssetByCDNID(ctx, "OTYwOTUyODk5OTk1MA")
+	// dummyScene := "OTYwOTUyODk5OTk1MA" // Springtime003.unity3d
+	// dummyScene := "OTYxMTQ4NDU5NDE5MA" // HomeLotSmall.unity3d
+	// dummyScene := "OTQ1MDc3NTY0MjEyNg" // HomeLot_Winter.unity3d
+
+	dummyScene, err := DummyService.GetValue(ctx, "map")
 	if err != nil {
 		return err
 	}
 
-	// ResName:       "HomeLotSmall.unity3d",
-	_, err = AssetService.GetGSFAssetByCDNID(ctx, "OTYxMTQ4NDU5NDE5MA")
-	if err != nil {
-		return err
-	}
-
-	// ResName:       "HomeLot_Winter.unity3d",
-	scene, err = AssetService.GetGSFAssetByCDNID(ctx, "OTQ1MDc3NTY0MjEyNg")
+	scene, err := AssetService.GetGSFAssetByCDNID(ctx, dummyScene)
 	if err != nil {
 		return err
 	}
@@ -558,5 +559,14 @@ func GetPlayerNPCs(w gsf.ResponseWriter, r *gsf.Request) error {
 	}
 	res := &messages.GetPlayerNPCsResponse{}
 	res.NPCs = []types.NPC{}
+	return w.Write(res)
+}
+
+func Logout(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.LogoutRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	res := &messages.LogoutResponse{}
 	return w.Write(res)
 }

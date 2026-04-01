@@ -20,6 +20,13 @@ func NewService(store db.Store) *Service {
 	}
 }
 
+func (s *Service) GetValue(ctx context.Context, key string) (string, error) {
+	const op = "dummy.Service.GetValue"
+	var value string
+	row := s.store.DB().QueryRowContext(ctx, "select value from dummy_config where key = ?;", key)
+	return value, wrap.IfErr(op, row.Scan(&value))
+}
+
 func (s *Service) GetForm(ctx context.Context) (w2.GetFormResponse[DummyConfig], error) {
 	const op = "dummy.Service.GetForm"
 	rows, err := s.store.DB().Query(`select key, value from dummy_config;`)
@@ -43,4 +50,23 @@ func (s *Service) GetForm(ctx context.Context) (w2.GetFormResponse[DummyConfig],
 	}
 
 	return w2.NewGetFormResponse(cfg), nil
+}
+
+func (s *Service) UpdateForm(ctx context.Context, cfg DummyConfig) error {
+	const op = "dummy.Service.UpdateForm"
+
+	tx, err := s.store.DB().BeginTx(ctx, nil)
+	if err != nil {
+		return wrap.IfErr(op, err)
+	}
+	defer tx.Rollback()
+
+	for key, value := range cfg {
+		_, err := tx.ExecContext(ctx, "update dummy_config set value = ? where key = ?;", value, key)
+		if err != nil {
+			return wrap.IfErr(op, err)
+		}
+	}
+
+	return wrap.IfErr(op, tx.Commit())
 }
