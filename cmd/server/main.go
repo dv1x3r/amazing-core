@@ -156,6 +156,7 @@ func main() {
 	gameServer := game.NewServer(
 		logger.Get(),
 		assetService,
+		dummyService,
 		randnameService,
 	)
 
