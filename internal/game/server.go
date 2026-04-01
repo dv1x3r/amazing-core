@@ -26,6 +26,7 @@ type Server struct {
 func NewServer(
 	logger *slog.Logger,
 	assetService *asset.Service,
+	dummyService *dummy.Service,
 	randnameService *randname.Service,
 ) *Server {
 	router := gsf.NewRouter()
@@ -36,6 +37,7 @@ func NewServer(
 	)
 
 	dummy.AssetService = assetService
+	dummy.DummyService = dummyService
 
 	randnameHandler := randname.NewGSFHandler(randnameService)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_RANDOM_NAMES), randnameHandler.GetRandomNames)
@@ -62,6 +64,7 @@ func NewServer(
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_ONLINE_STATUSES), dummy.GetOnlineStatuses)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_PLAYER_NPCS), dummy.GetPlayerNPCs)
 	router.HandleFunc(int32(serviceclass.SYNC_SERVER), int32(syncmessagetype.LOGIN), dummy.SyncLogin)
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.LOGOUT), dummy.Logout)
 
 	server := &gsf.Server{
 		Router: router,
