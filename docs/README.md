@@ -7,7 +7,7 @@ Markdown formatting is handled using [dprint](https://dprint.dev/plugins/markdow
 To run the docs locally in watch mode:
 
 ```sh
-make docs-run
+make docs-serve
 # or
 mdbook serve docs/
 ```
@@ -30,6 +30,8 @@ python cache.py /path/to/cache/folder \
 2. Serve the output directory using npm or bun:
 
 ```sh
+make docs-serve-data
+# or
 npmx serve -l 8080 --cors
 # or
 bunx serve -l 8080 --cors
