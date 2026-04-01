@@ -16,11 +16,11 @@ func Recover() Middleware {
 			})
 
 			if err != nil {
+				if lw, ok := w.(interface{ SetError(error) }); ok {
+					lw.SetError(err)
+				}
 				res := w2.NewErrorResponse(http.StatusText(http.StatusInternalServerError))
 				res.Write(w, http.StatusInternalServerError)
-				if e, ok := r.Context().Value("err").(*error); ok {
-					*e = err
-				}
 			}
 		})
 	}
