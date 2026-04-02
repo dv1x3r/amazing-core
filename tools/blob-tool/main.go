@@ -39,7 +39,7 @@ func run(logger *slog.Logger, mode string, dbPath string, dir string, overwrite 
 	}
 	defer store.DB().Close()
 
-	service := blob.NewService(logger, store)
+	service := blob.NewService(logger, store, "")
 	ctx := context.Background()
 
 	switch mode {
