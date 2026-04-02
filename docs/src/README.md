@@ -98,8 +98,6 @@ Now you can start the game.
 
 With your own server, you can access the admin dashboard to configure skins, maps, NPCs, and other features (work in progress)\*.
 
-> \* starting from `0.2.0`, which is probably not released yet.
-
 Modify the server address value as shown below:
 
 ```xml
@@ -113,8 +111,6 @@ ServerIP = 'localhost'
 3. **Run** the server binary;
 
 Once started, it will download the `blob.db` file (~2 GB).\*
-
-> \* starting from `0.2.0`, which is probably not released yet.
 
 When the download is finished, you can start the game.
 
