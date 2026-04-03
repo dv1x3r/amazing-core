@@ -27,7 +27,11 @@ func NewService(secure bool, sessionKey string, username string, password string
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	}
-	return &Service{session: session}
+	return &Service{
+		session:  session,
+		username: username,
+		password: password,
+	}
 }
 
 func (s *Service) AuthenticateSession(w http.ResponseWriter, r *http.Request, form AdminLoginForm) (bool, error) {
