@@ -30,6 +30,7 @@ func (l gLogger) Printf(format string, v ...any) {
 
 func (l gLogger) Fatalf(format string, v ...any) {
 	l.logger.Error(fmt.Sprintf(format, v...))
+	fmt.Scanln()
 	os.Exit(1)
 }
 

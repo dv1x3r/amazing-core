@@ -72,11 +72,27 @@ func main() {
 
 	if cfg.Servers.API == "" || cfg.Servers.Game == "" {
 		logger.Get().Error("missing server configuration", "api", cfg.Servers.API, "game", cfg.Servers.Game)
+		fmt.Scanln()
 		os.Exit(1)
 	}
 
 	if cfg.Storage.Databases.Core == "" || cfg.Storage.Databases.Blob == "" {
 		logger.Get().Error("missing database configuration", "core", cfg.Storage.Databases.Core, "blob", cfg.Storage.Databases.Blob)
+		fmt.Scanln()
+		os.Exit(1)
+	}
+
+	// prepare database folders
+
+	if err := os.MkdirAll(path.Dir(cfg.Storage.Databases.Core), os.ModePerm); err != nil {
+		logger.Get().Error("unable to access the folder for the core database", "err", err)
+		fmt.Scanln()
+		os.Exit(1)
+	}
+
+	if err := os.MkdirAll(path.Dir(cfg.Storage.Databases.Blob), os.ModePerm); err != nil {
+		logger.Get().Error("unable to access the folder for the blob database", "err", err)
+		fmt.Scanln()
 		os.Exit(1)
 	}
 
@@ -84,20 +100,9 @@ func main() {
 	if cfg.Blob.Download {
 		if err := downloader.DownloadIfNotExists(logger.Get(), cfg.Storage.Databases.Blob, cfg.Blob.DownloadURL); err != nil {
 			logger.Get().Error("unable to download blob.db", "err", err)
+			fmt.Scanln()
 			os.Exit(1)
 		}
-	}
-
-	// prepare database folders
-
-	if err := os.MkdirAll(path.Dir(cfg.Storage.Databases.Core), os.ModePerm); err != nil {
-		logger.Get().Error("unable to access the folder for the core database", "err", err)
-		os.Exit(1)
-	}
-
-	if err := os.MkdirAll(path.Dir(cfg.Storage.Databases.Blob), os.ModePerm); err != nil {
-		logger.Get().Error("unable to access the folder for the blob database", "err", err)
-		os.Exit(1)
 	}
 
 	// connect to the databases
@@ -105,6 +110,7 @@ func main() {
 	coreStore, err := db.NewSQLiteStore(cfg.Storage.Databases.Core)
 	if err != nil {
 		logger.Get().Error("unable to connect to core.db", "err", err)
+		fmt.Scanln()
 		os.Exit(1)
 	}
 	defer coreStore.DB().Close()
@@ -114,6 +120,7 @@ func main() {
 	blobStore, err := db.NewSQLiteStore(cfg.Storage.Databases.Blob)
 	if err != nil {
 		logger.Get().Error("unable to connect to blob.db", "err", err)
+		fmt.Scanln()
 		os.Exit(1)
 	}
 	defer blobStore.DB().Close()
@@ -124,16 +131,19 @@ func main() {
 
 	if err := coreStore.MigrateBaseFile(logger.Get(), data.FS, "sql/core_db/base.sql"); err != nil {
 		logger.Get().Error("unable to initialize core.db", "err", err)
+		fmt.Scanln()
 		os.Exit(1)
 	}
 
 	if err := blobStore.MigrateBaseFile(logger.Get(), data.FS, "sql/blob_db/base.sql"); err != nil {
 		logger.Get().Error("unable to initialize blob.db", "err", err)
+		fmt.Scanln()
 		os.Exit(1)
 	}
 
 	if err := coreStore.MigrateUp(logger.Get(), data.FS, "sql/core_db/updates"); err != nil {
 		logger.Get().Error("unable to apply core.db updates", "err", err)
+		fmt.Scanln()
 		os.Exit(1)
 	}
 
