@@ -16,9 +16,9 @@ These are later used by `SyncManager` to open its session and send `SyncLogin`.
 
 ## Request
 
-| Field   | Type  | Description |
-| ------- | ----- | ----------- |
-| `LocID` | `OID` |             |
+| Field   | Type                     | Description |
+| ------- | ------------------------ | ----------- |
+| `LocID` | [`OID`](../types/oid.md) |             |
 
 ## Response
 

@@ -8,10 +8,10 @@ Fetches the saved outfits for a given player avatar. The results are stored as `
 
 ## Request
 
-| Field            | Type  | Description          |
-| ---------------- | ----- | -------------------- |
-| `PlayerAvatarID` | `OID` | Requested avatar OID |
-| `PlayerID`       | `OID` | Requested player OID |
+| Field            | Type                     | Description          |
+| ---------------- | ------------------------ | -------------------- |
+| `PlayerAvatarID` | [`OID`](../types/oid.md) | Requested avatar OID |
+| `PlayerID`       | [`OID`](../types/oid.md) | Requested player OID |
 
 ## Response
 

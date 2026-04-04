@@ -8,10 +8,10 @@ Fetches the items placed in the player's current maze.
 
 ## Request
 
-| Field          | Type  | Description          |
-| -------------- | ----- | -------------------- |
-| `PlayerMazeID` | `OID` | Requested maze OID   |
-| `PlayerID`     | `OID` | Requested player OID |
+| Field          | Type                     | Description          |
+| -------------- | ------------------------ | -------------------- |
+| `PlayerMazeID` | [`OID`](../types/oid.md) | Requested maze OID   |
+| `PlayerID`     | [`OID`](../types/oid.md) | Requested player OID |
 
 ## Response
 

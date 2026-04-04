@@ -12,11 +12,11 @@ Authenticates the player on the SYNC server. The SYNC server handles real-time p
 
 ## Request
 
-| Field        | Type     | Description                                        |
-| ------------ | -------- | -------------------------------------------------- |
-| `UID`        | `OID`    |                                                    |
-| `Token`      | `string` | Sync server token from the `InitLocation` response |
-| `MaxVisSize` | `int32`  |                                                    |
+| Field        | Type                     | Description                                        |
+| ------------ | ------------------------ | -------------------------------------------------- |
+| `UID`        | [`OID`](../types/oid.md) |                                                    |
+| `Token`      | `string`                 | Sync server token from the `InitLocation` response |
+| `MaxVisSize` | `int32`                  |                                                    |
 
 ## Response
 

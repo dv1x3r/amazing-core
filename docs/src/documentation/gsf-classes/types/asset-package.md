@@ -8,7 +8,7 @@ An [`AssetContainer`](./asset-container.md) with an additional tag used to condi
 
 | Field           | Type                                   | Description                                                                        |
 | --------------- | -------------------------------------- | ---------------------------------------------------------------------------------- |
-| `OID`           | `OID`                                  | Inherited from [`AssetContainer`](./asset-container.md)                            |
+| `OID`           | [`OID`](../types/oid.md)               | Inherited from [`AssetContainer`](./asset-container.md)                            |
 | `AssetMap`      | [`map[string][]Asset`](./asset.md)     | Inherited from [`AssetContainer`](./asset-container.md)                            |
 | `AssetPackages` | [`[]AssetPackage`](./asset-package.md) | Inherited from [`AssetContainer`](./asset-container.md)                            |
 | `PTag`          | `string`                               | Tag matched against the current maze name to decide whether this package is loaded |

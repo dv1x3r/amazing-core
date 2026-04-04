@@ -11,15 +11,15 @@ The response also carries `AssetDeliveryURL`, which the client stores in `GameSe
 
 ## Request
 
-| Field              | Type        | Description                                           |
-| ------------------ | ----------- | ----------------------------------------------------- |
-| `TypeValue`        | `int32`     | Hardcoded to `1`                                      |
-| `LanglocalePairID` | `OID`       | "Class": 4, "Type": 19 "Server": 0, "Number": 9023265 |
-| `TierID`           | `OID`       | "Class": 0, "Type": 0, "Server": 0, "Number": 0       |
-| `BirthDate`        | `time.Time` | `#N/A`                                                |
-| `RegistrationDate` | `time.Time` | `#N/A`                                                |
-| `PreviewDate`      | `time.Time` | `#N/A`                                                |
-| `IsPreviewEnabled` | `bool`      | `false`                                               |
+| Field              | Type                     | Description                                           |
+| ------------------ | ------------------------ | ----------------------------------------------------- |
+| `TypeValue`        | `int32`                  | Hardcoded to `1`                                      |
+| `LanglocalePairID` | [`OID`](../types/oid.md) | "Class": 4, "Type": 19 "Server": 0, "Number": 9023265 |
+| `TierID`           | [`OID`](../types/oid.md) | "Class": 0, "Type": 0, "Server": 0, "Number": 0       |
+| `BirthDate`        | `time.Time`              | `#N/A`                                                |
+| `RegistrationDate` | `time.Time`              | `#N/A`                                                |
+| `PreviewDate`      | `time.Time`              | `#N/A`                                                |
+| `IsPreviewEnabled` | `bool`                   | `false`                                               |
 
 ## Response
 

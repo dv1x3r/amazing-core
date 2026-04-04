@@ -68,6 +68,7 @@
     - [ChatChannelType](./documentation/gsf-classes/types/chat-channel-type.md)
     - [ClientEnvironmentData](./documentation/gsf-classes/types/client-environment-data.md)
     - [ItemCategory](./documentation/gsf-classes/types/item-category.md)
+    - [OID](./documentation/gsf-classes/types/oid.md)
     - [Online Status](./documentation/gsf-classes/types/online-status.md)
     - [Player](./documentation/gsf-classes/types/player.md)
     - [PlayerAvatar](./documentation/gsf-classes/types/player-avatar.md)

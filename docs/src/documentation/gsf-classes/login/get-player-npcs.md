@@ -10,10 +10,10 @@ Fetches the NPCs for the player's home zone.
 
 ## Request
 
-| r Field    | Type  | Description          |
-| ---------- | ----- | -------------------- |
-| `PlayerID` | `OID` | Requested player OID |
-| `ZoneID`   | `OID` | Requested zone OID   |
+| r Field    | Type                     | Description          |
+| ---------- | ------------------------ | -------------------- |
+| `PlayerID` | [`OID`](../types/oid.md) | Requested player OID |
+| `ZoneID`   | [`OID`](../types/oid.md) | Requested zone OID   |
 
 ## Response
 

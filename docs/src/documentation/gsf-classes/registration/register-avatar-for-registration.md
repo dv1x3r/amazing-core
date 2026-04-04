@@ -8,15 +8,15 @@ Associates the chosen avatar and starter inventory items with the newly created 
 
 ## Request
 
-| Field               | Type     | Description                                       |
-| ------------------- | -------- | ------------------------------------------------- |
-| `PlayerID`          | `OID`    | The OID returned by `RegisterPlayer`              |
-| `SecretCode`        | `string` |                                                   |
-| `Name`              | `string` | Avatar name                                       |
-| `Bio`               | `string` |                                                   |
-| `AvatarID`          | `OID`    | OID of the selected avatar                        |
-| `GivenInventoryIDs` | `[]OID`  | List of starter item OIDs selected during intro   |
-| `GivenItemSlotIDs`  | `[]OID`  | List of inventory slot OIDs for the starter items |
+| Field               | Type                       | Description                                       |
+| ------------------- | -------------------------- | ------------------------------------------------- |
+| `PlayerID`          | [`OID`](../types/oid.md)   | The OID returned by `RegisterPlayer`              |
+| `SecretCode`        | `string`                   |                                                   |
+| `Name`              | `string`                   | Avatar name                                       |
+| `Bio`               | `string`                   |                                                   |
+| `AvatarID`          | [`OID`](../types/oid.md)   | OID of the selected avatar                        |
+| `GivenInventoryIDs` | [`[]OID`](../types/oid.md) | List of starter item OIDs selected during intro   |
+| `GivenItemSlotIDs`  | [`[]OID`](../types/oid.md) | List of inventory slot OIDs for the starter items |
 
 ## Response
 
