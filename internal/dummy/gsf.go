@@ -262,10 +262,18 @@ func GetSiteFrame(w gsf.ResponseWriter, r *gsf.Request) error {
 		return err
 	}
 
+	// Avatar_SlotIds.txt
+	avatarSlotIDs, err := AssetService.GetGSFAssetByCDNID(ctx, "OTU3MDUxOTg3NTU5OA")
+	if err != nil {
+		return err
+	}
+
 	res.SiteFrame.AssetMap = map[string][]types.Asset{}
 
 	// DressAvatarManager.cs -> LoadSlotIds -> ClientManager.Instance.configList
-	res.SiteFrame.AssetMap["Config_Text"] = []types.Asset{}
+	res.SiteFrame.AssetMap["Config_Text"] = []types.Asset{
+		avatarSlotIDs,
+	}
 
 	// OutdoorMazeLoader.cs -> LoadPreloadAssetsCommand() -> preloadList
 	res.SiteFrame.AssetMap["Preload_PrefabUnity3D"] = []types.Asset{}
