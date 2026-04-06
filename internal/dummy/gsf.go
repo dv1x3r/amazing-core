@@ -191,6 +191,7 @@ func Login(w gsf.ResponseWriter, r *gsf.Request) error {
 	}
 
 	res.Player.ActivePlayerAvatar.Avatar.AssetMap = activeAvatarAssetMap
+	res.Player.IsQA = true
 
 	return w.Write(res)
 }
@@ -263,6 +264,8 @@ func GetSiteFrame(w gsf.ResponseWriter, r *gsf.Request) error {
 	}
 
 	// Avatar_SlotIds.txt
+	// slot registry for wearable/equippable avatar parts
+	// the client looks for an asset whose resName is Avatar_SlotIds.txt (DressAvatarManager.cs:917)
 	avatarSlotIDs, err := AssetService.GetGSFAssetByCDNID(ctx, "OTU3MDUxOTg3NTU5OA")
 	if err != nil {
 		return err
