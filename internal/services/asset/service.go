@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/url"
+	"strings"
 
 	"github.com/dv1x3r/amazing-core/internal/lib/db"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
@@ -241,7 +242,7 @@ func (s *Service) GetGSFAssetByCDNID(ctx context.Context, cdnid string) (gsftype
 			left join asset_type as at on at.id = a.asset_type_id
 			left join asset_group as ag on ag.id = a.asset_group_id
 			where a.cdnid = ?;
-		`, cdnid)
+		`, strings.TrimSpace(cdnid))
 	err := row.Scan(&a.OID, &a.AssetTypeName, &a.CDNID, &a.ResName, &a.GroupName, &a.FileSize)
 	if err != nil {
 		return a, wrap.IfErr(op, fmt.Errorf("cdnid %s: %w", cdnid, err))
