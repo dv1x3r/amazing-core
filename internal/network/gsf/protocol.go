@@ -6,22 +6,22 @@ import (
 )
 
 type Serializable interface {
-	Serialize(ProtocolWriter)
+	Serialize(writer ProtocolWriter)
 }
 
 type Deserializable interface {
-	Deserialize(ProtocolReader)
+	Deserialize(reader ProtocolReader)
 }
 
 type ProtocolCodec interface {
-	NewReader([]byte) ProtocolReader
+	NewReader(data []byte) ProtocolReader
 	NewWriter() ProtocolWriter
-	ReadLength(io.ByteReader) (int, error)
-	WriteLength(io.ByteWriter, int) error
+	ReadLength(stream io.ByteReader) (int, error)
+	WriteLength(stream io.ByteWriter, len int) error
 }
 
 type ProtocolReader interface {
-	ReadObject(Deserializable)
+	ReadObject(value Deserializable)
 	GetByte() byte
 	ReadBool() bool
 	ReadInt16() int16
@@ -36,19 +36,19 @@ type ProtocolReader interface {
 }
 
 type ProtocolWriter interface {
-	CommitTo(io.Writer)
-	WriteObject(Serializable)
-	PutByte(byte)
-	WriteBool(bool)
-	WriteInt16(int16)
-	WriteInt32(int32)
-	WriteInt64(int64)
-	WriteFloat32(float32)
-	WriteFloat64(float64)
-	WriteChar(rune)
-	WriteString(string)
-	WriteBytes([]byte)
-	WriteUtcDate(time.Time)
+	CommitTo(stream io.Writer)
+	WriteObject(value Serializable)
+	PutByte(value byte)
+	WriteBool(value bool)
+	WriteInt16(value int16)
+	WriteInt32(value int32)
+	WriteInt64(value int64)
+	WriteFloat32(value float32)
+	WriteFloat64(value float64)
+	WriteChar(value rune)
+	WriteString(value string)
+	WriteBytes(value []byte)
+	WriteUtcDate(value time.Time)
 }
 
 func ReadNullable[T any](reader ProtocolReader, readFn func() T) Null[T] {
