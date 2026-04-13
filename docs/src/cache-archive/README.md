@@ -76,7 +76,7 @@ These files were also cached locally. Below is a list of known assets that have 
         const dir = this.sortDir === 'asc' ? 1 : -1
         list.sort((a, b) => {
           let va, vb
-          if (col === 'name') { va = a.item.file.name.toLowerCase(); vb = b.item.file.name.toLowerCase(); return va < vb ? -dir : va > vb ? dir : 0 }
+          if (col === 'name') { va = a.item.file.name; vb = b.item.file.name; return va < vb ? -dir : va > vb ? dir : 0 }
           if (col === 'type') { va = a.item.file.type.toLowerCase(); vb = b.item.file.type.toLowerCase(); return va < vb ? -dir : va > vb ? dir : 0 }
           if (col === 'asset') { va = this.shortestAsset(a.item).name.toLowerCase(); vb = this.shortestAsset(b.item).name.toLowerCase(); return va < vb ? -dir : va > vb ? dir : 0 }
           if (col === 'size') { return (a.item.file.size - b.item.file.size) * dir }
