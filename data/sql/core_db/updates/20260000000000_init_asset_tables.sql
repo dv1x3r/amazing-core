@@ -86,7 +86,7 @@ insert into asset_group ([id], [name]) values
 create table asset (
     [id] integer primary key,
     [cdnid] text not null unique collate nocase,
-    [gsfoid] integer not null,
+    [gsfoid] integer not null unique,
     [file_type_id] integer not null references file_type(id) on delete restrict,
     [asset_type_id] integer references asset_type(id) on delete restrict,
     [asset_group_id] integer references asset_group(id) on delete restrict,

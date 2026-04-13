@@ -89,6 +89,7 @@ export function createBlobGrid() {
         size: '60px',
         sortable: true,
         hidden: false,
+        searchable: 'int',
       },
       {
         field: 'cdnid',
@@ -98,7 +99,7 @@ export function createBlobGrid() {
         sortable: true,
         searchAll: true,
         searchable: 'text',
-        clipboardCopy: row => row.cdnid,
+        clipboardCopy: true,
       },
       {
         field: 'url',
@@ -106,7 +107,7 @@ export function createBlobGrid() {
         render: 'text',
         size: '400px',
         sortable: true,
-        clipboardCopy: row => row.url,
+        clipboardCopy: true,
       },
       {
         field: 'hash',
@@ -116,11 +117,11 @@ export function createBlobGrid() {
         sortable: true,
         searchAll: true,
         searchable: 'text',
-        clipboardCopy: row => row.hash,
+        clipboardCopy: true,
       },
       {
         field: 'size',
-        text: 'Size Bytes',
+        text: 'Bytes',
         render: 'text',
         size: '80px',
         sortable: true,

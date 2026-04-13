@@ -76,14 +76,15 @@ func (s *Service) FetchFilesList(ctx context.Context, req w2.GetGridRequest) (w2
 			"length(blob) as size",
 		},
 		WhereMapping: map[string]string{
+			"id":    "id",
 			"cdnid": "cdnid",
 			"hash":  "hash",
 			"size":  "length(blob)",
 		},
 		OrderByMapping: map[string]string{
 			"id":       "id",
-			"cdnid":    "cdnid",
-			"url":      "cdnid",
+			"cdnid":    "cdnid COLLATE BINARY",
+			"url":      "cdnid COLLATE BINARY",
 			"hash":     "hash",
 			"size":     "length(blob)",
 			"size_str": "length(blob)",

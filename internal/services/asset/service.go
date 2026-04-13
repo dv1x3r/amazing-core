@@ -8,13 +8,12 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/dv1x3r/amazing-core/internal/game/types"
 	"github.com/dv1x3r/amazing-core/internal/lib/db"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/w2go/w2"
 	"github.com/dv1x3r/w2go/w2db"
 	"github.com/dv1x3r/w2go/w2sql"
-
-	gsftypes "github.com/dv1x3r/amazing-core/internal/game/types"
 
 	"github.com/dustin/go-humanize"
 	"github.com/huandu/go-sqlbuilder"
@@ -24,7 +23,7 @@ type AssetItem struct {
 	ID          int              `json:"id"`
 	CDNID       string           `json:"cdnid"`
 	URL         string           `json:"url"`
-	GSFOID      w2.Field[int]    `json:"gsfoid"`
+	OID         int              `json:"oid"`
 	Class       int              `json:"class"`
 	Type        int              `json:"type"`
 	Server      int              `json:"server"`
@@ -81,8 +80,9 @@ func (s *Service) GetGridRecords(ctx context.Context, req w2.GetGridRequest) (w2
 			"(am.metadata ->> '$.info.version_engine') || ' ' || (am.metadata ->> '$.assets[0].target_platform')",
 		},
 		WhereMapping: map[string]string{
+			"id":          "a.id",
 			"cdnid":       "a.cdnid",
-			"gsfoid":      "a.gsfoid",
+			"oid":         "a.gsfoid",
 			"class":       "(a.gsfoid >> 56) & 0xFF",
 			"type":        "(a.gsfoid >> 48) & 0xFF",
 			"server":      "(a.gsfoid >> 40) & 0xFF",
@@ -98,9 +98,9 @@ func (s *Service) GetGridRecords(ctx context.Context, req w2.GetGridRequest) (w2
 		},
 		OrderByMapping: map[string]string{
 			"id":          "a.id",
-			"cdnid":       "a.cdnid",
-			"url":         "a.cdnid",
-			"gsfoid":      "a.gsfoid",
+			"cdnid":       "a.cdnid COLLATE BINARY",
+			"url":         "a.cdnid COLLATE BINARY",
+			"oid":         "a.gsfoid",
 			"class":       "(a.gsfoid >> 56) & 0xFF",
 			"type":        "(a.gsfoid >> 48) & 0xFF",
 			"server":      "(a.gsfoid >> 40) & 0xFF",
@@ -127,7 +127,7 @@ func (s *Service) GetGridRecords(ctx context.Context, req w2.GetGridRequest) (w2
 			if err := rows.Scan(
 				&record.ID,
 				&record.CDNID,
-				&record.GSFOID,
+				&record.OID,
 				&record.Class,
 				&record.Type,
 				&record.Server,
@@ -227,9 +227,9 @@ func (s *Service) GetAssetGroupDropdownRecords(ctx context.Context, req w2.GetDr
 	return res, wrap.IfErr(op, err)
 }
 
-func (s *Service) GetGSFAssetByCDNID(ctx context.Context, cdnid string) (gsftypes.Asset, error) {
+func (s *Service) GetGSFAssetByCDNID(ctx context.Context, cdnid string) (types.Asset, error) {
 	const op = "asset.Service.GetGSFAssetByCDNID"
-	a := gsftypes.Asset{}
+	a := types.Asset{}
 	row := s.store.DB().QueryRow(`
 			select
 				a.gsfoid,

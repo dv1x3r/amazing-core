@@ -52,7 +52,8 @@ export function createAssetGrid() {
         text: 'ID',
         size: '60px',
         sortable: true,
-        hidden: true,
+        hidden: false,
+        searchable: 'int',
       },
       {
         field: 'cdnid',
@@ -62,7 +63,7 @@ export function createAssetGrid() {
         sortable: true,
         searchAll: true,
         searchable: 'text',
-        clipboardCopy: row => row.cdnid,
+        clipboardCopy: true,
       },
       {
         field: 'url',
@@ -71,17 +72,17 @@ export function createAssetGrid() {
         size: '400px',
         hidden: true,
         sortable: true,
-        clipboardCopy: row => row.url,
+        clipboardCopy: true,
       },
       {
-        field: 'gsfoid',
+        field: 'oid',
         text: 'GSF OID',
         render: 'text',
         size: '130px',
         sortable: true,
         searchAll: true,
         searchable: 'text',
-        clipboardCopy: row => row.gsfoid,
+        clipboardCopy: true,
       },
       {
         field: 'class',
@@ -105,7 +106,7 @@ export function createAssetGrid() {
         render: 'text',
         size: '60px',
         sortable: true,
-        hidden: false,
+        hidden: true,
         searchable: 'int',
       },
       {
@@ -179,7 +180,7 @@ export function createAssetGrid() {
         sortable: true,
         hidden: true,
         searchable: 'text',
-        clipboardCopy: row => row.hash,
+        clipboardCopy: true,
       },
       {
         field: 'metadata',
@@ -191,7 +192,7 @@ export function createAssetGrid() {
       },
       {
         field: 'size',
-        text: 'Size Bytes',
+        text: 'Bytes',
         render: 'text',
         size: '80px',
         sortable: true,
@@ -209,7 +210,7 @@ export function createAssetGrid() {
       'text': 'contains',
     },
     sortData: [
-      { field: 'cdnid', direction: 'desc' },
+      { field: 'id', direction: 'desc' },
     ],
     onSave: function(event) { reloadOnSuccess(event) },
     onSearch: function(event) { searchAllFilter(event) },
