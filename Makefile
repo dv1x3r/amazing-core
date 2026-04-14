@@ -1,4 +1,5 @@
 export CGO_ENABLED?=0
+GOOSE=go tool goose -dir=./data/sql/core_db/updates sqlite ./data_db/core.db
 
 .PHONY: build
 build:
@@ -24,13 +25,19 @@ generate:
 fmt:
 	go fmt ./...
 
+.PHONY: tidy
+tidy:
+	go mod tidy
+
+.PHONY: update
+update:
+	go get -u ./...
+
 .PHONY: clean
 clean:
 	rm -rf ./build
 	rm -rf ./docs/book
 	find . -name ".DS_Store" -type f -print -delete
-
-GOOSE=go tool goose -dir=./data/sql/core_db/updates sqlite ./data_db/core.db
 
 .PHONY: db-up
 db-up:
