@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -17,10 +18,10 @@ type ImportResult struct {
 	SkippedFiles  int `json:"skipped_files"`
 }
 
-func (s *Service) ImportFromFolder(ctx context.Context, dir string) (*ImportResult, error) {
-	const op = "blob.Service.ImportFromFolder"
+func ImportFromFolder(ctx context.Context, logger *slog.Logger, db *sql.DB, dir string) (*ImportResult, error) {
+	const op = "blob.ImportFromFolder"
 
-	tx, err := s.store.DB().BeginTx(ctx, nil)
+	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, wrap.IfErr(op, err)
 	}
@@ -44,7 +45,7 @@ func (s *Service) ImportFromFolder(ctx context.Context, dir string) (*ImportResu
 		cdnid := fileName[:len(fileName)-len(fileExt)]
 		if len(cdnid) != 18 {
 			result.SkippedFiles++
-			s.logger.Debug(op, "cdnid", cdnid, "status", "skipped", "reason", "invalid_cdnid")
+			logger.Debug(op, "cdnid", cdnid, "status", "skipped", "reason", "invalid_cdnid")
 			continue
 		}
 
@@ -63,10 +64,10 @@ func (s *Service) ImportFromFolder(ctx context.Context, dir string) (*ImportResu
 
 		if inserted {
 			result.ImportedFiles++
-			s.logger.Debug(op, "cdnid", cdnid, "status", "imported")
+			logger.Debug(op, "cdnid", cdnid, "status", "imported")
 		} else {
 			result.SkippedFiles++
-			s.logger.Debug(op, "cdnid", cdnid, "status", "skipped", "reason", "hash_match")
+			logger.Debug(op, "cdnid", cdnid, "status", "skipped", "reason", "hash_match")
 		}
 	}
 
@@ -74,7 +75,7 @@ func (s *Service) ImportFromFolder(ctx context.Context, dir string) (*ImportResu
 		return nil, wrap.IfErr(op, err)
 	}
 
-	s.logger.Info("import cache files from folder: finished",
+	logger.Info("import cache files from folder: finished",
 		"imported_files", result.ImportedFiles,
 		"skipped_files", result.SkippedFiles,
 	)

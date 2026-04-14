@@ -2,9 +2,11 @@ package blob
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -16,14 +18,14 @@ type ExportResult struct {
 	SkippedFiles  int `json:"skipped_files"`
 }
 
-func (s *Service) ExportToFolder(ctx context.Context, dir string, overwrite bool) (*ExportResult, error) {
-	const op = "blob.Service.ExportToFolder"
+func ExportToFolder(ctx context.Context, logger *slog.Logger, db *sql.DB, dir string, overwrite bool) (*ExportResult, error) {
+	const op = "blob.ExportToFolder"
 
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return nil, wrap.IfErr(op, err)
 	}
 
-	rows, err := s.store.DB().Query("select cdnid, blob from asset_file;")
+	rows, err := db.QueryContext(ctx, "select cdnid, blob from asset_file;")
 	if err != nil {
 		return nil, wrap.IfErr(op, err)
 	}
@@ -47,10 +49,10 @@ func (s *Service) ExportToFolder(ctx context.Context, dir string, overwrite bool
 
 		if wrote {
 			result.ExportedFiles++
-			s.logger.Debug(op, "cdnid", cdnid, "status", "exported")
+			logger.Debug(op, "cdnid", cdnid, "status", "exported")
 		} else {
 			result.SkippedFiles++
-			s.logger.Debug(op, "cdnid", cdnid, "status", "skipped", "reason", "exists")
+			logger.Debug(op, "cdnid", cdnid, "status", "skipped", "reason", "exists")
 		}
 	}
 
@@ -58,7 +60,7 @@ func (s *Service) ExportToFolder(ctx context.Context, dir string, overwrite bool
 		return nil, wrap.IfErr(op, err)
 	}
 
-	s.logger.Info("export cache files to folder: finished",
+	logger.Info("export cache files to folder: finished",
 		"exported_files", result.ExportedFiles,
 		"skipped_files", result.SkippedFiles,
 	)

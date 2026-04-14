@@ -3,6 +3,8 @@ package blob
 import (
 	"bytes"
 	"context"
+	"database/sql"
+	"log/slog"
 	"sync/atomic"
 
 	"golang.org/x/sync/errgroup"
@@ -49,8 +51,8 @@ func newS3Client(cfg S3Config) *s3.Client {
 	return s3.NewFromConfig(awsCfg, opts...)
 }
 
-func (s *Service) SyncToS3(ctx context.Context, cfg S3Config) (*S3SyncResult, error) {
-	const op = "blob.Service.SyncToS3"
+func SyncToS3(ctx context.Context, logger *slog.Logger, db *sql.DB, cfg S3Config) (*S3SyncResult, error) {
+	const op = "blob.SyncToS3"
 
 	client := newS3Client(cfg)
 
@@ -77,7 +79,7 @@ func (s *Service) SyncToS3(ctx context.Context, cfg S3Config) (*S3SyncResult, er
 
 	// Step 2: Query files from database
 	const query = "SELECT cdnid, blob FROM asset_file;"
-	rows, err := s.store.DB().QueryContext(ctx, query)
+	rows, err := db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, wrap.IfErr(op, err)
 	}
@@ -113,7 +115,7 @@ func (s *Service) SyncToS3(ctx context.Context, cfg S3Config) (*S3SyncResult, er
 		// Check if file exists with same size
 		if existingSize, exists := existing[s3Key]; exists && existingSize == int64(len(data)) {
 			skipped := skippedFiles.Add(1)
-			s.logger.Debug(op, "cdnid", cdnid, "status", "skipped", "synced", syncedFiles.Load(), "skipped", skipped)
+			logger.Debug(op, "cdnid", cdnid, "status", "skipped", "synced", syncedFiles.Load(), "skipped", skipped)
 			continue
 		}
 
@@ -129,7 +131,7 @@ func (s *Service) SyncToS3(ctx context.Context, cfg S3Config) (*S3SyncResult, er
 			}
 
 			synced := syncedFiles.Add(1)
-			s.logger.Debug(op, "cdnid", cdnid, "status", "synced", "synced", synced, "skipped", skippedFiles.Load())
+			logger.Debug(op, "cdnid", cdnid, "status", "synced", "synced", synced, "skipped", skippedFiles.Load())
 			return nil
 		})
 	}
@@ -147,7 +149,7 @@ func (s *Service) SyncToS3(ctx context.Context, cfg S3Config) (*S3SyncResult, er
 		SkippedFiles: int(skippedFiles.Load()),
 	}
 
-	s.logger.Info("sync cache files with s3: finished",
+	logger.Info("sync cache files with s3: finished",
 		"synced_files", result.SyncedFiles,
 		"skipped_files", result.SkippedFiles,
 	)

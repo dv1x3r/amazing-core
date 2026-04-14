@@ -18,12 +18,6 @@ var (
 	ErrNameExists   = errors.New("name with the same type and name already exists")
 )
 
-type RandomName struct {
-	ID       int    `json:"id"`
-	PartType string `json:"part_type"`
-	Name     string `json:"name"`
-}
-
 type Service struct {
 	store db.Store
 }
@@ -32,6 +26,12 @@ func NewService(store db.Store) *Service {
 	return &Service{
 		store: store,
 	}
+}
+
+type RandomName struct {
+	ID       int    `json:"id"`
+	PartType string `json:"part_type"`
+	Name     string `json:"name"`
 }
 
 func (s *Service) GetNStringsByType(ctx context.Context, namePartType string, amount int) ([]string, error) {

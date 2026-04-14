@@ -1,4 +1,4 @@
-package dummy
+package game
 
 import (
 	"github.com/dv1x3r/amazing-core/internal/config"
@@ -6,12 +6,27 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/messages"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 	"github.com/dv1x3r/amazing-core/internal/services/asset"
+	"github.com/dv1x3r/amazing-core/internal/services/dummy"
+	"github.com/dv1x3r/amazing-core/internal/services/randname"
 )
 
-var (
-	DummyService *Service
-	AssetService *asset.Service
-)
+type Handler struct {
+	dummyService    *dummy.Service
+	assetService    *asset.Service
+	randnameService *randname.Service
+}
+
+func NewHandler(
+	dummyService *dummy.Service,
+	assetService *asset.Service,
+	randnameService *randname.Service,
+) *Handler {
+	return &Handler{
+		dummyService:    dummyService,
+		assetService:    assetService,
+		randnameService: randnameService,
+	}
+}
 
 var (
 	dummyPlayerID      = types.OIDFromInt64(72057594037927937)
@@ -111,7 +126,7 @@ Returns:
   - version is the current game version.
   - force_update is a boolean represented as "true" or "false", indicating whether a forced update is required.
 */
-func GetClientVersionInfo(w gsf.ResponseWriter, r *gsf.Request) error {
+func (h *Handler) GetClientVersionInfo(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetClientVersionInfoRequest{}
 	if err := r.Read(req); err != nil {
 		return err
@@ -134,7 +149,7 @@ Scenarios:
 Returns:
   - ItemCategories array.
 */
-func GetPublicItemCategories(w gsf.ResponseWriter, r *gsf.Request) error {
+func (h *Handler) GetPublicItemCategories(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetPublicItemCategoriesRequest{}
 	if err := r.Read(req); err != nil {
 		return err
@@ -144,7 +159,7 @@ func GetPublicItemCategories(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-func GetCMSItemCategories(w gsf.ResponseWriter, r *gsf.Request) error {
+func (h *Handler) GetCMSItemCategories(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetCMSItemCategoriesRequest{}
 	if err := r.Read(req); err != nil {
 		return err
@@ -163,13 +178,30 @@ Scenarios:
 Returns:
   - Items array.
 */
-func GetPublicItemsByOIDs(w gsf.ResponseWriter, r *gsf.Request) error {
+func (h *Handler) GetPublicItemsByOIDs(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetPublicItemsByOIDsRequest{}
 	if err := r.Read(req); err != nil {
 		return err
 	}
 	res := &messages.GetPublicItemsByOIDsResponse{}
 	res.Items = []types.Item{}
+	return w.Write(res)
+}
+
+func (h *Handler) GetRandomNames(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.GetRandomNamesRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+
+	names, err := h.randnameService.GetNStringsByType(r.Context(), req.NamePartType, int(req.Amount))
+	if err != nil {
+		return err
+	}
+
+	res := &messages.GetRandomNamesResponse{}
+	res.Names = names
+
 	return w.Write(res)
 }
 
@@ -183,7 +215,7 @@ Returns:
   - An empty string when validation passed.
   - Non empty string when validation failed.
 */
-func ValidateName(w gsf.ResponseWriter, r *gsf.Request) error {
+func (h *Handler) ValidateName(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.ValidateNameRequest{}
 	if err := r.Read(req); err != nil {
 		return err
@@ -206,7 +238,7 @@ Scenarios:
 Returns:
   - An empty message.
 */
-func SelectPlayerName(w gsf.ResponseWriter, r *gsf.Request) error {
+func (h *Handler) SelectPlayerName(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.SelectPlayerNameRequest{}
 	if err := r.Read(req); err != nil {
 		return err
@@ -224,7 +256,7 @@ Scenarios:
 Returns:
   - An empty message.
 */
-func CheckUsername(w gsf.ResponseWriter, r *gsf.Request) error {
+func (h *Handler) CheckUsername(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.CheckUsernameRequest{}
 	if err := r.Read(req); err != nil {
 		return err
@@ -242,7 +274,7 @@ Scenarios:
 Returns:
   - New PlayerID.
 */
-func RegisterPlayer(w gsf.ResponseWriter, r *gsf.Request) error {
+func (h *Handler) RegisterPlayer(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.RegisterPlayerRequest{}
 	if err := r.Read(req); err != nil {
 		return err
@@ -261,8 +293,7 @@ Scenarios:
 Returns:
   - LoginResponse object.
 */
-func Login(w gsf.ResponseWriter, r *gsf.Request) error {
-	ctx := r.Context()
+func (h *Handler) Login(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.LoginRequest{}
 	if err := r.Read(req); err != nil {
 		return err
@@ -273,7 +304,7 @@ func Login(w gsf.ResponseWriter, r *gsf.Request) error {
 	// base url for downloadable assets
 	res.AssetDeliveryURL = config.Get().Settings.AssetDeliveryURL
 
-	avatarAsset, err := AssetService.GetGSFAssetByCDNID(ctx, dummyAvatarCDNID)
+	avatarAsset, err := h.assetService.GetGSFAssetByCDNID(r.Context(), dummyAvatarCDNID)
 	if err != nil {
 		return err
 	}
@@ -296,7 +327,7 @@ Scenarios:
 Returns:
   - Tiers array.
 */
-func GetTiers(w gsf.ResponseWriter, r *gsf.Request) error {
+func (h *Handler) GetTiers(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetTiersRequest{}
 	if err := r.Read(req); err != nil {
 		return err
@@ -324,8 +355,7 @@ Returns:
   - SiteFrame object.
   - AssetDeliveryURL string.
 */
-func GetSiteFrame(w gsf.ResponseWriter, r *gsf.Request) error {
-	ctx := r.Context()
+func (h *Handler) GetSiteFrame(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetSiteFrameRequest{}
 	if err := r.Read(req); err != nil {
 		return err
@@ -337,19 +367,19 @@ func GetSiteFrame(w gsf.ResponseWriter, r *gsf.Request) error {
 	res.AssetDeliveryURL = config.Get().Settings.AssetDeliveryURL
 
 	// Player_Base.unity3d
-	playerBase, err := AssetService.GetGSFAssetByCDNID(ctx, playerBaseCDNID)
+	playerBase, err := h.assetService.GetGSFAssetByCDNID(r.Context(), playerBaseCDNID)
 	if err != nil {
 		return err
 	}
 
 	// PlayerCamera.unity3d
-	playerCamera, err := AssetService.GetGSFAssetByCDNID(ctx, playerCameraCDNID)
+	playerCamera, err := h.assetService.GetGSFAssetByCDNID(r.Context(), playerCameraCDNID)
 	if err != nil {
 		return err
 	}
 
 	// ShadersList.unity3d
-	shadersList, err := AssetService.GetGSFAssetByCDNID(ctx, shadersListCDNID)
+	shadersList, err := h.assetService.GetGSFAssetByCDNID(r.Context(), shadersListCDNID)
 	if err != nil {
 		return err
 	}
@@ -357,7 +387,7 @@ func GetSiteFrame(w gsf.ResponseWriter, r *gsf.Request) error {
 	// Avatar_SlotIds.txt
 	// slot registry for wearable/equippable avatar parts
 	// the client looks for an asset whose resName is Avatar_SlotIds.txt (DressAvatarManager.cs:917)
-	avatarSlotIDs, err := AssetService.GetGSFAssetByCDNID(ctx, avatarSlotIDsCDNID)
+	avatarSlotIDs, err := h.assetService.GetGSFAssetByCDNID(r.Context(), avatarSlotIDsCDNID)
 	if err != nil {
 		return err
 	}
@@ -397,19 +427,18 @@ Scenarios:
 Returns:
   - PlayerItems array.
 */
-func GetOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error {
-	ctx := r.Context()
+func (h *Handler) GetOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetOutfitItemsRequest{}
 	if err := r.Read(req); err != nil {
 		return err
 	}
 
-	hatAsset, err := AssetService.GetGSFAssetByCDNID(ctx, dummyHatAssetCDNID)
+	hatAsset, err := h.assetService.GetGSFAssetByCDNID(r.Context(), dummyHatAssetCDNID)
 	if err != nil {
 		return err
 	}
 	hatAsset = normalizePrefabAsset(hatAsset)
-	hatIcon, err := AssetService.GetGSFAssetByCDNID(ctx, dummyHatIconCDNID)
+	hatIcon, err := h.assetService.GetGSFAssetByCDNID(r.Context(), dummyHatIconCDNID)
 	if err != nil {
 		return err
 	}
@@ -429,14 +458,13 @@ Scenarios:
 Returns:
   - PlayerAvatars array.
 */
-func GetAvatars(w gsf.ResponseWriter, r *gsf.Request) error {
-	ctx := r.Context()
+func (h *Handler) GetAvatars(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetAvatarsRequest{}
 	if err := r.Read(req); err != nil {
 		return err
 	}
 
-	avatarAsset, err := AssetService.GetGSFAssetByCDNID(ctx, dummyAvatarCDNID)
+	avatarAsset, err := h.assetService.GetGSFAssetByCDNID(r.Context(), dummyAvatarCDNID)
 	if err != nil {
 		return err
 	}
@@ -456,7 +484,7 @@ Scenarios:
 Returns:
   - PlayerAvatarOutfits array.
 */
-func GetOutfits(w gsf.ResponseWriter, r *gsf.Request) error {
+func (h *Handler) GetOutfits(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetOutfitsRequest{}
 	if err := r.Read(req); err != nil {
 		return err
@@ -482,7 +510,7 @@ Scenarios:
 Returns:
   - Zones array.
 */
-func GetZones(w gsf.ResponseWriter, r *gsf.Request) error {
+func (h *Handler) GetZones(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetZonesRequest{}
 	if err := r.Read(req); err != nil {
 		return err
@@ -513,8 +541,7 @@ Returns:
   - ZoneInstance object.
   - Village object.
 */
-func InitLocation(w gsf.ResponseWriter, r *gsf.Request) error {
-	ctx := r.Context()
+func (h *Handler) InitLocation(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.InitLocationRequest{}
 	if err := r.Read(req); err != nil {
 		return err
@@ -529,12 +556,12 @@ func InitLocation(w gsf.ResponseWriter, r *gsf.Request) error {
 	// dummyScene := "OTYxMTQ4NDU5NDE5MA" // HomeLotSmall.unity3d
 	// dummyScene := "OTQ1MDc3NTY0MjEyNg" // HomeLot_Winter.unity3d
 
-	dummyScene, err := DummyService.GetValue(ctx, "map")
+	dummyScene, err := h.dummyService.GetValue(r.Context(), "map")
 	if err != nil {
 		return err
 	}
 
-	scene, err := AssetService.GetGSFAssetByCDNID(ctx, dummyScene)
+	scene, err := h.assetService.GetGSFAssetByCDNID(r.Context(), dummyScene)
 	if err != nil {
 		return err
 	}
@@ -568,7 +595,7 @@ Scenarios:
 Returns:
   - PlayerItems array.
 */
-func GetMazeItems(w gsf.ResponseWriter, r *gsf.Request) error {
+func (h *Handler) GetMazeItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetMazeItemsRequest{}
 	if err := r.Read(req); err != nil {
 		return err
@@ -587,7 +614,7 @@ Scenarios:
 Returns:
   - ChatChannelTypes array.
 */
-func GetChatChannelTypes(w gsf.ResponseWriter, r *gsf.Request) error {
+func (h *Handler) GetChatChannelTypes(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetChatChannelTypesRequest{}
 	if err := r.Read(req); err != nil {
 		return err
@@ -606,7 +633,7 @@ Scenarios:
 Returns:
   - Announcements array.
 */
-func GetAnnouncements(w gsf.ResponseWriter, r *gsf.Request) error {
+func (h *Handler) GetAnnouncements(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetAnnouncementsRequest{}
 	if err := r.Read(req); err != nil {
 		return err
@@ -625,7 +652,7 @@ Scenarios:
 Returns:
   - An empty message.
 */
-func SyncLogin(w gsf.ResponseWriter, r *gsf.Request) error {
+func (h *Handler) SyncLogin(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.SyncLoginRequest{}
 	if err := r.Read(req); err != nil {
 		return err
@@ -643,7 +670,7 @@ Scenarios:
 Returns:
   - BuildingID object.
 */
-func EnterBuilding(w gsf.ResponseWriter, r *gsf.Request) error {
+func (h *Handler) EnterBuilding(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.EnterBuildingRequest{}
 	if err := r.Read(req); err != nil {
 		return err
@@ -661,7 +688,7 @@ Scenarios:
 Returns:
   - OnlineStatuses array.
 */
-func GetOnlineStatuses(w gsf.ResponseWriter, r *gsf.Request) error {
+func (h *Handler) GetOnlineStatuses(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetOnlineStatusesRequest{}
 	if err := r.Read(req); err != nil {
 		return err
@@ -680,7 +707,7 @@ Scenarios:
 Returns:
   - NPC array.
 */
-func GetPlayerNPCs(w gsf.ResponseWriter, r *gsf.Request) error {
+func (h *Handler) GetPlayerNPCs(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetPlayerNPCsRequest{}
 	if err := r.Read(req); err != nil {
 		return err
@@ -690,7 +717,7 @@ func GetPlayerNPCs(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-func Logout(w gsf.ResponseWriter, r *gsf.Request) error {
+func (h *Handler) Logout(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.LogoutRequest{}
 	if err := r.Read(req); err != nil {
 		return err

@@ -19,7 +19,21 @@ import (
 	"github.com/huandu/go-sqlbuilder"
 )
 
-type AssetItem struct {
+type Service struct {
+	logger      *slog.Logger
+	store       db.Store
+	deliveryURL string
+}
+
+func NewService(logger *slog.Logger, store db.Store, deliveryURL string) *Service {
+	return &Service{
+		logger:      logger,
+		store:       store,
+		deliveryURL: deliveryURL,
+	}
+}
+
+type Asset struct {
 	ID          int              `json:"id"`
 	CDNID       string           `json:"cdnid"`
 	URL         string           `json:"url"`
@@ -40,23 +54,9 @@ type AssetItem struct {
 	Version     w2.Field[string] `json:"version"`
 }
 
-type Service struct {
-	logger      *slog.Logger
-	store       db.Store
-	deliveryURL string
-}
-
-func NewService(logger *slog.Logger, store db.Store, deliveryURL string) *Service {
-	return &Service{
-		logger:      logger,
-		store:       store,
-		deliveryURL: deliveryURL,
-	}
-}
-
-func (s *Service) GetGridRecords(ctx context.Context, req w2.GetGridRequest) (w2.GetGridResponse[AssetItem], error) {
+func (s *Service) GetGridRecords(ctx context.Context, req w2.GetGridRequest) (w2.GetGridResponse[Asset], error) {
 	const op = "asset.Service.GetGridRecords"
-	res, err := w2db.GetGridContext(ctx, s.store.DB(), req, w2db.GetGridOptions[AssetItem]{
+	res, err := w2db.GetGridContext(ctx, s.store.DB(), req, w2db.GetGridOptions[Asset]{
 		From: "asset as a",
 		Select: []string{
 			"a.id",
@@ -122,8 +122,8 @@ func (s *Service) GetGridRecords(ctx context.Context, req w2.GetGridRequest) (w2
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_group as ag", "ag.id = a.asset_group_id")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_metadata as am", "am.asset_id = a.id")
 		},
-		Scan: func(rows *sql.Rows) (AssetItem, error) {
-			var record AssetItem
+		Scan: func(rows *sql.Rows) (Asset, error) {
+			var record Asset
 			if err := rows.Scan(
 				&record.ID,
 				&record.CDNID,
@@ -155,12 +155,12 @@ func (s *Service) GetGridRecords(ctx context.Context, req w2.GetGridRequest) (w2
 	return res, wrap.IfErr(op, err)
 }
 
-func (s *Service) SaveGrid(ctx context.Context, req w2.SaveGridRequest[AssetItem]) error {
+func (s *Service) SaveGrid(ctx context.Context, req w2.SaveGridRequest[Asset]) error {
 	const op = "asset.Service.SaveGrid"
 	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
-		_, err := w2db.SaveGridContext(ctx, tx, req, w2db.SaveGridOptions[AssetItem]{
+		_, err := w2db.SaveGridContext(ctx, tx, req, w2db.SaveGridOptions[Asset]{
 			Flavor: sqlbuilder.SQLite,
-			BuildUpdate: func(change AssetItem) *sqlbuilder.UpdateBuilder {
+			BuildUpdate: func(change Asset) *sqlbuilder.UpdateBuilder {
 				ub := sqlbuilder.Update("asset")
 				w2sql.Set(ub, change.AssetType.ID, "asset_type_id")
 				w2sql.Set(ub, change.AssetGroup.ID, "asset_group_id")
@@ -248,4 +248,8 @@ func (s *Service) GetGSFAssetByCDNID(ctx context.Context, cdnid string) (types.A
 		return a, wrap.IfErr(op, fmt.Errorf("cdnid %s: %w", cdnid, err))
 	}
 	return a, nil
+}
+
+func (s *Service) ImportCacheItems(ctx context.Context, items []CacheItem) (*ImportResult, error) {
+	return ImportCacheItems(ctx, s.logger, s.store.DB(), items)
 }

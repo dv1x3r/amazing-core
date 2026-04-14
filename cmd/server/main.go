@@ -13,7 +13,6 @@ import (
 
 	"github.com/dv1x3r/amazing-core/internal/api"
 	"github.com/dv1x3r/amazing-core/internal/config"
-	"github.com/dv1x3r/amazing-core/internal/dummy"
 	"github.com/dv1x3r/amazing-core/internal/game"
 
 	"github.com/dv1x3r/amazing-core/internal/lib/db"
@@ -23,6 +22,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/services/asset"
 	"github.com/dv1x3r/amazing-core/internal/services/auth"
 	"github.com/dv1x3r/amazing-core/internal/services/blob"
+	"github.com/dv1x3r/amazing-core/internal/services/dummy"
 	"github.com/dv1x3r/amazing-core/internal/services/randname"
 )
 
@@ -44,6 +44,7 @@ const AMAZING_CORE = `
 func main() {
 	cfg := config.Get()
 
+	// ── Logger ──────────────────────────────────────────────────────────────────
 	switch cfg.Logger.Level {
 	case "debug":
 		logger.SetLevel(slog.LevelDebug)
@@ -70,6 +71,7 @@ func main() {
 		logger.Get().Info(fmt.Sprintf(AMAZING_CORE, version), "config", cfg)
 	}
 
+	// ── Config check ────────────────────────────────────────────────────────────
 	if cfg.Servers.API == "" || cfg.Servers.Game == "" {
 		logger.Get().Error("missing server configuration", "api", cfg.Servers.API, "game", cfg.Servers.Game)
 		fmt.Scanln()
@@ -82,8 +84,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// prepare database folders
-
+	// ── Database folders ────────────────────────────────────────────────────────
 	if err := os.MkdirAll(path.Dir(cfg.Storage.Databases.Core), os.ModePerm); err != nil {
 		logger.Get().Error("unable to access the folder for the core database", "err", err)
 		fmt.Scanln()
@@ -96,7 +97,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// prepare blob.db if missing & download is enabled
+	// ── Download blob.db ────────────────────────────────────────────────────────
 	if cfg.Blob.Download {
 		if err := downloader.DownloadIfNotExists(logger.Get(), cfg.Storage.Databases.Blob, cfg.Blob.DownloadURL); err != nil {
 			logger.Get().Error("unable to download blob.db", "err", err)
@@ -105,8 +106,7 @@ func main() {
 		}
 	}
 
-	// connect to the databases
-
+	// ── Database stores ─────────────────────────────────────────────────────────
 	coreStore, err := db.NewSQLiteStore(cfg.Storage.Databases.Core)
 	if err != nil {
 		logger.Get().Error("unable to connect to core.db", "err", err)
@@ -127,8 +127,7 @@ func main() {
 
 	logger.Get().Info(fmt.Sprintf("connected to the %s using the %s driver", cfg.Storage.Databases.Blob, blobStore.DriverName()))
 
-	// apply database migrations
-
+	// ── Database migrations ─────────────────────────────────────────────────────
 	if err := coreStore.MigrateBaseFile(logger.Get(), data.FS, "sql/core_db/base.sql"); err != nil {
 		logger.Get().Error("unable to initialize core.db", "err", err)
 		fmt.Scanln()
@@ -147,6 +146,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	// ── Services & Servers ──────────────────────────────────────────────────────
 	authService := auth.NewService(cfg.Secure.Session.Secure, cfg.Secure.Session.Key, cfg.Secure.Auth.Username, cfg.Secure.Auth.Password)
 	dummyService := dummy.NewService(coreStore)
 	blobService := blob.NewService(logger.Get(), blobStore, cfg.Settings.AssetDeliveryURL)

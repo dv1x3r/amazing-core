@@ -1,6 +1,7 @@
 package asset
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -26,7 +27,7 @@ type CacheItem struct {
 	Bundle json.RawMessage `json:"bundle"`
 }
 
-func ImportCacheItems(logger *slog.Logger, db *sql.DB, items []CacheItem) (*ImportResult, error) {
+func ImportCacheItems(ctx context.Context, logger *slog.Logger, db *sql.DB, items []CacheItem) (*ImportResult, error) {
 	const op = "asset.ImportCacheItems"
 
 	const assetSQL = `
@@ -45,14 +46,14 @@ func ImportCacheItems(logger *slog.Logger, db *sql.DB, items []CacheItem) (*Impo
 		on conflict(asset_id) do update set
 			metadata = excluded.metadata`
 
-	tx, err := db.Begin()
+	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, wrap.IfErr(op, err)
 	}
 	defer tx.Rollback()
 
 	fileTypes := map[string]int{}
-	rows, err := tx.Query("select id, name from file_type")
+	rows, err := tx.QueryContext(ctx, "select id, name from file_type")
 	if err != nil {
 		return nil, wrap.IfErr(op, err)
 	}
@@ -90,7 +91,8 @@ func ImportCacheItems(logger *slog.Logger, db *sql.DB, items []CacheItem) (*Impo
 		}
 
 		var assetID int64
-		err := stmtAsset.QueryRow(
+		err := stmtAsset.QueryRowContext(
+			ctx,
 			item.File.Name,
 			item.File.OID,
 			item.File.Hash,
@@ -107,7 +109,7 @@ func ImportCacheItems(logger *slog.Logger, db *sql.DB, items []CacheItem) (*Impo
 			continue
 		}
 
-		res, err := stmtMetadata.Exec(assetID, item.Bundle)
+		res, err := stmtMetadata.ExecContext(ctx, assetID, item.Bundle)
 		if err != nil {
 			return nil, wrap.IfErr(op, err)
 		}

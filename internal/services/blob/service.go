@@ -26,15 +26,6 @@ var (
 	ErrFileExists   = errors.New("file with the same name already exists")
 )
 
-type AssetFile struct {
-	ID      int    `json:"id"`
-	CDNID   string `json:"cdnid"`
-	Hash    string `json:"hash"`
-	Size    int    `json:"size"`
-	SizeStr string `json:"size_str"`
-	URL     string `json:"url"`
-}
-
 type Service struct {
 	logger      *slog.Logger
 	store       db.Store
@@ -47,6 +38,15 @@ func NewService(logger *slog.Logger, store db.Store, deliveryURL string) *Servic
 		store:       store,
 		deliveryURL: deliveryURL,
 	}
+}
+
+type File struct {
+	ID      int    `json:"id"`
+	CDNID   string `json:"cdnid"`
+	Hash    string `json:"hash"`
+	Size    int    `json:"size"`
+	SizeStr string `json:"size_str"`
+	URL     string `json:"url"`
 }
 
 func (s *Service) FetchFileBlob(ctx context.Context, cdnid string) ([]byte, error) {
@@ -65,9 +65,9 @@ func (s *Service) FetchFileBlob(ctx context.Context, cdnid string) ([]byte, erro
 	return data, nil
 }
 
-func (s *Service) FetchFilesList(ctx context.Context, req w2.GetGridRequest) (w2.GetGridResponse[AssetFile], error) {
+func (s *Service) FetchFilesList(ctx context.Context, req w2.GetGridRequest) (w2.GetGridResponse[File], error) {
 	const op = "blob.Service.FetchFilesList"
-	res, err := w2db.GetGridContext(ctx, s.store.DB(), req, w2db.GetGridOptions[AssetFile]{
+	res, err := w2db.GetGridContext(ctx, s.store.DB(), req, w2db.GetGridOptions[File]{
 		From: "asset_file",
 		Select: []string{
 			"id",
@@ -90,8 +90,8 @@ func (s *Service) FetchFilesList(ctx context.Context, req w2.GetGridRequest) (w2
 			"size_str": "length(blob)",
 		},
 		Flavor: sqlbuilder.SQLite,
-		Scan: func(rows *sql.Rows) (AssetFile, error) {
-			var record AssetFile
+		Scan: func(rows *sql.Rows) (File, error) {
+			var record File
 			if err := rows.Scan(
 				&record.ID,
 				&record.CDNID,
@@ -154,4 +154,16 @@ func (s *Service) SaveFiles(ctx context.Context, headers []*multipart.FileHeader
 	}
 
 	return wrap.IfErr(op, tx.Commit())
+}
+
+func (s *Service) ImportFromFolder(ctx context.Context) (*ImportResult, error) {
+	return ImportFromFolder(ctx, s.logger, s.store.DB(), "cache")
+}
+
+func (s *Service) ExportToFolder(ctx context.Context) (*ExportResult, error) {
+	return ExportToFolder(ctx, s.logger, s.store.DB(), "cache", true)
+}
+
+func (s *Service) SyncToS3(ctx context.Context, cfg S3Config) (*S3SyncResult, error) {
+	return SyncToS3(ctx, s.logger, s.store.DB(), cfg)
 }

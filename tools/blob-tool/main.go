@@ -33,25 +33,24 @@ func main() {
 }
 
 func run(logger *slog.Logger, mode string, dbPath string, dir string, overwrite bool) error {
+	ctx := context.Background()
+
 	store, err := db.NewSQLiteStore(dbPath)
 	if err != nil {
 		return fmt.Errorf("open database: %w", err)
 	}
 	defer store.DB().Close()
 
-	service := blob.NewService(logger, store, "")
-	ctx := context.Background()
-
 	switch mode {
 	case "import":
-		result, err := service.ImportFromFolder(ctx, dir)
+		result, err := blob.ImportFromFolder(ctx, logger, store.DB(), dir)
 		if err != nil {
 			return err
 		}
 		fmt.Printf("imported: %d, skipped: %d\n", result.ImportedFiles, result.SkippedFiles)
 
 	case "export":
-		result, err := service.ExportToFolder(ctx, dir, overwrite)
+		result, err := blob.ExportToFolder(ctx, logger, store.DB(), dir, overwrite)
 		if err != nil {
 			return err
 		}

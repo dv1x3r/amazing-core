@@ -7,11 +7,6 @@ import (
 	"github.com/gorilla/sessions"
 )
 
-type AdminLoginForm struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
 type Service struct {
 	session  sessions.Store
 	username string
@@ -32,6 +27,11 @@ func NewService(secure bool, sessionKey string, username string, password string
 		username: username,
 		password: password,
 	}
+}
+
+type AdminLoginForm struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 func (s *Service) AuthenticateSession(w http.ResponseWriter, r *http.Request, form AdminLoginForm) (bool, error) {
