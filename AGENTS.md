@@ -77,12 +77,7 @@ HTTP API & admin dashboard backend:
 
 ### internal/game/
 
-Game server message routing:
-
-- Key subfolders and files:
-  - `types/` — game domain object types and enums, used within messages
-  - `messages/` — game domain message types that implement client-server interaction, may reference `types/`
-- Do not modify existing message structures unless verified in client code or explicitly instructed.
+Game server message routing.
 
 ### internal/dummy/
 
@@ -97,10 +92,13 @@ TCP game server protocol handling:
     - `server.go` — TCP server bootstrap
     - `router.go` — message routing
     - `protocol.go` — protocol interface and slice/map helpers
+    - `types/` — DTO types and enums, used within messages
+    - `messages/` — DTO message types that implement client-server interaction, may reference `types/`
   - `bitprotocol/` — bit-level protocol encoding and decoding
   - `middleware/` — game server middlewares
 - Use `ReadSlice`/`WriteSlice`, `ReadMap`/`WriteMap`, `ReadObject`/`WriteObject` helpers
 - **Do not break wire compatibility**
+- **Do not modify existing message structures** unless verified in client code or explicitly instructed.
 
 ### internal/services/
 

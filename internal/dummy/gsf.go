@@ -2,9 +2,9 @@ package dummy
 
 import (
 	"github.com/dv1x3r/amazing-core/internal/config"
-	"github.com/dv1x3r/amazing-core/internal/game/messages"
-	"github.com/dv1x3r/amazing-core/internal/game/types"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf/messages"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 	"github.com/dv1x3r/amazing-core/internal/services/asset"
 )
 
@@ -12,6 +12,93 @@ var (
 	DummyService *Service
 	AssetService *asset.Service
 )
+
+var (
+	dummyPlayerID      = types.OIDFromInt64(72057594037927937)
+	dummyAvatarID      = types.OIDFromInt64(72057594037927938)
+	dummyOutfitID      = types.OIDFromInt64(72057594037927939)
+	dummyHatItemID     = types.OIDFromInt64(72057594037927940)
+	dummyHatTemplateID = types.OIDFromInt64(72057594037927941)
+	dummyClothingCatID = types.OIDFromInt64(72057594037927942)
+	dummyHatSlotID     = types.OIDFromInt64(289356276061314068)
+	dummyAvatarCDNID   = "OTQ3ODg2NDg5NjAxNA"
+	dummyHatAssetCDNID = "OTYyOTU0MTA3MjkxMA"
+	dummyHatIconCDNID  = "OTYyOTM4NjkzMjIzOA"
+	avatarSlotIDsCDNID = "OTU3MDUxOTg3NTU5OA"
+	playerBaseCDNID    = "OTQ4NzQwNDQ5ODk1OA"
+	playerCameraCDNID  = "OTQ4NzQyMTI3NjE3NA"
+	shadersListCDNID   = "OTYyMzU1MDU1ODIyMg"
+)
+
+func dummyItemCategories() []types.ItemCategory {
+	return []types.ItemCategory{
+		{
+			RuleContainer: types.RuleContainer{
+				AssetContainer: types.AssetContainer{
+					OID:      dummyClothingCatID,
+					AssetMap: map[string][]types.Asset{},
+				},
+			},
+			Name: "Clothing",
+		},
+	}
+}
+
+func normalizePrefabAsset(asset types.Asset) types.Asset {
+	asset.AssetTypeName = "Prefab_Unity3D"
+	asset.GroupName = ""
+	return asset
+}
+
+func normalizeImageAsset(asset types.Asset) types.Asset {
+	asset.AssetTypeName = "Images"
+	if asset.GroupName == "" {
+		asset.GroupName = "Inventory Icon"
+	}
+	return asset
+}
+
+func dummyAvatarWithAsset(avatarAsset types.Asset) types.PlayerAvatar {
+	return types.PlayerAvatar{
+		OID:                  dummyAvatarID,
+		PlayerID:             dummyPlayerID,
+		Name:                 "dummy-zing",
+		PlayerAvatarOutfitID: dummyOutfitID,
+		OutfitNo:             1,
+		Avatar: types.Avatar{
+			AssetContainer: types.AssetContainer{
+				AssetMap: map[string][]types.Asset{
+					"Prefab_Unity3D": {avatarAsset},
+				},
+			},
+			MaxOutfits: 1,
+			Name:       "dummy-zing",
+		},
+	}
+}
+
+func dummyHatPlayerItem(hatAsset, hatIcon types.Asset) types.PlayerItem {
+	return types.PlayerItem{
+		OID:                  dummyHatItemID,
+		SlotID:               dummyHatSlotID,
+		PlayerAvatarOutfitID: dummyOutfitID,
+		PlayerAvatarID:       dummyAvatarID,
+		PlayerID:             dummyPlayerID,
+		Item: types.Item{
+			AssetContainer: types.AssetContainer{
+				OID: dummyHatTemplateID,
+				AssetMap: map[string][]types.Asset{
+					"Prefab_Unity3D": {hatAsset},
+					"Images":         {hatIcon},
+				},
+			},
+			Name:              "dummy-hat",
+			ItemCategories:    dummyItemCategories(),
+			AcceptableSlotIds: []types.OID{dummyHatSlotID},
+		},
+		Quantity: 1,
+	}
+}
 
 /*
 GetClientVersionInfo returns the server version for a specific client.
@@ -53,6 +140,17 @@ func GetPublicItemCategories(w gsf.ResponseWriter, r *gsf.Request) error {
 		return err
 	}
 	res := &messages.GetPublicItemCategoriesResponse{}
+	res.ItemCategories = dummyItemCategories()
+	return w.Write(res)
+}
+
+func GetCMSItemCategories(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.GetCMSItemCategoriesRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	res := &messages.GetCMSItemCategoriesResponse{}
+	res.ItemCategories = dummyItemCategories()
 	return w.Write(res)
 }
 
@@ -71,6 +169,7 @@ func GetPublicItemsByOIDs(w gsf.ResponseWriter, r *gsf.Request) error {
 		return err
 	}
 	res := &messages.GetPublicItemsByOIDsResponse{}
+	res.Items = []types.Item{}
 	return w.Write(res)
 }
 
@@ -174,24 +273,16 @@ func Login(w gsf.ResponseWriter, r *gsf.Request) error {
 	// base url for downloadable assets
 	res.AssetDeliveryURL = config.Get().Settings.AssetDeliveryURL
 
-	// dummyAvatar := "OTQ0NDE2MzMyMTg3MA" // CAB-cows007
-	dummyAvatar, err := DummyService.GetValue(ctx, "avatar")
+	avatarAsset, err := AssetService.GetGSFAssetByCDNID(ctx, dummyAvatarCDNID)
 	if err != nil {
 		return err
 	}
+	avatarAsset = normalizePrefabAsset(avatarAsset)
 
-	avatarAsset, err := AssetService.GetGSFAssetByCDNID(ctx, dummyAvatar)
-	if err != nil {
-		return err
-	}
-
-	activeAvatarAssetMap := map[string][]types.Asset{}
-	activeAvatarAssetMap["Prefab_Unity3D"] = []types.Asset{
-		avatarAsset,
-	}
-
-	res.Player.ActivePlayerAvatar.Avatar.AssetMap = activeAvatarAssetMap
+	res.Player.OID = dummyPlayerID
+	res.Player.ActivePlayerAvatar = dummyAvatarWithAsset(avatarAsset)
 	res.Player.IsQA = true
+	res.MaxOutfit = 1
 
 	return w.Write(res)
 }
@@ -246,19 +337,19 @@ func GetSiteFrame(w gsf.ResponseWriter, r *gsf.Request) error {
 	res.AssetDeliveryURL = config.Get().Settings.AssetDeliveryURL
 
 	// Player_Base.unity3d
-	playerBase, err := AssetService.GetGSFAssetByCDNID(ctx, "OTU2NTAzNTgyMzExOA")
+	playerBase, err := AssetService.GetGSFAssetByCDNID(ctx, playerBaseCDNID)
 	if err != nil {
 		return err
 	}
 
 	// PlayerCamera.unity3d
-	playerCamera, err := AssetService.GetGSFAssetByCDNID(ctx, "OTQyNDc5ODIyMDMwMg")
+	playerCamera, err := AssetService.GetGSFAssetByCDNID(ctx, playerCameraCDNID)
 	if err != nil {
 		return err
 	}
 
 	// ShadersList.unity3d
-	shadersList, err := AssetService.GetGSFAssetByCDNID(ctx, "OTYyNDQwNDA5OTA4Ng")
+	shadersList, err := AssetService.GetGSFAssetByCDNID(ctx, shadersListCDNID)
 	if err != nil {
 		return err
 	}
@@ -266,7 +357,7 @@ func GetSiteFrame(w gsf.ResponseWriter, r *gsf.Request) error {
 	// Avatar_SlotIds.txt
 	// slot registry for wearable/equippable avatar parts
 	// the client looks for an asset whose resName is Avatar_SlotIds.txt (DressAvatarManager.cs:917)
-	avatarSlotIDs, err := AssetService.GetGSFAssetByCDNID(ctx, "OTU3MDUxOTg3NTU5OA")
+	avatarSlotIDs, err := AssetService.GetGSFAssetByCDNID(ctx, avatarSlotIDsCDNID)
 	if err != nil {
 		return err
 	}
@@ -307,12 +398,25 @@ Returns:
   - PlayerItems array.
 */
 func GetOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error {
+	ctx := r.Context()
 	req := &messages.GetOutfitItemsRequest{}
 	if err := r.Read(req); err != nil {
 		return err
 	}
+
+	hatAsset, err := AssetService.GetGSFAssetByCDNID(ctx, dummyHatAssetCDNID)
+	if err != nil {
+		return err
+	}
+	hatAsset = normalizePrefabAsset(hatAsset)
+	hatIcon, err := AssetService.GetGSFAssetByCDNID(ctx, dummyHatIconCDNID)
+	if err != nil {
+		return err
+	}
+	hatIcon = normalizeImageAsset(hatIcon)
+
 	res := &messages.GetOutfitItemsResponse{}
-	res.OutfitItems = []types.PlayerItem{}
+	res.OutfitItems = []types.PlayerItem{dummyHatPlayerItem(hatAsset, hatIcon)}
 	return w.Write(res)
 }
 
@@ -326,14 +430,20 @@ Returns:
   - PlayerAvatars array.
 */
 func GetAvatars(w gsf.ResponseWriter, r *gsf.Request) error {
+	ctx := r.Context()
 	req := &messages.GetAvatarsRequest{}
 	if err := r.Read(req); err != nil {
 		return err
 	}
+
+	avatarAsset, err := AssetService.GetGSFAssetByCDNID(ctx, dummyAvatarCDNID)
+	if err != nil {
+		return err
+	}
+	avatarAsset = normalizePrefabAsset(avatarAsset)
+
 	res := &messages.GetAvatarsResponse{}
-	avatar := types.Avatar{}
-	avatar.AssetMap = map[string][]types.Asset{}
-	res.Avatars = []types.PlayerAvatar{{Avatar: avatar}}
+	res.Avatars = []types.PlayerAvatar{dummyAvatarWithAsset(avatarAsset)}
 	return w.Write(res)
 }
 
@@ -352,7 +462,14 @@ func GetOutfits(w gsf.ResponseWriter, r *gsf.Request) error {
 		return err
 	}
 	res := &messages.GetOutfitsResponse{}
-	res.PlayerAvatarOutfits = []types.PlayerAvatarOutfit{}
+	res.PlayerAvatarOutfits = []types.PlayerAvatarOutfit{
+		{
+			OID:            dummyOutfitID,
+			PlayerID:       dummyPlayerID,
+			PlayerAvatarID: dummyAvatarID,
+			OutfitNo:       1,
+		},
+	}
 	return w.Write(res)
 }
 

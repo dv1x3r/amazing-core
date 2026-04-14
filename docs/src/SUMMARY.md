@@ -40,7 +40,7 @@
     - [GetCMSMissions]()
     - [GetCrispActions]()
     - [GetRequiredExperience]()
-    - [GetCMSItemCategories]()
+    - [GetCMSItemCategories](./documentation/gsf-classes/login/get-cms-item-categories.md)
     - [GetOutfitItems](./documentation/gsf-classes/login/get-outfit-items.md)
     - [GetAvatars](./documentation/gsf-classes/login/get-avatars.md)
     - [GetOutfits](./documentation/gsf-classes/login/get-outfits.md)

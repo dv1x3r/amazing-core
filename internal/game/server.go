@@ -8,12 +8,12 @@ import (
 	"net"
 
 	"github.com/dv1x3r/amazing-core/internal/dummy"
-	"github.com/dv1x3r/amazing-core/internal/game/types/serviceclass"
-	"github.com/dv1x3r/amazing-core/internal/game/types/syncmessagetype"
-	"github.com/dv1x3r/amazing-core/internal/game/types/usermessagetype"
+	"github.com/dv1x3r/amazing-core/internal/game/middleware"
 	"github.com/dv1x3r/amazing-core/internal/network/bitprotocol"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
-	"github.com/dv1x3r/amazing-core/internal/network/middleware"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/serviceclass"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/syncmessagetype"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/usermessagetype"
 	"github.com/dv1x3r/amazing-core/internal/services/asset"
 	"github.com/dv1x3r/amazing-core/internal/services/randname"
 )
@@ -52,6 +52,7 @@ func NewServer(
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.LOGIN), dummy.Login)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_TIERS), dummy.GetTiers)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_SITE_FRAME), dummy.GetSiteFrame)
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_CMS_ITEMCATEGORIES), dummy.GetCMSItemCategories)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_OUTFIT_ITEMS), dummy.GetOutfitItems)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_AVATARS), dummy.GetAvatars)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_OUTFITS), dummy.GetOutfits)

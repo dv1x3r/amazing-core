@@ -3,13 +3,12 @@ package gsf
 import (
 	"fmt"
 
-	"github.com/dv1x3r/amazing-core/internal/game/types/appcode"
-	"github.com/dv1x3r/amazing-core/internal/game/types/clientmessagetype"
-	"github.com/dv1x3r/amazing-core/internal/game/types/resultcode"
-	"github.com/dv1x3r/amazing-core/internal/game/types/serviceclass"
-	"github.com/dv1x3r/amazing-core/internal/game/types/syncmessagetype"
-	"github.com/dv1x3r/amazing-core/internal/game/types/usermessagetype"
-	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/appcode"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/clientmessagetype"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/resultcode"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/serviceclass"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/syncmessagetype"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/usermessagetype"
 )
 
 type Header struct {
@@ -25,17 +24,6 @@ type Header struct {
 		Code int32
 		Str  string
 	}
-}
-
-func ReadHeader(reader ProtocolReader) (*Header, error) {
-	header := &Header{}
-	return header, wrap.Panic(func() error {
-		if reader.ReadBool() {
-			return fmt.Errorf("null request")
-		}
-		reader.ReadObject(header)
-		return nil
-	})
 }
 
 func (h *Header) IsService() bool {

@@ -1,8 +1,8 @@
 package messages
 
 import (
-	"github.com/dv1x3r/amazing-core/internal/game/types"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
 type GetAnnouncementsRequest struct {

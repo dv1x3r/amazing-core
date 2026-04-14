@@ -2,9 +2,13 @@
 
 ## Description
 
-These categories are somehow related to starter clothing for player's avatar before registering.
+This is the public item-category lookup used by the registration flow.
 
-I do not know how this affects the intro scene at the moment.
+Its purpose is to give the intro scene enough category data to classify and render preview items that are shown before the player has fully registered.
+
+The returned categories are added into `InventoryManager` and then used when the public items are converted into temporary `GSFPlayerItem`s.
+
+This message is for public preview content, while [`GetCMSItemCategories`](../login/get-cms-item-categories.md) is for the actual logged-in game state.
 
 ## Request
 

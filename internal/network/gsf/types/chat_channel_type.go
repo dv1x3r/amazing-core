@@ -1,8 +1,8 @@
 package types
 
 import (
-	"github.com/dv1x3r/amazing-core/internal/game/types/chatchanneltypevalue"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/chatchanneltypevalue"
 )
 
 type ChatChannelType struct {

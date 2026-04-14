@@ -10,6 +10,8 @@ import (
 	"net"
 	"sync"
 	"time"
+
+	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 )
 
 type Server struct {
@@ -133,24 +135,31 @@ func (s *Server) processRequest(ctx context.Context, stream *bufio.ReadWriter, r
 		return err
 	}
 
-	codecReader := s.Codec.NewReader(data)
-	codecWriter := s.Codec.NewWriter()
+	reader := s.Codec.NewReader(data)
+	writer := s.Codec.NewWriter()
 
-	requestHeader, err := ReadHeader(codecReader)
+	header := &Header{}
+	err = wrap.Panic(func() error {
+		if reader.ReadBool() {
+			return fmt.Errorf("null request")
+		}
+		reader.ReadObject(header)
+		return nil
+	})
 	if err != nil {
 		return err
 	}
 
-	handler, ok := s.Router.Lookup(requestHeader.SvcClass, requestHeader.MsgType)
+	handler, ok := s.Router.Lookup(header.SvcClass, header.MsgType)
 	if !ok {
 		if s.Hooks.OnUnhandled != nil {
-			s.Hooks.OnUnhandled(remoteAddr, requestHeader, data)
+			s.Hooks.OnUnhandled(remoteAddr, header, data)
 		}
 		return nil
 	}
 
-	req := NewRequest(ctx, requestHeader, codecReader)
-	res := NewResponse(requestHeader, codecWriter)
+	req := NewRequest(ctx, header, reader)
+	res := NewResponse(header, writer)
 	req.RemoteIP = remoteAddr
 
 	if err = handler(res, req); err != nil {
@@ -158,7 +167,7 @@ func (s *Server) processRequest(ctx context.Context, stream *bufio.ReadWriter, r
 	}
 
 	if res.Body() != nil {
-		return s.writeMessage(stream, codecWriter)
+		return s.writeMessage(stream, writer)
 	}
 
 	return nil

@@ -8,9 +8,9 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/dv1x3r/amazing-core/internal/game/types"
 	"github.com/dv1x3r/amazing-core/internal/lib/db"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 	"github.com/dv1x3r/w2go/w2"
 	"github.com/dv1x3r/w2go/w2db"
 	"github.com/dv1x3r/w2go/w2sql"

@@ -1,8 +1,8 @@
 package types
 
 import (
-	"github.com/dv1x3r/amazing-core/internal/game/types/onlinestatusvalue"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/onlinestatusvalue"
 )
 
 type OnlineStatus struct {
