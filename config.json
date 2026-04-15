@@ -32,11 +32,6 @@
     "session": {
       "key": "openssl rand -hex 32",
       "secure": false
-    },
-    "csrf": {
-      "trustedOrigins": [
-        "http://localhost:3000"
-      ]
     }
   }
 }

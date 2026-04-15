@@ -49,9 +49,6 @@ type Secure struct {
 		Key    string `json:"key"`
 		Secure bool   `json:"secure"`
 	} `json:"session"`
-	CSRF struct {
-		TrustedOrigins []string `json:"trustedOrigins"`
-	} `json:"csrf"`
 }
 
 func (cfg Config) MarshalJSON() ([]byte, error) {

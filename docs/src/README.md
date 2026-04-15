@@ -122,26 +122,25 @@ When the download is finished, you can start the game.
 
 You can customize server settings using the `config.json` file.
 
-| Key                          | Description                                               |
-| ---------------------------- | --------------------------------------------------------- |
-| `logger.level`               | Log verbosity: `debug`, `info`, `warn`, `error`           |
-| `logger.handler`             | Log format: `pretty` (colored, formatted), `text`, `json` |
-| `servers.api`                | HTTP API bind address (e.g. `localhost:3000`)             |
-| `servers.game`               | TCP game server bind address (e.g. `localhost:8182`)      |
-| `settings.assetDeliveryAPI`  | Expose `/cdn/{cdnid}` endpoint - serves `blob.db` files   |
-| `settings.assetDeliveryURL`  | Base CDN URL sent to game clients                         |
-| `settings.syncServerIP`      | Sync server IP sent in `InitLocation` responses           |
-| `settings.syncServerPort`    | Sync server port sent in `InitLocation` responses         |
-| `blob.download`              | Auto-download `blob.db` on first start if missing         |
-| `blob.downloadURL`           | URL to fetch `blob.db` from                               |
-| `storage.explorer`           | Enable the dashboard SQL explorer - **only for testing!** |
-| `storage.databases.core`     | Path to `core.db` - main SQLite database                  |
-| `storage.databases.blob`     | Path to `blob.db` - assets SQLite database                |
-| `secure.auth.username`       | Dashboard admin username                                  |
-| `secure.auth.password`       | Dashboard admin password                                  |
-| `secure.session.key`         | Cookie session signing key                                |
-| `secure.session.secure`      | Set `Secure` flag on session cookie (enable behind HTTPS) |
-| `secure.csrf.trustedOrigins` | Origins allowed to make cross-site requests               |
+| Key                         | Description                                               |
+| --------------------------- | --------------------------------------------------------- |
+| `logger.level`              | Log verbosity: `debug`, `info`, `warn`, `error`           |
+| `logger.handler`            | Log format: `pretty` (colored, formatted), `text`, `json` |
+| `servers.api`               | HTTP API bind address (e.g. `localhost:3000`)             |
+| `servers.game`              | TCP game server bind address (e.g. `localhost:8182`)      |
+| `settings.assetDeliveryAPI` | Expose `/cdn/{cdnid}` endpoint - serves `blob.db` files   |
+| `settings.assetDeliveryURL` | Base CDN URL sent to game clients                         |
+| `settings.syncServerIP`     | Sync server IP sent in `InitLocation` responses           |
+| `settings.syncServerPort`   | Sync server port sent in `InitLocation` responses         |
+| `blob.download`             | Auto-download `blob.db` on first start if missing         |
+| `blob.downloadURL`          | URL to fetch `blob.db` from                               |
+| `storage.explorer`          | Enable the dashboard SQL explorer - **only for testing!** |
+| `storage.databases.core`    | Path to `core.db` - main SQLite database                  |
+| `storage.databases.blob`    | Path to `blob.db` - assets SQLite database                |
+| `secure.auth.username`      | Dashboard admin username                                  |
+| `secure.auth.password`      | Dashboard admin password                                  |
+| `secure.session.key`        | Cookie session signing key                                |
+| `secure.session.secure`     | Set `Secure` flag on session cookie (enable behind HTTPS) |
 
 ## Running the game on macOS
 

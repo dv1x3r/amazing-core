@@ -104,18 +104,12 @@ func NewServer(
 	protected := middleware.Protected(authService)
 	router.Handle("/api/v1/", http.StripPrefix("/api/v1", protected(v1)))
 
-	cop := http.NewCrossOriginProtection()
-	for _, origin := range config.Get().Secure.CSRF.TrustedOrigins {
-		cop.AddTrustedOrigin(origin)
-	}
-
 	stack := middleware.CreateStack(
 		middleware.Secure(),
 		middleware.IPExtractor(),
 		middleware.Logger(logger),
 		middleware.Recover(),
 		middleware.RateLimiter(50, 100, 3*time.Minute),
-		cop.Handler,
 	)
 
 	server := &http.Server{
