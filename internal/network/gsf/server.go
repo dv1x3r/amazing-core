@@ -16,7 +16,7 @@ import (
 
 type Server struct {
 	Addr   string
-	Router Router
+	Router *Router
 	Codec  ProtocolCodec
 	Hooks  ServerHooks
 

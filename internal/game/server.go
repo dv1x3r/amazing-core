@@ -30,12 +30,13 @@ func NewServer(
 	randnameService *randname.Service,
 ) *Server {
 	router := gsf.NewRouter()
+	handler := NewHandler(dummyService, assetService, randnameService)
+
 	router.Use(
 		middleware.Logger(logger),
 		middleware.Recover(),
 	)
 
-	handler := NewHandler(dummyService, assetService, randnameService)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_CLIENT_VERSION_INFO), handler.GetClientVersionInfo)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_PUBLIC_ITEM_CATEGORIES), handler.GetPublicItemCategories)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_PUBLIC_ITEMS_BY_OIDS), handler.GetPublicItemsByOIDs)
