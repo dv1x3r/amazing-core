@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/dv1x3r/amazing-core/data"
+	"github.com/dv1x3r/w2go/w2db"
 
 	"github.com/dv1x3r/amazing-core/internal/api"
 	"github.com/dv1x3r/amazing-core/internal/config"
@@ -46,6 +47,8 @@ func main() {
 
 	// ── Logger ──────────────────────────────────────────────────────────────────
 	switch cfg.Logger.Level {
+	case "debug+sql":
+		logger.SetLevel(slog.LevelDebug)
 	case "debug":
 		logger.SetLevel(slog.LevelDebug)
 	case "info":
@@ -69,6 +72,10 @@ func main() {
 	default:
 		logger.Create(logger.PrettyHandler)
 		logger.Get().Info(fmt.Sprintf(AMAZING_CORE, version), "config", cfg)
+	}
+
+	if cfg.Logger.Level == "debug+sql" {
+		w2db.SetLogger(logger.Get())
 	}
 
 	// ── Config check ────────────────────────────────────────────────────────────

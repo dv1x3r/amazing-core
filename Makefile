@@ -32,6 +32,7 @@ tidy:
 .PHONY: update
 update:
 	go get -u ./...
+	go mod tidy
 
 .PHONY: clean
 clean:

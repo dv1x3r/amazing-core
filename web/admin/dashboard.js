@@ -1,7 +1,7 @@
 import { w2layout, w2sidebar, w2toolbar } from '/lib/w2ui.es6.min.js'
-import { w2init, registerSidebarSearch } from '/lib/w2ui.helpers.js'
+import * as helpers from '/lib/w2ui.helpers.js'
 
-w2init()
+helpers.w2init()
 
 const dashboardSidebar = new w2sidebar({
   name: 'dashboardSidebar',
@@ -153,9 +153,21 @@ const dashboardSidebar = new w2sidebar({
           tooltip: 'Discord',
           onClick: () => window.open('https://discord.gg/TWfTBbfdA9', '_blank'),
         },
+        { type: 'spacer' },
+        {
+          id: 'dark',
+          type: 'check',
+          icon: 'fa fa-moon',
+          tooltip: 'Dark Theme',
+          checked: helpers.isDarkTheme(),
+          onClick: async function(event) {
+            await event.complete
+            helpers.setDarkTheme(event.detail.item.checked)
+          },
+        },
       ],
     })
-    const search = registerSidebarSearch(dashboardSidebar)
+    const search = helpers.registerSidebarSearch(dashboardSidebar)
     const el = document.getElementById('dashboard-sidebar-search')
     el.addEventListener('keyup', e => search(e.target.value))
   },

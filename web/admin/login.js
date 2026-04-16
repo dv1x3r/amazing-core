@@ -1,7 +1,7 @@
-import { w2ui, w2form, w2toolbar, w2utils } from '/lib/w2ui.es6.min.js'
+import { w2form, w2toolbar } from '/lib/w2ui.es6.min.js'
+import * as helpers from '/lib/w2ui.helpers.js'
 
-window.w2ui = w2ui
-w2utils.settings.dataType = 'JSON'
+helpers.w2init()
 
 new w2form({
   name: 'loginForm',
@@ -40,25 +40,37 @@ new w2toolbar({
   box: '#login-toolbar',
   items: [
     {
-      type: 'button',
       id: 'website',
+      type: 'button',
       icon: 'fa fa-globe',
       tooltip: 'Website',
       onClick: () => window.open('https://amazingcore.org', '_blank'),
     },
     {
-      type: 'button',
       id: 'github',
+      type: 'button',
       icon: 'fa-brands fa-github',
       tooltip: 'GitHub',
       onClick: () => window.open('https://github.com/dv1x3r/amazing-core', '_blank'),
     },
     {
-      type: 'button',
       id: 'discord',
+      type: 'button',
       icon: 'fa-brands fa-discord',
       tooltip: 'Discord',
       onClick: () => window.open('https://discord.gg/TWfTBbfdA9', '_blank'),
+    },
+    { type: 'spacer' },
+    {
+      id: 'dark',
+      type: 'check',
+      icon: 'fa fa-moon',
+      tooltip: 'Dark Theme',
+      checked: helpers.isDarkTheme(),
+      onClick: async function(event) {
+        await event.complete
+        helpers.setDarkTheme(event.detail.item.checked)
+      },
     },
   ],
 })
