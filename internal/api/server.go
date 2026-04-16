@@ -2,10 +2,7 @@ package api
 
 import (
 	"context"
-	"database/sql"
-	"embed"
 	"errors"
-	"html/template"
 	"io/fs"
 	"log/slog"
 	"net/http"
@@ -14,27 +11,15 @@ import (
 	"github.com/dv1x3r/amazing-core/data"
 	"github.com/dv1x3r/amazing-core/internal/api/middleware"
 	"github.com/dv1x3r/amazing-core/internal/config"
+	"github.com/dv1x3r/amazing-core/internal/lib/db"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
+	"github.com/dv1x3r/amazing-core/internal/services/auth"
 	"github.com/dv1x3r/amazing-core/web"
+
 	"github.com/dv1x3r/w2go/w2"
 	"github.com/dv1x3r/w2go/w2lib"
 	"github.com/dv1x3r/w2go/w2widget"
-
-	"github.com/dv1x3r/amazing-core/internal/services/asset"
-	"github.com/dv1x3r/amazing-core/internal/services/auth"
-	"github.com/dv1x3r/amazing-core/internal/services/blob"
-	"github.com/dv1x3r/amazing-core/internal/services/dummy"
-	"github.com/dv1x3r/amazing-core/internal/services/randname"
 )
-
-//go:embed *.gotmpl
-var templatesFS embed.FS
-
-var tmpl *template.Template
-
-func init() {
-	tmpl = template.Must(template.ParseFS(templatesFS, "*.gotmpl"))
-}
 
 type Server struct {
 	logger *slog.Logger
@@ -42,18 +27,18 @@ type Server struct {
 }
 
 func NewServer(
-	db *sql.DB,
 	logger *slog.Logger,
+	store db.Store,
+	handler *Handler,
 	authService *auth.Service,
-	dummyService *dummy.Service,
-	blobService *blob.Service,
-	assetService *asset.Service,
-	randnameService *randname.Service,
 ) *Server {
 	router := http.NewServeMux()
-	handler := NewHandler(authService, dummyService, blobService, assetService, randnameService)
 
-	router.HandleFunc("GET /{$}", handler.Admin)
+	router.HandleFunc("GET /{$}", errorHandler(handler.Admin))
+	router.HandleFunc("POST /login", errorHandler(handler.PostLogin))
+	router.HandleFunc("POST /logout", errorHandler(handler.PostLogout))
+	router.HandleFunc("GET /cdn/{cdnid}", errorHandler(handler.GetBlob))
+
 	router.Handle("GET /lib/", http.StripPrefix("/lib/", w2lib.FileServerFS()))
 	router.Handle("GET /admin/", http.FileServerFS(web.FS))
 	router.Handle("GET /queries/", http.FileServerFS(mustSubFS(data.FS, "sql")))
@@ -65,40 +50,57 @@ func NewServer(
 	router.Handle("GET /android-chrome-192x192.png", fsFileHandler(web.FS, "favicon_io/android-chrome-192x192.png"))
 	router.Handle("GET /android-chrome-512x512.png", fsFileHandler(web.FS, "favicon_io/android-chrome-512x512.png"))
 
-	router.HandleFunc("POST /login", errorHandler(handler.PostLogin))
-	router.HandleFunc("POST /logout", errorHandler(handler.PostLogout))
-
 	v1 := http.NewServeMux()
 
-	v1.HandleFunc("GET /asset/records", errorHandler(handler.GetAssetRecords))
-	v1.HandleFunc("POST /asset/save", errorHandler(handler.PostAssetSave))
+	v1.HandleFunc("GET /asset", errorHandler(handler.GetAsset))
+	v1.HandleFunc("GET /asset/grid", errorHandler(handler.GetAssetGrid))
+	v1.HandleFunc("POST /asset/grid", errorHandler(handler.PostAssetGrid))
 	v1.HandleFunc("POST /asset/remove", errorHandler(handler.PostAssetRemove))
-	v1.HandleFunc("GET /asset/filetypes", errorHandler(handler.GetAssetFileTypeDropdown))
-	v1.HandleFunc("GET /asset/assettypes", errorHandler(handler.GetAssetTypeDropdown))
-	v1.HandleFunc("GET /asset/assetgroups", errorHandler(handler.GetAssetGroupDropdown))
 	v1.HandleFunc("POST /asset/cache.json", errorHandler(handler.PostAssetCacheJSON))
 
-	v1.HandleFunc("GET /blob/records", errorHandler(handler.GetBlobRecords))
-	v1.HandleFunc("POST /blob/upload", errorHandler(handler.PostBlobUpload))
+	v1.HandleFunc("GET /asset/filetype", errorHandler(handler.GetAssetFileType))
+	v1.HandleFunc("GET /asset/assettype", errorHandler(handler.GetAssetType))
+	v1.HandleFunc("GET /asset/assetgroup", errorHandler(handler.GetAssetGroup))
+
+	v1.HandleFunc("GET /container", errorHandler(handler.GetContainer))
+	v1.HandleFunc("GET /container/grid", errorHandler(handler.GetContainerGrid))
+	v1.HandleFunc("POST /container/grid", errorHandler(handler.PostContainerGrid))
+	v1.HandleFunc("POST /container/remove", errorHandler(handler.PostContainerRemove))
+	v1.HandleFunc("POST /container/form", errorHandler(handler.PostContainerForm))
+
+	v1.HandleFunc("GET /container/{id}/asset/grid", errorHandler(handler.GetContainerAssetGrid))
+	v1.HandleFunc("POST /container/{id}/asset/grid", errorHandler(handler.PostContainerAssetGrid))
+	v1.HandleFunc("POST /container/asset/remove", errorHandler(handler.PostContainerAssetRemove))
+	v1.HandleFunc("POST /container/asset/reorder", errorHandler(handler.PostContainerAssetReorder))
+	v1.HandleFunc("POST /container/{id}/asset/form", errorHandler(handler.PostContainerAssetForm))
+
+	v1.HandleFunc("GET /container/{id}/package/grid", errorHandler(handler.GetContainerPackageGrid))
+
+	v1.HandleFunc("GET /package", errorHandler(handler.GetPackage))
+
+	v1.HandleFunc("GET /siteframe/grid", errorHandler(handler.GetSiteFrameGrid))
+	v1.HandleFunc("POST /siteframe/grid", errorHandler(handler.PostSiteFrameGrid))
+	v1.HandleFunc("POST /siteframe/remove", errorHandler(handler.PostSiteFrameRemove))
+	v1.HandleFunc("POST /siteframe/form", errorHandler(handler.PostSiteFrameForm))
+
+	v1.HandleFunc("GET /dummy/grid", errorHandler(handler.GetDummyGrid))
+	v1.HandleFunc("POST /dummy/grid", errorHandler(handler.PostDummyGrid))
+
+	v1.HandleFunc("GET /randname/grid", errorHandler(handler.GetRandnameGrid))
+	v1.HandleFunc("POST /randname/remove", errorHandler(handler.PostRandnameRemove))
+	v1.HandleFunc("GET /randname/form", errorHandler(handler.GetRandnameForm))
+	v1.HandleFunc("POST /randname/form", errorHandler(handler.PostRandnameForm))
+
+	v1.HandleFunc("GET /blob/grid", errorHandler(handler.GetBlobGrid))
 	v1.HandleFunc("POST /blob/remove", errorHandler(handler.PostBlobRemove))
+	v1.HandleFunc("POST /blob/upload", errorHandler(handler.PostBlobUpload))
 	v1.HandleFunc("POST /blob/import", errorHandler(handler.PostBlobImport))
 	v1.HandleFunc("POST /blob/export", errorHandler(handler.PostBlobExport))
 	v1.HandleFunc("POST /blob/s3sync", errorHandler(handler.PostBlobS3Sync))
-	if config.Get().Settings.AssetDeliveryAPI {
-		router.HandleFunc("GET /cdn/{cdnid}", errorHandler(handler.GetBlob))
-	}
-
-	v1.HandleFunc("GET /dummy/form", errorHandler(handler.GetDummyForm))
-	v1.HandleFunc("POST /dummy/form", errorHandler(handler.PostDummyForm))
-
-	v1.HandleFunc("GET /randname/form", errorHandler(handler.GetRandnameForm))
-	v1.HandleFunc("POST /randname/form", errorHandler(handler.PostRandnameForm))
-	v1.HandleFunc("GET /randname/records", errorHandler(handler.GetRandnameRecords))
-	v1.HandleFunc("POST /randname/remove", errorHandler(handler.PostRandnameRemove))
 
 	if config.Get().Storage.Explorer {
-		v1.HandleFunc("GET /sql", errorHandler(w2widget.SQLiteSchemaHandler(db)))
-		v1.HandleFunc("POST /sql", errorHandler(w2widget.SQLExecHandler(db)))
+		v1.HandleFunc("GET /sql", errorHandler(w2widget.SQLiteSchemaHandler(store.DB())))
+		v1.HandleFunc("POST /sql", errorHandler(w2widget.SQLExecHandler(store.DB())))
 	}
 
 	protected := middleware.Protected(authService)

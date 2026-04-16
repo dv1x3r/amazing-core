@@ -1,11 +1,11 @@
 import { w2confirm, w2form, w2grid, w2popup } from '/lib/w2ui.es6.min.js'
-import { w2fetch, w2upload, searchAllFilter } from '/lib/w2ui.helpers.js'
+import * as helpers from '/lib/w2ui.helpers.js'
 
-export function createBlobGrid() {
+export function createWidget() {
   return new w2grid({
     name: 'blobGrid',
     url: {
-      get: '/api/v1/blob/records',
+      get: '/api/v1/blob/grid',
       remove: '/api/v1/blob/remove',
     },
     recid: 'id',
@@ -39,7 +39,7 @@ export function createBlobGrid() {
               btn_no: { text: 'Cancel' },
             }).yes(async () => {
               await new Promise(r => setTimeout(r, 300));
-              await w2fetch({
+              await helpers.w2fetch({
                 owner: this.owner,
                 reload: true,
                 lock: 'Importing cache files...',
@@ -63,7 +63,7 @@ export function createBlobGrid() {
               btn_no: { text: 'Cancel' },
             }).yes(async () => {
               await new Promise(r => setTimeout(r, 300));
-              await w2fetch({
+              await helpers.w2fetch({
                 owner: this.owner,
                 reload: false,
                 lock: 'Exporting cache files...',
@@ -88,14 +88,14 @@ export function createBlobGrid() {
         text: 'ID',
         size: '60px',
         sortable: true,
-        hidden: false,
+        searchAll: true,
         searchable: 'int',
       },
       {
         field: 'cdnid',
         text: 'CDN ID',
-        render: 'text',
         size: '200px',
+        render: 'text',
         sortable: true,
         searchAll: true,
         searchable: 'text',
@@ -104,16 +104,16 @@ export function createBlobGrid() {
       {
         field: 'url',
         text: 'File URL',
-        render: 'text',
         size: '400px',
+        render: 'text',
         sortable: true,
         clipboardCopy: true,
       },
       {
         field: 'hash',
         text: 'File Hash',
-        render: 'text',
         size: '350px',
+        render: 'text',
         sortable: true,
         searchAll: true,
         searchable: 'text',
@@ -122,16 +122,16 @@ export function createBlobGrid() {
       {
         field: 'size',
         text: 'Bytes',
-        render: 'text',
         size: '80px',
+        render: 'text',
         sortable: true,
         searchable: 'int',
       },
       {
         field: 'size_str',
         text: 'Size',
-        render: 'text',
         size: '80px',
+        render: 'text',
         sortable: true,
       },
     ],
@@ -142,7 +142,7 @@ export function createBlobGrid() {
       { field: 'id', direction: 'desc' },
     ],
     onAdd: function() {
-      w2upload({
+      helpers.w2upload({
         owner: this,
         reload: true,
         lock: 'Uploading files...',
@@ -151,12 +151,12 @@ export function createBlobGrid() {
         multiple: true,
       })
     },
-    onSearch: function(event) { searchAllFilter(event) },
+    onSearch: function(event) { helpers.searchAllFilter(event) },
   })
 }
 
 function openS3SyncPopup() {
-  const s3SyncForm = new w2form({
+  const form = new w2form({
     name: 's3SyncForm',
     fields: [
       {
@@ -230,7 +230,7 @@ function openS3SyncPopup() {
         if (errors.length > 0) {
           return
         }
-        await w2fetch({
+        await helpers.w2fetch({
           owner: this,
           reload: false,
           lock: 'Syncing to S3...',
@@ -249,6 +249,6 @@ function openS3SyncPopup() {
     body: '<div id="s3-sync-form" style="width: 100%; height: 100%;"></div>',
     width: 600, height: 400, showMax: false, resizable: false,
   })
-    .then(() => s3SyncForm.render('#s3-sync-form'))
-    .close(() => s3SyncForm.destroy())
+    .then(() => form.render('#s3-sync-form'))
+    .close(() => form.destroy())
 }

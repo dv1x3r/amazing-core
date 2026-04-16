@@ -88,10 +88,10 @@ create table asset (
     [cdnid] text not null unique collate nocase,
     [gsfoid] integer not null unique,
     [file_type_id] integer not null references file_type(id) on delete restrict,
-    [asset_type_id] integer references asset_type(id) on delete restrict,
+    [asset_type_id] integer not null references asset_type(id) on delete restrict,
     [asset_group_id] integer references asset_group(id) on delete restrict,
     [res_name] text collate nocase,
-    [description] text,
+    [description] text collate nocase,
     [hash] text not null,
     [size] integer not null
 ) strict;

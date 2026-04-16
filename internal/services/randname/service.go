@@ -57,12 +57,13 @@ func (s *Service) GetNStringsByType(ctx context.Context, namePartType string, am
 	return names, wrap.IfErr(op, rows.Err())
 }
 
-func (s *Service) GetGridRecords(ctx context.Context, req w2.GetGridRequest) (w2.GetGridResponse[RandomName], error) {
-	const op = "randname.Service.GetGridRecords"
+func (s *Service) GetRandomNameGrid(ctx context.Context, req w2.GetGridRequest) (w2.GetGridResponse[RandomName], error) {
+	const op = "randname.Service.GetRandomNameGrid"
 	res, err := w2db.GetGridContext(ctx, s.store.DB(), req, w2db.GetGridOptions[RandomName]{
 		From:   "random_name",
 		Select: []string{"id", "part_type", "name"},
 		WhereMapping: map[string]string{
+			"id":        "id",
 			"part_type": "part_type",
 			"name":      "name",
 		},
@@ -80,19 +81,8 @@ func (s *Service) GetGridRecords(ctx context.Context, req w2.GetGridRequest) (w2
 	return res, wrap.IfErr(op, err)
 }
 
-func (s *Service) DeleteByGridIDs(ctx context.Context, req w2.RemoveGridRequest) error {
-	const op = "randname.Service.DeleteByGridIDs"
-	_, err := w2db.RemoveGridContext(ctx, s.store.DB(), req, w2db.RemoveGridOptions{
-		From:    "random_name",
-		IDField: "id",
-		Flavor:  sqlbuilder.SQLite,
-	})
-	return wrap.IfErr(op, err)
-}
-
-func (s *Service) GetByFormID(ctx context.Context, req w2.GetFormRequest) (w2.GetFormResponse[RandomName], error) {
-	const op = "randname.Service.GetByFormID"
-
+func (s *Service) GetRandomNameForm(ctx context.Context, req w2.GetFormRequest) (w2.GetFormResponse[RandomName], error) {
+	const op = "randname.Service.GetRandomNameForm"
 	res, err := w2db.GetFormContext(ctx, s.store.DB(), req, w2db.GetFormOptions[RandomName]{
 		From:    "random_name",
 		IDField: "id",
@@ -103,33 +93,28 @@ func (s *Service) GetByFormID(ctx context.Context, req w2.GetFormRequest) (w2.Ge
 			return record, row.Scan(&record.ID, &record.PartType, &record.Name)
 		},
 	})
-
 	if errors.Is(err, sql.ErrNoRows) {
 		return res, wrap.IfErr(op, ErrNameNotFound)
 	}
-
 	return res, wrap.IfErr(op, err)
 }
 
-func (s *Service) InsertFormRecord(ctx context.Context, req w2.SaveFormRequest[RandomName]) (int, error) {
-	const op = "randname.Service.InsertFormRecord"
-
+func (s *Service) CreateRandomName(ctx context.Context, req w2.SaveFormRequest[RandomName]) (int, error) {
+	const op = "randname.Service.CreateRandomName"
 	id, err := w2db.InsertFormContext(ctx, s.store.DB(), req, w2db.InsertFormOptions{
 		Into:   "random_name",
 		Cols:   []string{"part_type", "name"},
 		Values: []any{req.Record.PartType, req.Record.Name},
+		Flavor: sqlbuilder.SQLite,
 	})
-
 	if s.store.IsErrConstraintUnique(err) {
 		return 0, wrap.IfErr(op, ErrNameExists)
 	}
-
 	return id, wrap.IfErr(op, err)
 }
 
-func (s *Service) UpdateFormRecord(ctx context.Context, req w2.SaveFormRequest[RandomName]) error {
-	const op = "randname.Service.UpdateFormRecord"
-
+func (s *Service) UpdateRandomName(ctx context.Context, req w2.SaveFormRequest[RandomName]) error {
+	const op = "randname.Service.UpdateRandomName"
 	affected, err := w2db.UpdateFormContext(ctx, s.store.DB(), req, w2db.UpdateFormOptions{
 		Update:  "random_name",
 		IDField: "id",
@@ -137,14 +122,21 @@ func (s *Service) UpdateFormRecord(ctx context.Context, req w2.SaveFormRequest[R
 		Values:  []any{req.Record.PartType, req.Record.Name},
 		Flavor:  sqlbuilder.SQLite,
 	})
-
 	if s.store.IsErrConstraintUnique(err) {
 		return wrap.IfErr(op, ErrNameExists)
 	}
-
 	if affected == 0 && err == nil {
 		return wrap.IfErr(op, ErrNameNotFound)
 	}
+	return wrap.IfErr(op, err)
+}
 
+func (s *Service) DeleteRandomNames(ctx context.Context, req w2.RemoveGridRequest) error {
+	const op = "randname.Service.DeleteRandomNames"
+	_, err := w2db.RemoveGridContext(ctx, s.store.DB(), req, w2db.RemoveGridOptions{
+		From:    "random_name",
+		IDField: "id",
+		Flavor:  sqlbuilder.SQLite,
+	})
 	return wrap.IfErr(op, err)
 }

@@ -1,10 +1,10 @@
-import { w2form, w2grid, w2popup } from '/lib/w2ui.es6.min.js'
+import { w2form, w2grid, w2layout, w2popup } from '/lib/w2ui.es6.min.js'
 
-export function createRandomNameGrid() {
-  return new w2grid({
+export function createWidget() {
+  const grid = new w2grid({
     name: 'randomNameGrid',
     url: {
-      get: '/api/v1/randname/records',
+      get: '/api/v1/randname/grid',
       remove: '/api/v1/randname/remove',
     },
     recid: 'id',
@@ -27,7 +27,7 @@ export function createRandomNameGrid() {
         text: 'ID',
         size: '60px',
         sortable: true,
-        hidden: true,
+        searchable: 'int',
       },
       {
         field: 'part_type',
@@ -57,10 +57,25 @@ export function createRandomNameGrid() {
     onEdit: function(event) { openRandomNamePopup(event) },
     onDblClick: function(event) { openRandomNamePopup(event) },
   })
+
+  return new w2layout({
+    name: 'randomNameLayout',
+    panels: [
+      { type: 'left', html: grid, resizable: true, size: -420 },
+      { type: 'main' },
+    ],
+    onRender: async function(event) {
+      await event.complete
+      event.owner.load('main', '/admin/pages/random_names.html')
+    },
+    onDestroy: function() {
+      grid.destroy()
+    }
+  })
 }
 
 function openRandomNamePopup(event) {
-  const randomNameForm = new w2form({
+  const form = new w2form({
     name: `randomNameForm`,
     url: '/api/v1/randname/form',
     recid: event.detail.recid,
@@ -113,7 +128,7 @@ function openRandomNamePopup(event) {
     body: '<div id="random-name-form" style="width: 100%; height: 100%;"></div>',
     width: 600, height: 300, showMax: false, resizable: false,
   })
-    .then(() => randomNameForm.render('#random-name-form'))
-    .close(() => randomNameForm.destroy())
+    .then(() => form.render('#random-name-form'))
+    .close(() => form.destroy())
 }
 

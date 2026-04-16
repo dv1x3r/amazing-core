@@ -128,7 +128,6 @@ You can customize server settings using the `config.json` file.
 | `logger.handler`            | Log format: `pretty` (colored, formatted), `text`, `json` |
 | `servers.api`               | HTTP API bind address (e.g. `localhost:3000`)             |
 | `servers.game`              | TCP game server bind address (e.g. `localhost:8182`)      |
-| `settings.assetDeliveryAPI` | Expose `/cdn/{cdnid}` endpoint - serves `blob.db` files   |
 | `settings.assetDeliveryURL` | Base CDN URL sent to game clients                         |
 | `settings.syncServerIP`     | Sync server IP sent in `InitLocation` responses           |
 | `settings.syncServerPort`   | Sync server port sent in `InitLocation` responses         |

@@ -20,7 +20,7 @@ const dashboardSidebar = new w2sidebar({
       </div>
     </div>
   `,
-  bottomHTML: '<div id="logout-toolbar"></div>',
+  bottomHTML: '<div id="logout-toolbar" style="height: 40px;"></div>',
   nodes: [
     {
       id: 'welcome',
@@ -35,8 +35,8 @@ const dashboardSidebar = new w2sidebar({
       },
     },
     {
-      id: 'general',
-      text: 'General',
+      id: 'assets-group',
+      text: 'Assets',
       group: true,
       expanded: true,
       nodes: [
@@ -50,38 +50,92 @@ const dashboardSidebar = new w2sidebar({
           },
         },
         {
-          id: 'random-names',
-          text: 'Random Names',
-          icon: 'fa fa-dice',
+          id: 'asset-containers',
+          text: 'Asset Containers',
+          icon: 'fa fa-folder-open',
           onClick: async function() {
-            const module = await import('./widgets/random_names.js')
-            setDashboardWidget(module.createRandomNameGrid)
+            const module = await import('./widgets/assets.js')
+            setDashboardWidget(module.createContainerLayout)
           },
         },
         {
-          id: 'dummy-config',
-          text: 'Dummy Config',
-          icon: 'fa fa-person-digging',
+          id: 'asset-packages',
+          text: 'Asset Packages',
+          icon: 'fa fa-box-open',
           onClick: async function() {
-            const module = await import('./widgets/dummy_config.js')
-            setDashboardWidget(module.createDummyForm)
+            const module = await import('./widgets/assets.js')
+            setDashboardWidget(module.createPackageLayout)
+          },
+        },
+      ],
+    },
+    {
+      id: 'collections',
+      text: 'Collections',
+      group: true,
+      expanded: true,
+      nodes: [
+        {
+          id: 'site-frame',
+          text: 'Site Frame',
+          icon: 'fa fa-layer-group',
+          onClick: async function() {
+            const module = await import('./widgets/site_frame.js')
+            setDashboardWidget(module.createWidget)
           },
         },
       ]
     },
     {
-      id: 'cdn',
-      text: 'Databases',
+      id: 'general',
+      text: 'Parameters',
       group: true,
       expanded: true,
       nodes: [
         {
-          id: 'core-db',
-          text: 'SQL Explorer: core.db',
+          id: 'dummy-params',
+          text: 'Dummy Parameters',
+          icon: 'fa fa-person-digging',
+          onClick: async function() {
+            const module = await import('./widgets/dummy_params.js')
+            setDashboardWidget(module.createWidget)
+          },
+        },
+      ]
+    },
+    {
+      id: 'player-registration',
+      text: 'Player Registration',
+      group: true,
+      expanded: true,
+      nodes: [
+        {
+          id: 'random-names',
+          text: 'Random Names',
+          icon: 'fa fa-dice',
+          onClick: async function() {
+            const module = await import('./widgets/random_names.js')
+            setDashboardWidget(module.createWidget)
+          },
+        },
+      ]
+    },
+    {
+      id: 'core-db',
+      text: 'core.db',
+      group: true,
+      expanded: true,
+      nodes: [
+        {
+          id: 'sql-explorer',
+          text: 'SQL Explorer',
           icon: 'fa fa-database',
+          expanded: false,
           onClick: async function() {
             const module = await import('/lib/w2ui.widgets.js')
-            setDashboardWidget(() => module.createSqlExplorerLayout({ url: '/api/v1/sql' }))
+            setDashboardWidget(() => module.createSqlExplorerLayout({
+              url: '/api/v1/sql',
+            }))
           },
           nodes: await (async () => {
             const res = await fetch('/queries')
@@ -103,17 +157,25 @@ const dashboardSidebar = new w2sidebar({
             }))
           })(),
         },
+      ],
+    },
+    {
+      id: 'blob-db',
+      text: 'blob.db',
+      group: true,
+      expanded: true,
+      nodes: [
         {
-          id: 'blob-db',
-          text: 'Cache Files: blob.db',
-          icon: 'fa fa-database',
+          id: 'asset-files',
+          text: 'Asset Files',
+          icon: 'fa fa-file',
           onClick: async function() {
             const module = await import('./widgets/blob_db.js')
-            setDashboardWidget(module.createBlobGrid)
+            setDashboardWidget(module.createWidget)
           },
         },
-      ]
-    }
+      ],
+    },
   ],
   onRender: async function(event) {
     await event.complete
@@ -178,8 +240,12 @@ const dashboardLayout = new w2layout({
   box: '#dashboard-layout',
   panels: [
     { type: 'left', size: 240, html: dashboardSidebar },
-    { type: 'main', style: 'border-left: 1px solid #e0e0e0;', html: '' },
+    { type: 'main', style: 'border-left: 1px solid #e0e0e0;' },
   ],
+  onRender: async function(event) {
+    await event.complete
+    event.owner.load('main', '/admin/pages/welcome.html')
+  },
 })
 
 function setDashboardWidget(createWidget) {
@@ -188,6 +254,4 @@ function setDashboardWidget(createWidget) {
   }
   dashboardLayout.html('main', createWidget())
 }
-
-dashboardLayout.load('main', '/admin/pages/welcome.html')
 

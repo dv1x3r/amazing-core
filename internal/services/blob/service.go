@@ -49,8 +49,8 @@ type File struct {
 	URL     string `json:"url"`
 }
 
-func (s *Service) FetchFileBlob(ctx context.Context, cdnid string) ([]byte, error) {
-	const op = "blob.Service.FetchFileBlob"
+func (s *Service) GetBlobFile(ctx context.Context, cdnid string) ([]byte, error) {
+	const op = "blob.Service.GetBlobFile"
 
 	var data []byte
 
@@ -65,8 +65,8 @@ func (s *Service) FetchFileBlob(ctx context.Context, cdnid string) ([]byte, erro
 	return data, nil
 }
 
-func (s *Service) FetchFilesList(ctx context.Context, req w2.GetGridRequest) (w2.GetGridResponse[File], error) {
-	const op = "blob.Service.FetchFilesList"
+func (s *Service) GetBlobGrid(ctx context.Context, req w2.GetGridRequest) (w2.GetGridResponse[File], error) {
+	const op = "blob.Service.GetBlobGrid"
 	res, err := w2db.GetGridContext(ctx, s.store.DB(), req, w2db.GetGridOptions[File]{
 		From: "asset_file",
 		Select: []string{

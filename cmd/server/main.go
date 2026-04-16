@@ -25,6 +25,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/services/blob"
 	"github.com/dv1x3r/amazing-core/internal/services/dummy"
 	"github.com/dv1x3r/amazing-core/internal/services/randname"
+	"github.com/dv1x3r/amazing-core/internal/services/siteframe"
 )
 
 var (
@@ -159,22 +160,33 @@ func main() {
 	blobService := blob.NewService(logger.Get(), blobStore, cfg.Settings.AssetDeliveryURL)
 	assetService := asset.NewService(logger.Get(), coreStore, cfg.Settings.AssetDeliveryURL)
 	randnameService := randname.NewService(coreStore)
+	siteFrameService := siteframe.NewService(logger.Get(), coreStore)
+
+	apiHandler := api.NewHandler(
+		authService,
+		assetService,
+		blobService,
+		siteFrameService,
+		dummyService,
+		randnameService,
+	)
 
 	apiServer := api.NewServer(
-		coreStore.DB(),
 		logger.Get(),
+		coreStore,
+		apiHandler,
 		authService,
+	)
+
+	gameHandler := game.NewHandler(
 		dummyService,
-		blobService,
 		assetService,
 		randnameService,
 	)
 
 	gameServer := game.NewServer(
 		logger.Get(),
-		assetService,
-		dummyService,
-		randnameService,
+		gameHandler,
 	)
 
 	interruptCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt)

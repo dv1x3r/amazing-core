@@ -13,9 +13,6 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/serviceclass"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/syncmessagetype"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/usermessagetype"
-	"github.com/dv1x3r/amazing-core/internal/services/asset"
-	"github.com/dv1x3r/amazing-core/internal/services/dummy"
-	"github.com/dv1x3r/amazing-core/internal/services/randname"
 )
 
 type Server struct {
@@ -25,12 +22,9 @@ type Server struct {
 
 func NewServer(
 	logger *slog.Logger,
-	assetService *asset.Service,
-	dummyService *dummy.Service,
-	randnameService *randname.Service,
+	handler *Handler,
 ) *Server {
 	router := gsf.NewRouter()
-	handler := NewHandler(dummyService, assetService, randnameService)
 
 	router.Use(
 		middleware.Logger(logger),

@@ -29,7 +29,7 @@ A separate SQLite database storing the **raw binary content** of game asset file
 
 Downloaded on startup if `blob.download = true` and the database is missing.
 
-When a client requests `/cdn/{cdnid}`, the server fetches the `blob` column for that `cdnid` (enabled when `settings.assetDeliveryAPI = true`).
+When a client requests `/cdn/{cdnid}`, the server fetches the `blob` column for that `cdnid`.
 
 The database can be populated using the [**blob-tool**](https://github.com/dv1x3r/amazing-core/tree/master/tools/blob-tool) or the **admin dashboard**.
 

@@ -3,6 +3,7 @@ package types
 import (
 	"database/sql"
 	"encoding/base64"
+	"fmt"
 	"strconv"
 
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
@@ -36,13 +37,17 @@ func OIDFromCDNID(cdnid string) (OID, error) {
 	return OIDFromInt64(v), nil
 }
 
-func (oid *OID) Int64() int64 {
+func (oid OID) Int64() int64 {
 	var value int64
 	value |= int64(oid.Class) << 56
 	value |= int64(oid.Type) << 48
 	value |= int64(oid.Server) << 40
 	value |= int64(oid.Number)
 	return value
+}
+
+func (oid OID) String() string {
+	return fmt.Sprintf("C:%d T:%d S:%d N:%d", oid.Class, oid.Type, oid.Server, oid.Number)
 }
 
 func (oid *OID) Scan(value any) error {
