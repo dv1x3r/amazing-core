@@ -590,17 +590,3 @@ func (h *Handler) PostBlobExport(w http.ResponseWriter, r *http.Request) error {
 	res.Message = fmt.Sprintf("Export completed: %d exported, %d skipped", result.ExportedFiles, result.SkippedFiles)
 	return res.Write(w, http.StatusOK)
 }
-
-func (h *Handler) PostBlobS3Sync(w http.ResponseWriter, r *http.Request) error {
-	cfg := blob.S3Config{}
-	if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {
-		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
-	}
-	result, err := h.blobService.SyncToS3(r.Context(), cfg)
-	if err != nil {
-		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
-	}
-	res := w2.NewSuccessResponse()
-	res.Message = fmt.Sprintf("Sync completed: %d uploaded, %d skipped", result.SyncedFiles, result.SkippedFiles)
-	return res.Write(w, http.StatusOK)
-}

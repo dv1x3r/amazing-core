@@ -96,7 +96,6 @@ func NewServer(
 	v1.HandleFunc("POST /blob/upload", errorHandler(handler.PostBlobUpload))
 	v1.HandleFunc("POST /blob/import", errorHandler(handler.PostBlobImport))
 	v1.HandleFunc("POST /blob/export", errorHandler(handler.PostBlobExport))
-	v1.HandleFunc("POST /blob/s3sync", errorHandler(handler.PostBlobS3Sync))
 
 	if config.Get().Storage.Explorer {
 		v1.HandleFunc("GET /sql", errorHandler(w2widget.SQLiteSchemaHandler(store.DB())))

@@ -159,7 +159,3 @@ func (s *Service) ImportFromFolder(ctx context.Context) (*ImportResult, error) {
 func (s *Service) ExportToFolder(ctx context.Context) (*ExportResult, error) {
 	return ExportToFolder(ctx, s.logger, s.store.DB(), "cache", true)
 }
-
-func (s *Service) SyncToS3(ctx context.Context, cfg S3Config) (*S3SyncResult, error) {
-	return SyncToS3(ctx, s.logger, s.store.DB(), cfg)
-}
