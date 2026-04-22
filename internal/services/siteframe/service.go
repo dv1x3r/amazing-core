@@ -57,13 +57,11 @@ func (s *Service) GetSiteFrameGrid(ctx context.Context, req w2.GetGridRequest) (
 			"type_value": "sf.type_value",
 			"container":  "ac.gsfoid",
 		},
-		Flavor: sqlbuilder.SQLite,
 		BuildBase: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("asset_container as ac", "ac.id = sf.container_id")
 		},
-		Scan: func(rows *sql.Rows) (SiteFrame, error) {
-			var record SiteFrame
-			return record, rows.Scan(
+		Scan: func(rows *sql.Rows, record *SiteFrame) error {
+			return rows.Scan(
 				&record.ID,
 				&record.TypeValue,
 				&record.Container.ID,
@@ -80,7 +78,6 @@ func (s *Service) CreateSiteFrame(ctx context.Context, req w2.SaveFormRequest[Si
 		Into:   "site_frame",
 		Cols:   []string{"type_value", "container_id"},
 		Values: []any{req.Record.TypeValue, req.Record.Container.ID},
-		Flavor: sqlbuilder.SQLite,
 	})
 	if s.store.IsErrConstraintUnique(err) {
 		return 0, wrap.IfErr(op, ErrSiteFrameExists)
@@ -92,7 +89,6 @@ func (s *Service) UpdateSiteFrames(ctx context.Context, req w2.SaveGridRequest[S
 	const op = "siteframe.Service.UpdateSiteFrames"
 	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
 		_, err := w2db.SaveGridContext(ctx, tx, req, w2db.SaveGridOptions[SiteFrame]{
-			Flavor: sqlbuilder.SQLite,
 			BuildUpdate: func(change SiteFrame) *sqlbuilder.UpdateBuilder {
 				ub := sqlbuilder.Update("site_frame")
 				w2sql.Set(ub, change.TypeValue, "type_value")
@@ -114,7 +110,6 @@ func (s *Service) DeleteSiteFrames(ctx context.Context, req w2.RemoveGridRequest
 	_, err := w2db.RemoveGridContext(ctx, s.store.DB(), req, w2db.RemoveGridOptions{
 		From:    "site_frame",
 		IDField: "id",
-		Flavor:  sqlbuilder.SQLite,
 	})
 	return wrap.IfErr(op, err)
 }

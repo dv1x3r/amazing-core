@@ -51,3 +51,11 @@ type ContainerPackage struct {
 	Name      string `json:"name"`
 	PTag      string `json:"ptag"`
 }
+
+type Package struct {
+	ID          int         `json:"id"`
+	Name        string      `json:"name"`
+	PTag        string      `json:"ptag"`
+	CreatedDate string      `json:"created_date"`
+	Container   w2.Dropdown `json:"container"`
+}

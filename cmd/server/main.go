@@ -11,6 +11,7 @@ import (
 
 	"github.com/dv1x3r/amazing-core/data"
 	"github.com/dv1x3r/w2go/w2db"
+	"github.com/huandu/go-sqlbuilder"
 
 	"github.com/dv1x3r/amazing-core/internal/api"
 	"github.com/dv1x3r/amazing-core/internal/config"
@@ -75,6 +76,7 @@ func main() {
 		logger.Get().Info(fmt.Sprintf(AMAZING_CORE, version), "config", cfg)
 	}
 
+	w2db.SetFlavor(sqlbuilder.SQLite)
 	if cfg.Logger.Level == "debug+sql" {
 		w2db.SetLogger(logger.Get())
 	}

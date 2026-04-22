@@ -44,10 +44,8 @@ func (s *Service) GetDummyParametersGrid(ctx context.Context, req w2.GetGridRequ
 			"key":   "key",
 			"value": "value",
 		},
-		Flavor: sqlbuilder.SQLite,
-		Scan: func(rows *sql.Rows) (Param, error) {
-			var record Param
-			return record, rows.Scan(&record.RowID, &record.Key, &record.Value)
+		Scan: func(rows *sql.Rows, record *Param) error {
+			return rows.Scan(&record.RowID, &record.Key, &record.Value)
 		},
 	})
 	return res, wrap.IfErr(op, err)
@@ -57,7 +55,6 @@ func (s *Service) UpdateDummyParameters(ctx context.Context, req w2.SaveGridRequ
 	const op = "dummy.Service.UpdateDummyParameters"
 	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
 		_, err := w2db.SaveGridContext(ctx, tx, req, w2db.SaveGridOptions[Param]{
-			Flavor: sqlbuilder.SQLite,
 			BuildUpdate: func(change Param) *sqlbuilder.UpdateBuilder {
 				ub := sqlbuilder.Update("dummy_config")
 				ub.Set(ub.Assign("value", change.Value))

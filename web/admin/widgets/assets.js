@@ -627,6 +627,15 @@ export function createPackageLayout() {
         searchable: 'int',
       },
       {
+        field: 'name',
+        text: 'Name',
+        size: '135px',
+        render: 'text',
+        sortable: true,
+        searchable: 'text',
+        editable: { type: 'text' },
+      },
+      {
         field: 'ptag',
         text: 'PTag',
         size: '135px',
@@ -684,12 +693,21 @@ function openPackagePopup(event) {
     url: '/api/v1/package/form',
     fields: [
       {
+        field: 'name',
+        type: 'text',
+        required: true,
+        html: {
+          label: 'Name',
+          span: 5,
+          column: 0,
+        },
+      },
+      {
         field: 'ptag',
         type: 'text',
         required: true,
         html: {
           label: 'PTag',
-          attr: 'size="10"',
           span: 5,
           column: 0,
         },

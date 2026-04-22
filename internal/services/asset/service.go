@@ -108,15 +108,13 @@ func (s *Service) GetAssetGrid(ctx context.Context, req w2.GetGridRequest) (w2.G
 			"size_str":    "a.size",
 			"version":     "(am.metadata ->> '$.info.version_engine') || ' ' || (am.metadata ->> '$.assets[0].target_platform')",
 		},
-		Flavor: sqlbuilder.SQLite,
 		BuildBase: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("file_type as ft", "ft.id = a.file_type_id")
 			sb.Join("asset_type as at", "at.id = a.asset_type_id")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_group as ag", "ag.id = a.asset_group_id")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_metadata as am", "am.asset_id = a.id")
 		},
-		Scan: func(rows *sql.Rows) (Asset, error) {
-			var record Asset
+		Scan: func(rows *sql.Rows, record *Asset) error {
 			if err := rows.Scan(
 				&record.ID,
 				&record.OID,
@@ -134,12 +132,12 @@ func (s *Service) GetAssetGrid(ctx context.Context, req w2.GetGridRequest) (w2.G
 				&record.Metadata,
 				&record.Version,
 			); err != nil {
-				return record, err
+				return err
 			}
 			record.OIDStr = types.OIDFromInt64(record.OID).String()
 			record.SizeStr = humanize.Bytes(uint64(record.Size))
 			record.URL, _ = url.JoinPath(s.deliveryURL, record.CDNID)
-			return record, nil
+			return nil
 		},
 	})
 	return res, wrap.IfErr(op, err)
@@ -164,14 +162,12 @@ func (s *Service) GetContainerGrid(ctx context.Context, req w2.GetGridRequest) (
 			"oid":  "gsfoid",
 			"name": "name",
 		},
-		Flavor: sqlbuilder.SQLite,
-		Scan: func(rows *sql.Rows) (Container, error) {
-			var record Container
+		Scan: func(rows *sql.Rows, record *Container) error {
 			if err := rows.Scan(&record.ID, &record.OID, &record.Name); err != nil {
-				return record, err
+				return err
 			}
 			record.OIDStr = types.OIDFromInt64(record.OID.V).String()
-			return record, nil
+			return nil
 		},
 	})
 	return res, wrap.IfErr(op, err)
@@ -189,7 +185,6 @@ func (s *Service) GetContainerAssetGrid(ctx context.Context, req w2.GetGridReque
 			"concat_ws(' - ', at.name, a.gsfoid, coalesce(a.res_name, '[NULL]'), (am.metadata ->> '$.info.version_engine') || ' ' || (am.metadata ->> '$.assets[0].target_platform'))",
 			"iif(ax.id is null, null, concat_ws(' - ', axt.name, ax.gsfoid, coalesce(ax.res_name, '[NULL]'), (axm.metadata ->> '$.info.version_engine') || ' ' || (axm.metadata ->> '$.assets[0].target_platform')))",
 		},
-		Flavor: sqlbuilder.SQLite,
 		BuildBase: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Where(sb.EQ("ca.container_id", id))
 		},
@@ -202,9 +197,8 @@ func (s *Service) GetContainerAssetGrid(ctx context.Context, req w2.GetGridReque
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_metadata as axm", "axm.asset_id = ax.id")
 			sb.OrderByAsc("ca.position").OrderByDesc("ca.id")
 		},
-		Scan: func(rows *sql.Rows) (ContainerAsset, error) {
-			var record ContainerAsset
-			return record, rows.Scan(
+		Scan: func(rows *sql.Rows, record *ContainerAsset) error {
+			return rows.Scan(
 				&record.ID,
 				&record.Position,
 				&record.WINAsset.ID,
@@ -228,7 +222,6 @@ func (s *Service) GetContainerPackageGrid(ctx context.Context, req w2.GetGridReq
 			"p.name",
 			"p.ptag",
 		},
-		Flavor: sqlbuilder.SQLite,
 		BuildBase: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Where(sb.EQ("cp.container_id", id))
 		},
@@ -237,14 +230,54 @@ func (s *Service) GetContainerPackageGrid(ctx context.Context, req w2.GetGridReq
 			sb.Join("asset_container as c", "c.id = cp.container_id")
 			sb.OrderByAsc("cp.position").OrderByDesc("cp.id")
 		},
-		Scan: func(rows *sql.Rows) (ContainerPackage, error) {
-			var record ContainerPackage
-			return record, rows.Scan(
+		Scan: func(rows *sql.Rows, record *ContainerPackage) error {
+			return rows.Scan(
 				&record.ID,
 				&record.Position,
 				&record.Container,
 				&record.Name,
 				&record.PTag,
+			)
+		},
+	})
+	return res, wrap.IfErr(op, err)
+}
+
+func (s *Service) GetPackageGrid(ctx context.Context, req w2.GetGridRequest) (w2.GetGridResponse[Package], error) {
+	const op = "asset.Service.GetPackageGrid"
+	res, err := w2db.GetGridContext(ctx, s.store.DB(), req, w2db.GetGridOptions[Package]{
+		From: "asset_package as p",
+		Select: []string{
+			"p.id",
+			"p.name",
+			"p.ptag",
+			"datetime(p.created_date, 'unixepoch', 'localtime')",
+			"p.container_id",
+			"c.gsfoid || ' - ' || c.name",
+		},
+		WhereMapping: map[string]string{
+			"id":        "p.id",
+			"name":      "p.name",
+			"ptag":      "p.ptag",
+			"container": "c.gsfoid || ' - ' || c.name",
+		},
+		OrderByMapping: map[string]string{
+			"id":        "p.id",
+			"name":      "p.name",
+			"ptag":      "p.ptag",
+			"container": "c.gsfoid",
+		},
+		BuildBase: func(sb *sqlbuilder.SelectBuilder) {
+			sb.Join("asset_container as c", "c.id = p.container_id")
+		},
+		Scan: func(rows *sql.Rows, record *Package) error {
+			return rows.Scan(
+				&record.ID,
+				&record.Name,
+				&record.PTag,
+				&record.CreatedDate,
+				&record.Container.ID,
+				&record.Container.Text,
 			)
 		},
 	})
@@ -264,7 +297,6 @@ func (s *Service) GetAssetsDropdown(ctx context.Context, req w2.GetDropdownReque
 				(am.metadata ->> '$.info.version_engine') || ' ' || (am.metadata ->> '$.assets[0].target_platform')
 			)`,
 		OrderByField: "at.name, a.gsfoid",
-		Flavor:       sqlbuilder.SQLite,
 		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("asset_type as at", "at.id = a.asset_type_id")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_metadata as am", "am.asset_id = a.id")
@@ -280,7 +312,6 @@ func (s *Service) GetContainersDropdown(ctx context.Context, req w2.GetDropdownR
 		IDField:      "id",
 		TextField:    "gsfoid || ' - ' || name",
 		OrderByField: "gsfoid",
-		Flavor:       sqlbuilder.SQLite,
 	})
 	return res, wrap.IfErr(op, err)
 }
@@ -292,7 +323,6 @@ func (s *Service) GetPackagesDropdown(ctx context.Context, req w2.GetDropdownReq
 		IDField:      "id",
 		TextField:    "ptag",
 		OrderByField: "ptag",
-		Flavor:       sqlbuilder.SQLite,
 	})
 	return res, wrap.IfErr(op, err)
 }
@@ -304,7 +334,6 @@ func (s *Service) GetFileTypesDropdown(ctx context.Context, req w2.GetDropdownRe
 		IDField:      "id",
 		TextField:    "name",
 		OrderByField: "name",
-		Flavor:       sqlbuilder.SQLite,
 	})
 	return res, wrap.IfErr(op, err)
 }
@@ -316,7 +345,6 @@ func (s *Service) GetAssetTypesDropdown(ctx context.Context, req w2.GetDropdownR
 		IDField:      "id",
 		TextField:    "name",
 		OrderByField: "name",
-		Flavor:       sqlbuilder.SQLite,
 	})
 	return res, wrap.IfErr(op, err)
 }
@@ -328,7 +356,6 @@ func (s *Service) GetAssetGroupsDropdown(ctx context.Context, req w2.GetDropdown
 		IDField:      "id",
 		TextField:    "name",
 		OrderByField: "name",
-		Flavor:       sqlbuilder.SQLite,
 	})
 	return res, wrap.IfErr(op, err)
 }
@@ -337,7 +364,6 @@ func (s *Service) UpdateAssets(ctx context.Context, req w2.SaveGridRequest[Asset
 	const op = "asset.Service.UpdateAssets"
 	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
 		_, err := w2db.SaveGridContext(ctx, tx, req, w2db.SaveGridOptions[Asset]{
-			Flavor: sqlbuilder.SQLite,
 			BuildUpdate: func(change Asset) *sqlbuilder.UpdateBuilder {
 				ub := sqlbuilder.Update("asset")
 				w2sql.Set(ub, change.AssetType.ID, "asset_type_id")
@@ -359,7 +385,6 @@ func (s *Service) CreateContainer(ctx context.Context, req w2.SaveFormRequest[Co
 		Into:   "asset_container",
 		Cols:   []string{"gsfoid", "name"},
 		Values: []any{req.Record.OID, req.Record.Name},
-		Flavor: sqlbuilder.SQLite,
 	})
 	if s.store.IsErrConstraintUnique(err) {
 		return 0, wrap.IfErr(op, ErrContainerExists)
@@ -371,7 +396,6 @@ func (s *Service) UpdateContainers(ctx context.Context, req w2.SaveGridRequest[C
 	const op = "asset.Service.UpdateContainers"
 	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
 		_, err := w2db.SaveGridContext(ctx, tx, req, w2db.SaveGridOptions[Container]{
-			Flavor: sqlbuilder.SQLite,
 			BuildUpdate: func(change Container) *sqlbuilder.UpdateBuilder {
 				ub := sqlbuilder.Update("asset_container")
 				w2sql.Set(ub, change.OID, "gsfoid")
@@ -394,7 +418,6 @@ func (s *Service) AddContainerAsset(ctx context.Context, req w2.SaveFormRequest[
 		Into:   "asset_container_asset",
 		Cols:   []string{"container_id", "win_asset_id", "osx_asset_id"},
 		Values: []any{id, req.Record.WINAsset.ID, req.Record.OSXAsset.ID},
-		Flavor: sqlbuilder.SQLite,
 	})
 	if s.store.IsErrConstraintUnique(err) {
 		return 0, wrap.IfErr(op, ErrContainerAssetExists)
@@ -406,7 +429,6 @@ func (s *Service) UpdateContainerAssets(ctx context.Context, req w2.SaveGridRequ
 	const op = "asset.Service.UpdateContainerAssets"
 	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
 		_, err := w2db.SaveGridContext(ctx, tx, req, w2db.SaveGridOptions[ContainerAsset]{
-			Flavor: sqlbuilder.SQLite,
 			BuildUpdate: func(change ContainerAsset) *sqlbuilder.UpdateBuilder {
 				ub := sqlbuilder.Update("asset_container_asset")
 				w2sql.Set(ub, change.WINAsset.ID, "win_asset_id")
@@ -431,7 +453,6 @@ func (s *Service) ReorderContainerAssets(ctx context.Context, req w2.ReorderGrid
 			IDField:    "id",
 			SetField:   "position",
 			GroupField: "container_id",
-			Flavor:     sqlbuilder.SQLite,
 		})
 		return err
 	})
@@ -443,7 +464,6 @@ func (s *Service) DeleteAssets(ctx context.Context, req w2.RemoveGridRequest) er
 	_, err := w2db.RemoveGridContext(ctx, s.store.DB(), req, w2db.RemoveGridOptions{
 		From:    "asset",
 		IDField: "id",
-		Flavor:  sqlbuilder.SQLite,
 	})
 	return wrap.IfErr(op, err)
 }
@@ -453,7 +473,6 @@ func (s *Service) DeleteContainers(ctx context.Context, req w2.RemoveGridRequest
 	_, err := w2db.RemoveGridContext(ctx, s.store.DB(), req, w2db.RemoveGridOptions{
 		From:    "asset_container",
 		IDField: "id",
-		Flavor:  sqlbuilder.SQLite,
 	})
 	if s.store.IsErrConstraintTrigger(err) {
 		return wrap.IfErr(op, ErrContainerInUse)
@@ -466,7 +485,6 @@ func (s *Service) DeleteContainerAssets(ctx context.Context, req w2.RemoveGridRe
 	_, err := w2db.RemoveGridContext(ctx, s.store.DB(), req, w2db.RemoveGridOptions{
 		From:    "asset_container_asset",
 		IDField: "id",
-		Flavor:  sqlbuilder.SQLite,
 	})
 	return wrap.IfErr(op, err)
 }

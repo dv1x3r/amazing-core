@@ -18,7 +18,6 @@ import (
 	"github.com/dv1x3r/w2go/w2db"
 
 	"github.com/dustin/go-humanize"
-	"github.com/huandu/go-sqlbuilder"
 )
 
 var (
@@ -89,20 +88,18 @@ func (s *Service) GetBlobGrid(ctx context.Context, req w2.GetGridRequest) (w2.Ge
 			"size":     "length(blob)",
 			"size_str": "length(blob)",
 		},
-		Flavor: sqlbuilder.SQLite,
-		Scan: func(rows *sql.Rows) (File, error) {
-			var record File
+		Scan: func(rows *sql.Rows, record *File) error {
 			if err := rows.Scan(
 				&record.ID,
 				&record.CDNID,
 				&record.Hash,
 				&record.Size,
 			); err != nil {
-				return record, err
+				return err
 			}
 			record.SizeStr = humanize.Bytes(uint64(record.Size))
 			record.URL, _ = url.JoinPath(s.deliveryURL, record.CDNID)
-			return record, nil
+			return nil
 		},
 	})
 	return res, wrap.IfErr(op, err)
@@ -113,7 +110,6 @@ func (s *Service) DeleteFiles(ctx context.Context, req w2.RemoveGridRequest) err
 	_, err := w2db.RemoveGridContext(ctx, s.store.DB(), req, w2db.RemoveGridOptions{
 		From:    "asset_file",
 		IDField: "id",
-		Flavor:  sqlbuilder.SQLite,
 	})
 	return wrap.IfErr(op, err)
 }
