@@ -40,6 +40,7 @@ export function createWidget() {
     defaultOperator: {
       'text': 'contains',
     },
+    onDelete: function(event) { event.preventDefault() },
   })
 
   return new w2layout({

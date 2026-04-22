@@ -3,9 +3,11 @@ create table asset_container (
     [id] integer primary key,
     [gsfoid] integer not null unique,
     [name] text not null collate nocase
+    [ptag] text collate nocase,
+    [created_at] integer not null default (unixepoch())
 ) strict;
 
-create table asset_container_asset (
+create table asset_container_assetmap (
     [id] integer primary key not null,
     [container_id] integer not null references asset_container(id) on delete cascade,
     [win_asset_id] integer not null references asset(id) on delete cascade,
@@ -14,20 +16,12 @@ create table asset_container_asset (
     unique([container_id], [win_asset_id])
 ) strict;
 
-create table asset_package (
-    [id] integer primary key not null,
-    [container_id] integer not null unique references asset_container(id) on delete cascade,
-    [name] text not null collate nocase,
-    [ptag] text not null collate nocase,
-    [created_date] integer not null default (unixepoch())
-) strict;
-
 create table asset_container_package (
     [id] integer primary key not null,
     [container_id] integer not null references asset_container(id) on delete cascade,
-    [package_id] integer not null references asset_package(id) on delete cascade,
+    [pkg_container_id] integer not null references asset_container(id) on delete cascade,
     [position] integer not null default 0,
-    unique([container_id], [package_id])
+    unique([container_id], [pkg_container_id])
 ) strict;
 
 insert into asset_container ([id], [gsfoid], [name])

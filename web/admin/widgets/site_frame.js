@@ -120,7 +120,7 @@ function openSiteFramePopup(event) {
   w2popup.open({
     title: 'New Site Frame',
     body: '<div id="site-frame-form" style="width: 100%; height: 100%;"></div>',
-    width: 600, height: 300, showMax: false, resizable: false,
+    width: 600, height: 220, showMax: false, resizable: false,
   })
     .then(() => form.render('#site-frame-form'))
     .close(() => form.destroy())

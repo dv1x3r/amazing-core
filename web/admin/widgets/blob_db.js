@@ -28,7 +28,7 @@ export function createWidget() {
         {
           type: 'button',
           id: 'import',
-          text: 'Import',
+          text: 'Import from folder',
           tooltip: 'Import cache files from the ./cache folder',
           icon: 'fa fa-file-arrow-down',
           onClick: function() {
@@ -52,7 +52,7 @@ export function createWidget() {
         {
           type: 'button',
           id: 'export',
-          text: 'Export',
+          text: 'Export to folder',
           tooltip: 'Export cache files to the ./cache folder',
           icon: 'fa fa-file-arrow-up',
           onClick: function() {

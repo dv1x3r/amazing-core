@@ -97,11 +97,11 @@ func (s *Service) UpdateSiteFrames(ctx context.Context, req w2.SaveGridRequest[S
 				return ub
 			},
 		})
+		if s.store.IsErrConstraintUnique(err) {
+			return ErrSiteFrameExists
+		}
 		return err
 	})
-	if s.store.IsErrConstraintUnique(err) {
-		return wrap.IfErr(op, ErrSiteFrameExists)
-	}
 	return wrap.IfErr(op, err)
 }
 

@@ -135,17 +135,6 @@ func (h *Handler) PostAssetGrid(w http.ResponseWriter, r *http.Request) error {
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)
 }
 
-func (h *Handler) PostAssetRemove(w http.ResponseWriter, r *http.Request) error {
-	req, err := w2.ParseRemoveGridRequest(r.Body)
-	if err != nil {
-		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
-	}
-	if err := h.assetService.DeleteAssets(r.Context(), req); err != nil {
-		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
-	}
-	return w2.NewSuccessResponse().Write(w, http.StatusOK)
-}
-
 func (h *Handler) PostAssetCacheJSON(w http.ResponseWriter, r *http.Request) error {
 	headers, err := w2file.ParseMultipartFiles(r)
 	if err != nil {
@@ -301,16 +290,30 @@ func (h *Handler) GetContainerAssetGrid(w http.ResponseWriter, r *http.Request) 
 	return res.Write(w)
 }
 
-func (h *Handler) PostContainerAssetGrid(w http.ResponseWriter, r *http.Request) error {
+func (h *Handler) PostContainerAssetForm(w http.ResponseWriter, r *http.Request) error {
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
+	req, err := w2.ParseSaveFormRequest[asset.ContainerAsset](r.Body)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	err = h.assetService.AddContainerAsset(r.Context(), req, id)
+	if errors.Is(err, asset.ErrContainerAssetExists) {
+		return wrap.WithHTTPStatus(err, http.StatusConflict)
+	} else if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return w2.NewSaveFormResponse(req.RecID).Write(w)
+}
+
+func (h *Handler) PostContainerAssetGrid(w http.ResponseWriter, r *http.Request) error {
 	req, err := w2.ParseSaveGridRequest[asset.ContainerAsset](r.Body)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	err = h.assetService.UpdateContainerAssets(r.Context(), req, id)
+	err = h.assetService.UpdateContainerAssets(r.Context(), req)
 	if errors.Is(err, asset.ErrContainerAssetExists) {
 		return wrap.WithHTTPStatus(err, http.StatusConflict)
 	} else if err != nil {
@@ -341,24 +344,6 @@ func (h *Handler) PostContainerAssetReorder(w http.ResponseWriter, r *http.Reque
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)
 }
 
-func (h *Handler) PostContainerAssetForm(w http.ResponseWriter, r *http.Request) error {
-	id, err := strconv.Atoi(r.PathValue("id"))
-	if err != nil {
-		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
-	}
-	req, err := w2.ParseSaveFormRequest[asset.ContainerAsset](r.Body)
-	if err != nil {
-		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
-	}
-	_, err = h.assetService.AddContainerAsset(r.Context(), req, id)
-	if errors.Is(err, asset.ErrContainerAssetExists) {
-		return wrap.WithHTTPStatus(err, http.StatusConflict)
-	} else if err != nil {
-		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
-	}
-	return w2.NewSaveFormResponse(req.RecID).Write(w)
-}
-
 // ── Container Packages ───────────────────────────────────────────────────────
 
 func (h *Handler) GetContainerPackageGrid(w http.ResponseWriter, r *http.Request) error {
@@ -377,18 +362,58 @@ func (h *Handler) GetContainerPackageGrid(w http.ResponseWriter, r *http.Request
 	return res.Write(w)
 }
 
-// ── Asset Packages ───────────────────────────────────────────────────────────
-
-func (h *Handler) GetPackage(w http.ResponseWriter, r *http.Request) error {
-	req, err := w2.ParseGetDropdownRequest(r.URL.Query().Get("request"))
+func (h *Handler) PostContainerPackageForm(w http.ResponseWriter, r *http.Request) error {
+	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.assetService.GetPackagesDropdown(r.Context(), req)
+	req, err := w2.ParseSaveFormRequest[asset.ContainerPackage](r.Body)
 	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	err = h.assetService.AddContainerPackage(r.Context(), req, id)
+	if errors.Is(err, asset.ErrContainerPackageExists) {
+		return wrap.WithHTTPStatus(err, http.StatusConflict)
+	} else if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
-	return res.Write(w)
+	return w2.NewSaveFormResponse(req.RecID).Write(w)
+}
+
+func (h *Handler) PostContainerPackageGrid(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseSaveGridRequest[asset.ContainerPackage](r.Body)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	err = h.assetService.UpdateContainerPackages(r.Context(), req)
+	if errors.Is(err, asset.ErrContainerPackageExists) {
+		return wrap.WithHTTPStatus(err, http.StatusConflict)
+	} else if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return w2.NewSuccessResponse().Write(w, http.StatusOK)
+}
+
+func (h *Handler) PostContainerPackageRemove(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseRemoveGridRequest(r.Body)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	if err = h.assetService.DeleteContainerPackages(r.Context(), req); err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return w2.NewSuccessResponse().Write(w, http.StatusOK)
+}
+
+func (h *Handler) PostContainerPackageReorder(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseReorderGridRequest(r.Body)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	if err = h.assetService.ReorderContainerPackages(r.Context(), req); err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return w2.NewSuccessResponse().Write(w, http.StatusOK)
 }
 
 // ── Site Frame ───────────────────────────────────────────────────────────────

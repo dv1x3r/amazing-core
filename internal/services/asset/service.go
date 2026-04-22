@@ -146,24 +146,51 @@ func (s *Service) GetAssetGrid(ctx context.Context, req w2.GetGridRequest) (w2.G
 func (s *Service) GetContainerGrid(ctx context.Context, req w2.GetGridRequest) (w2.GetGridResponse[Container], error) {
 	const op = "asset.Service.GetContainerGrid"
 	res, err := w2db.GetGridContext(ctx, s.store.DB(), req, w2db.GetGridOptions[Container]{
-		From: "asset_container",
+		From: "asset_container as c",
 		Select: []string{
-			"id",
-			"gsfoid",
-			"name",
+			"c.id",
+			"c.gsfoid",
+			"c.name",
+			"c.ptag",
+			"coalesce(a.assets, 0)",
+			"coalesce(p.packages, 0)",
+			"datetime(c.created_at, 'unixepoch', 'localtime')",
 		},
 		WhereMapping: map[string]string{
-			"id":   "id",
-			"oid":  "gsfoid",
-			"name": "name",
+			"id":   "c.id",
+			"oid":  "c.gsfoid",
+			"name": "c.name",
+			"ptag": "c.ptag",
 		},
 		OrderByMapping: map[string]string{
-			"id":   "id",
-			"oid":  "gsfoid",
-			"name": "name",
+			"id":         "c.id",
+			"oid":        "c.gsfoid",
+			"name":       "c.name",
+			"ptag":       "c.ptag",
+			"assets":     "a.assets",
+			"packages":   "p.packages",
+			"created_at": "ac.created_at",
+		},
+		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
+			sb.JoinWithOption(sqlbuilder.LeftJoin,
+				"(select container_id, count(*) as assets from asset_container_assetmap group by container_id) as a",
+				"a.container_id = c.id",
+			)
+			sb.JoinWithOption(sqlbuilder.LeftJoin,
+				"(select container_id, count(*) as packages from asset_container_package group by container_id) as p",
+				"p.container_id = c.id",
+			)
 		},
 		Scan: func(rows *sql.Rows, record *Container) error {
-			if err := rows.Scan(&record.ID, &record.OID, &record.Name); err != nil {
+			if err := rows.Scan(
+				&record.ID,
+				&record.OID,
+				&record.Name,
+				&record.PTag,
+				&record.Assets,
+				&record.Packages,
+				&record.CreatedAt,
+			); err != nil {
 				return err
 			}
 			record.OIDStr = types.OIDFromInt64(record.OID.V).String()
@@ -176,7 +203,7 @@ func (s *Service) GetContainerGrid(ctx context.Context, req w2.GetGridRequest) (
 func (s *Service) GetContainerAssetGrid(ctx context.Context, req w2.GetGridRequest, id int) (w2.GetGridResponse[ContainerAsset], error) {
 	const op = "asset.Service.GetContainerAssetGrid"
 	res, err := w2db.GetGridContext(ctx, s.store.DB(), req, w2db.GetGridOptions[ContainerAsset]{
-		From: "asset_container_asset as ca",
+		From: "asset_container_assetmap as ca",
 		Select: []string{
 			"ca.id",
 			"ca.position",
@@ -218,66 +245,22 @@ func (s *Service) GetContainerPackageGrid(ctx context.Context, req w2.GetGridReq
 		Select: []string{
 			"cp.id",
 			"cp.position",
-			"c.name",
-			"p.name",
-			"p.ptag",
+			"cp.pkg_container_id",
+			"concat(pc.gsfoid, ' - ', pc.name, ' (' || pc.ptag || ')')",
 		},
 		BuildBase: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Where(sb.EQ("cp.container_id", id))
 		},
 		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
-			sb.Join("asset_package as p", "p.id = cp.package_id")
-			sb.Join("asset_container as c", "c.id = cp.container_id")
+			sb.Join("asset_container as pc", "pc.id = cp.pkg_container_id")
 			sb.OrderByAsc("cp.position").OrderByDesc("cp.id")
 		},
 		Scan: func(rows *sql.Rows, record *ContainerPackage) error {
 			return rows.Scan(
 				&record.ID,
 				&record.Position,
-				&record.Container,
-				&record.Name,
-				&record.PTag,
-			)
-		},
-	})
-	return res, wrap.IfErr(op, err)
-}
-
-func (s *Service) GetPackageGrid(ctx context.Context, req w2.GetGridRequest) (w2.GetGridResponse[Package], error) {
-	const op = "asset.Service.GetPackageGrid"
-	res, err := w2db.GetGridContext(ctx, s.store.DB(), req, w2db.GetGridOptions[Package]{
-		From: "asset_package as p",
-		Select: []string{
-			"p.id",
-			"p.name",
-			"p.ptag",
-			"datetime(p.created_date, 'unixepoch', 'localtime')",
-			"p.container_id",
-			"c.gsfoid || ' - ' || c.name",
-		},
-		WhereMapping: map[string]string{
-			"id":        "p.id",
-			"name":      "p.name",
-			"ptag":      "p.ptag",
-			"container": "c.gsfoid || ' - ' || c.name",
-		},
-		OrderByMapping: map[string]string{
-			"id":        "p.id",
-			"name":      "p.name",
-			"ptag":      "p.ptag",
-			"container": "c.gsfoid",
-		},
-		BuildBase: func(sb *sqlbuilder.SelectBuilder) {
-			sb.Join("asset_container as c", "c.id = p.container_id")
-		},
-		Scan: func(rows *sql.Rows, record *Package) error {
-			return rows.Scan(
-				&record.ID,
-				&record.Name,
-				&record.PTag,
-				&record.CreatedDate,
-				&record.Container.ID,
-				&record.Container.Text,
+				&record.PkgContainer.ID,
+				&record.PkgContainer.Text,
 			)
 		},
 	})
@@ -310,19 +293,8 @@ func (s *Service) GetContainersDropdown(ctx context.Context, req w2.GetDropdownR
 	res, err := w2db.GetDropdownContext(ctx, s.store.DB(), req, w2db.GetDropdownOptions{
 		From:         "asset_container",
 		IDField:      "id",
-		TextField:    "gsfoid || ' - ' || name",
+		TextField:    "concat(gsfoid, ' - ', name, ' (' || ptag || ')')",
 		OrderByField: "gsfoid",
-	})
-	return res, wrap.IfErr(op, err)
-}
-
-func (s *Service) GetPackagesDropdown(ctx context.Context, req w2.GetDropdownRequest) (w2.GetDropdownResponse[w2.Dropdown], error) {
-	const op = "asset.Service.GetPackagesDropdown"
-	res, err := w2db.GetDropdownContext(ctx, s.store.DB(), req, w2db.GetDropdownOptions{
-		From:         "asset_package",
-		IDField:      "id",
-		TextField:    "ptag",
-		OrderByField: "ptag",
 	})
 	return res, wrap.IfErr(op, err)
 }
@@ -383,8 +355,8 @@ func (s *Service) CreateContainer(ctx context.Context, req w2.SaveFormRequest[Co
 	const op = "asset.Service.CreateContainer"
 	id, err := w2db.InsertFormContext(ctx, s.store.DB(), req, w2db.InsertFormOptions{
 		Into:   "asset_container",
-		Cols:   []string{"gsfoid", "name"},
-		Values: []any{req.Record.OID, req.Record.Name},
+		Cols:   []string{"gsfoid", "name", "ptag"},
+		Values: []any{req.Record.OID, req.Record.Name, req.Record.PTag},
 	})
 	if s.store.IsErrConstraintUnique(err) {
 		return 0, wrap.IfErr(op, ErrContainerExists)
@@ -400,44 +372,25 @@ func (s *Service) UpdateContainers(ctx context.Context, req w2.SaveGridRequest[C
 				ub := sqlbuilder.Update("asset_container")
 				w2sql.Set(ub, change.OID, "gsfoid")
 				w2sql.Set(ub, change.Name, "name")
+				w2sql.Set(ub, change.PTag, "ptag")
 				ub.Where(ub.EQ("id", change.ID))
 				return ub
 			},
 		})
+		if s.store.IsErrConstraintUnique(err) {
+			return ErrContainerExists
+		}
 		return err
 	})
-	if s.store.IsErrConstraintUnique(err) {
-		return wrap.IfErr(op, ErrContainerExists)
-	}
 	return wrap.IfErr(op, err)
 }
 
-func (s *Service) AddContainerAsset(ctx context.Context, req w2.SaveFormRequest[ContainerAsset], id int) (int, error) {
+func (s *Service) AddContainerAsset(ctx context.Context, req w2.SaveFormRequest[ContainerAsset], id int) error {
 	const op = "asset.Service.AddContainerAsset"
-	id, err := w2db.InsertFormContext(ctx, s.store.DB(), req, w2db.InsertFormOptions{
-		Into:   "asset_container_asset",
+	_, err := w2db.InsertFormContext(ctx, s.store.DB(), req, w2db.InsertFormOptions{
+		Into:   "asset_container_assetmap",
 		Cols:   []string{"container_id", "win_asset_id", "osx_asset_id"},
 		Values: []any{id, req.Record.WINAsset.ID, req.Record.OSXAsset.ID},
-	})
-	if s.store.IsErrConstraintUnique(err) {
-		return 0, wrap.IfErr(op, ErrContainerAssetExists)
-	}
-	return id, wrap.IfErr(op, err)
-}
-
-func (s *Service) UpdateContainerAssets(ctx context.Context, req w2.SaveGridRequest[ContainerAsset], id int) error {
-	const op = "asset.Service.UpdateContainerAssets"
-	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
-		_, err := w2db.SaveGridContext(ctx, tx, req, w2db.SaveGridOptions[ContainerAsset]{
-			BuildUpdate: func(change ContainerAsset) *sqlbuilder.UpdateBuilder {
-				ub := sqlbuilder.Update("asset_container_asset")
-				w2sql.Set(ub, change.WINAsset.ID, "win_asset_id")
-				w2sql.Set(ub, change.OSXAsset.ID, "osx_asset_id")
-				ub.Where(ub.EQ("id", change.ID))
-				return ub
-			},
-		})
-		return err
 	})
 	if s.store.IsErrConstraintUnique(err) {
 		return wrap.IfErr(op, ErrContainerAssetExists)
@@ -445,11 +398,72 @@ func (s *Service) UpdateContainerAssets(ctx context.Context, req w2.SaveGridRequ
 	return wrap.IfErr(op, err)
 }
 
+func (s *Service) UpdateContainerAssets(ctx context.Context, req w2.SaveGridRequest[ContainerAsset]) error {
+	const op = "asset.Service.UpdateContainerAssets"
+	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
+		_, err := w2db.SaveGridContext(ctx, tx, req, w2db.SaveGridOptions[ContainerAsset]{
+			BuildUpdate: func(change ContainerAsset) *sqlbuilder.UpdateBuilder {
+				ub := sqlbuilder.Update("asset_container_assetmap")
+				w2sql.Set(ub, change.WINAsset.ID, "win_asset_id")
+				w2sql.Set(ub, change.OSXAsset.ID, "osx_asset_id")
+				ub.Where(ub.EQ("id", change.ID))
+				return ub
+			},
+		})
+		if s.store.IsErrConstraintUnique(err) {
+			return ErrContainerAssetExists
+		}
+		return err
+	})
+	return wrap.IfErr(op, err)
+}
+
+func (s *Service) AddContainerPackage(ctx context.Context, req w2.SaveFormRequest[ContainerPackage], id int) error {
+	const op = "asset.Service.AddContainerPackage"
+	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
+		_, err := w2db.InsertFormContext(ctx, tx, req, w2db.InsertFormOptions{
+			Into:   "asset_container_package",
+			Cols:   []string{"container_id", "pkg_container_id"},
+			Values: []any{id, req.Record.PkgContainer.ID},
+		})
+		if s.store.IsErrConstraintUnique(err) {
+			return ErrContainerPackageExists
+		}
+		if err != nil {
+			return err
+		}
+		return s.validatePackageRecursion(ctx, tx)
+	})
+	return wrap.IfErr(op, err)
+}
+
+func (s *Service) UpdateContainerPackages(ctx context.Context, req w2.SaveGridRequest[ContainerPackage]) error {
+	const op = "asset.Service.UpdateContainerPackages"
+	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
+		_, err := w2db.SaveGridContext(ctx, tx, req, w2db.SaveGridOptions[ContainerPackage]{
+			BuildUpdate: func(change ContainerPackage) *sqlbuilder.UpdateBuilder {
+				ub := sqlbuilder.Update("asset_container_package")
+				w2sql.Set(ub, change.PkgContainer.ID, "pkg_container_id")
+				ub.Where(ub.EQ("id", change.ID))
+				return ub
+			},
+		})
+		if s.store.IsErrConstraintUnique(err) {
+			return ErrContainerPackageExists
+		}
+		if err != nil {
+			return err
+		}
+		return s.validatePackageRecursion(ctx, tx)
+	})
+	return wrap.IfErr(op, err)
+}
+
 func (s *Service) ReorderContainerAssets(ctx context.Context, req w2.ReorderGridRequest) error {
 	const op = "asset.Service.ReorderContainerAssets"
 	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
 		_, err := w2db.ReorderGridContext(ctx, tx, req, w2db.ReorderGridOptions{
-			Update:     "asset_container_asset",
+			Update:     "asset_container_assetmap",
 			IDField:    "id",
 			SetField:   "position",
 			GroupField: "container_id",
@@ -459,11 +473,16 @@ func (s *Service) ReorderContainerAssets(ctx context.Context, req w2.ReorderGrid
 	return wrap.IfErr(op, err)
 }
 
-func (s *Service) DeleteAssets(ctx context.Context, req w2.RemoveGridRequest) error {
-	const op = "asset.Service.DeleteAssets"
-	_, err := w2db.RemoveGridContext(ctx, s.store.DB(), req, w2db.RemoveGridOptions{
-		From:    "asset",
-		IDField: "id",
+func (s *Service) ReorderContainerPackages(ctx context.Context, req w2.ReorderGridRequest) error {
+	const op = "asset.Service.ReorderContainerPackages"
+	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
+		_, err := w2db.ReorderGridContext(ctx, tx, req, w2db.ReorderGridOptions{
+			Update:     "asset_container_package",
+			IDField:    "id",
+			SetField:   "position",
+			GroupField: "container_id",
+		})
+		return err
 	})
 	return wrap.IfErr(op, err)
 }
@@ -483,8 +502,22 @@ func (s *Service) DeleteContainers(ctx context.Context, req w2.RemoveGridRequest
 func (s *Service) DeleteContainerAssets(ctx context.Context, req w2.RemoveGridRequest) error {
 	const op = "asset.Service.DeleteContainerAssets"
 	_, err := w2db.RemoveGridContext(ctx, s.store.DB(), req, w2db.RemoveGridOptions{
-		From:    "asset_container_asset",
+		From:    "asset_container_assetmap",
 		IDField: "id",
 	})
 	return wrap.IfErr(op, err)
+}
+
+func (s *Service) DeleteContainerPackages(ctx context.Context, req w2.RemoveGridRequest) error {
+	const op = "asset.Service.DeleteContainerPackages"
+	_, err := w2db.RemoveGridContext(ctx, s.store.DB(), req, w2db.RemoveGridOptions{
+		From:    "asset_container_package",
+		IDField: "id",
+	})
+	return wrap.IfErr(op, err)
+}
+
+func (s *Service) validatePackageRecursion(ctx context.Context, tx *sql.Tx) error {
+	// TODO: ErrPackageRecursion
+	return nil
 }

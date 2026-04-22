@@ -1,7 +1,16 @@
-import { w2layout, w2sidebar, w2toolbar } from '/lib/w2ui.es6.min.js'
+import { w2layout, w2sidebar, w2toolbar, w2utils } from '/lib/w2ui.es6.min.js'
 import * as helpers from '/lib/w2ui.helpers.js'
 
 helpers.w2init()
+
+// sorry my American friends,
+// I will parametrize this later somehow...
+w2utils.locale({
+  weekStarts: 'M',
+  dateFormat: 'yyyy-MM-dd',
+  datetimeFormat: 'yyyy-MM-dd|hh24:mi',
+  timeFormat: 'hh24:mi',
+})
 
 const dashboardSidebar = new w2sidebar({
   name: 'dashboardSidebar',
@@ -51,20 +60,11 @@ const dashboardSidebar = new w2sidebar({
         },
         {
           id: 'asset-containers',
-          text: 'Asset Containers',
+          text: 'Containers',
           icon: 'fa fa-folder-open',
           onClick: async function() {
             const module = await import('./widgets/assets.js')
             setDashboardWidget(module.createContainerLayout)
-          },
-        },
-        {
-          id: 'asset-packages',
-          text: 'Asset Packages',
-          icon: 'fa fa-box-open',
-          onClick: async function() {
-            const module = await import('./widgets/assets.js')
-            setDashboardWidget(module.createPackageLayout)
           },
         },
       ],

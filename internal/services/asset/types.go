@@ -7,9 +7,11 @@ import (
 )
 
 var (
-	ErrContainerExists      = errors.New("asset container with the same GSF OID already exists")
-	ErrContainerInUse       = errors.New("asset container is still referenced and cannot be removed")
-	ErrContainerAssetExists = errors.New("the same primary asset already exists in the container")
+	ErrContainerExists        = errors.New("asset container with this GSF OID already exists")
+	ErrContainerInUse         = errors.New("asset container is still in use and cannot be removed")
+	ErrContainerAssetExists   = errors.New("asset container already contains this primary asset")
+	ErrContainerPackageExists = errors.New("asset container already contains this package")
+	ErrContainerRecursion     = errors.New("asset container recursion detected")
 )
 
 type Asset struct {
@@ -31,10 +33,14 @@ type Asset struct {
 }
 
 type Container struct {
-	ID     int              `json:"id"`
-	OID    w2.Field[int64]  `json:"oid"`
-	OIDStr string           `json:"oid_str"`
-	Name   w2.Field[string] `json:"name"`
+	ID        int              `json:"id"`
+	OID       w2.Field[int64]  `json:"oid"`
+	OIDStr    string           `json:"oid_str"`
+	Name      w2.Field[string] `json:"name"`
+	PTag      w2.Field[string] `json:"ptag"`
+	Assets    int              `json:"assets"`
+	Packages  int              `json:"packages"`
+	CreatedAt string           `json:"created_at"`
 }
 
 type ContainerAsset struct {
@@ -45,17 +51,9 @@ type ContainerAsset struct {
 }
 
 type ContainerPackage struct {
-	ID        int    `json:"id"`
-	Position  int    `json:"position"`
-	Container string `json:"container"`
-	Name      string `json:"name"`
-	PTag      string `json:"ptag"`
-}
-
-type Package struct {
-	ID          int         `json:"id"`
-	Name        string      `json:"name"`
-	PTag        string      `json:"ptag"`
-	CreatedDate string      `json:"created_date"`
-	Container   w2.Dropdown `json:"container"`
+	ID           int         `json:"id"`
+	Position     int         `json:"position"`
+	PkgContainer w2.Dropdown `json:"pkg_container"`
+	Assets       int         `json:"assets"`
+	Packages     int         `json:"packages"`
 }

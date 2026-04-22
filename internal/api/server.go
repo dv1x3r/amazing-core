@@ -55,7 +55,6 @@ func NewServer(
 	v1.HandleFunc("GET /asset", errorHandler(handler.GetAsset))
 	v1.HandleFunc("GET /asset/grid", errorHandler(handler.GetAssetGrid))
 	v1.HandleFunc("POST /asset/grid", errorHandler(handler.PostAssetGrid))
-	v1.HandleFunc("POST /asset/remove", errorHandler(handler.PostAssetRemove))
 	v1.HandleFunc("POST /asset/cache.json", errorHandler(handler.PostAssetCacheJSON))
 
 	v1.HandleFunc("GET /asset/filetype", errorHandler(handler.GetAssetFileType))
@@ -69,14 +68,16 @@ func NewServer(
 	v1.HandleFunc("POST /container/form", errorHandler(handler.PostContainerForm))
 
 	v1.HandleFunc("GET /container/{id}/asset/grid", errorHandler(handler.GetContainerAssetGrid))
-	v1.HandleFunc("POST /container/{id}/asset/grid", errorHandler(handler.PostContainerAssetGrid))
+	v1.HandleFunc("POST /container/{id}/asset/form", errorHandler(handler.PostContainerAssetForm))
+	v1.HandleFunc("POST /container/asset/grid", errorHandler(handler.PostContainerAssetGrid))
 	v1.HandleFunc("POST /container/asset/remove", errorHandler(handler.PostContainerAssetRemove))
 	v1.HandleFunc("POST /container/asset/reorder", errorHandler(handler.PostContainerAssetReorder))
-	v1.HandleFunc("POST /container/{id}/asset/form", errorHandler(handler.PostContainerAssetForm))
 
 	v1.HandleFunc("GET /container/{id}/package/grid", errorHandler(handler.GetContainerPackageGrid))
-
-	v1.HandleFunc("GET /package", errorHandler(handler.GetPackage))
+	v1.HandleFunc("POST /container/{id}/package/form", errorHandler(handler.PostContainerPackageForm))
+	v1.HandleFunc("POST /container/package/grid", errorHandler(handler.PostContainerPackageGrid))
+	v1.HandleFunc("POST /container/package/remove", errorHandler(handler.PostContainerPackageRemove))
+	v1.HandleFunc("POST /container/package/reorder", errorHandler(handler.PostContainerPackageReorder))
 
 	v1.HandleFunc("GET /siteframe/grid", errorHandler(handler.GetSiteFrameGrid))
 	v1.HandleFunc("POST /siteframe/grid", errorHandler(handler.PostSiteFrameGrid))

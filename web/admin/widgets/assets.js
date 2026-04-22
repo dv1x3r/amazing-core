@@ -7,7 +7,6 @@ export function createAssetGrid() {
     url: {
       get: '/api/v1/asset/grid',
       save: '/api/v1/asset/grid',
-      remove: '/api/v1/asset/remove',
     },
     recid: 'id',
     recordHeight: 28,
@@ -17,7 +16,7 @@ export function createAssetGrid() {
       toolbar: true,
       toolbarAdd: false,
       toolbarEdit: false,
-      toolbarDelete: true,
+      toolbarDelete: false,
       toolbarSave: true,
       toolbarSearch: true,
       toolbarReload: true,
@@ -175,6 +174,7 @@ export function createAssetGrid() {
     sortData: [
       { field: 'oid', direction: 'desc' },
     ],
+    onDelete: function(event) { event.preventDefault() },
     onSave: function(event) { helpers.reloadOnSuccess(event) },
     onSearch: function(event) { helpers.searchAllFilter(event) },
     onExpand: function(event) {
@@ -286,12 +286,40 @@ export function createContainerLayout() {
         searchable: 'text',
         editable: { type: 'text' },
       },
+      {
+        field: 'ptag',
+        text: 'PTag',
+        size: '120px',
+        render: 'text',
+        sortable: true,
+        searchable: 'text',
+        editable: { type: 'text' },
+      },
+      {
+        field: 'assets',
+        text: 'Assets',
+        size: '60px',
+        sortable: true,
+      },
+      {
+        field: 'packages',
+        text: 'Pkgs',
+        size: '60px',
+        sortable: true,
+      },
+      {
+        field: 'created_at',
+        text: 'Created at',
+        size: '135px',
+        render: 'datetime',
+        sortable: true,
+      },
     ],
     defaultOperator: {
       'text': 'contains',
     },
     sortData: [
-      { field: 'id', direction: 'desc' },
+      { field: 'oid', direction: 'desc' },
     ],
     onAdd: function(event) { openContainerPopup(event) },
     onSave: function(event) { helpers.reloadOnSuccess(event) },
@@ -311,7 +339,7 @@ export function createContainerLayout() {
   async function reloadSubGrids(event) {
     await event.complete
     const selection = event.owner.getSelection()
-    if (selection.length == 0) {
+    if (selection.length != 1) {
       clearSubGrids()
     } else {
       containerAssetGrid.routeData.id = selection[0]
@@ -327,7 +355,7 @@ export function createContainerLayout() {
     header: '<i class="fa fa-list"></i> Asset Map',
     url: {
       get: '/api/v1/container/:id/asset/grid',
-      save: '/api/v1/container/:id/asset/grid',
+      save: '/api/v1/container/asset/grid',
       remove: '/api/v1/container/asset/remove',
     },
     routeData: { id: 0 },
@@ -384,8 +412,8 @@ export function createContainerLayout() {
     header: '<i class="fa fa-box-open"></i> Asset Packages',
     url: {
       get: '/api/v1/container/:id/package/grid',
-      save: '/api/v1/container/:id/package/grid',
-      remove: '/api/v1/container/:id/package/remove',
+      save: '/api/v1/container/package/grid',
+      remove: '/api/v1/container/package/remove',
     },
     routeData: { id: 0 },
     recid: 'id',
@@ -411,11 +439,11 @@ export function createContainerLayout() {
         hidden: true,
       },
       {
-        field: 'container',
-        text: 'Package',
+        field: 'pkg_container',
+        text: 'Package Container',
         render: 'dropdown-tooltip',
         size: '100%',
-        editable: helpers.remoteListOptions('/api/v1/package'),
+        editable: helpers.remoteListOptions('/api/v1/container'),
       },
     ],
     defaultOperator: {
@@ -466,7 +494,7 @@ function openContainerPopup(event) {
         required: true,
         html: {
           label: 'Container OID',
-          span: 5,
+          span: 6,
           column: 0,
         },
       },
@@ -477,7 +505,17 @@ function openContainerPopup(event) {
         html: {
           label: 'Container Name',
           attr: 'style="width:100%;"',
-          span: 5,
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'ptag',
+        type: 'text',
+        html: {
+          label: 'PTag',
+          attr: 'style="width:100%;"',
+          span: 6,
           column: 0,
         },
       },
@@ -518,7 +556,7 @@ function openContainerAssetPopup(event) {
         html: {
           label: 'Windows Asset',
           attr: 'style="width:100%;" placeholder="Type to search..."',
-          span: 5,
+          span: 6,
           column: 0,
         },
       },
@@ -529,7 +567,7 @@ function openContainerAssetPopup(event) {
         html: {
           label: 'OSX Asset',
           attr: 'style="width:100%;" placeholder="Type to search..."',
-          span: 5,
+          span: 6,
           column: 0,
         },
       },
@@ -548,10 +586,10 @@ function openContainerAssetPopup(event) {
 
   w2popup.open({
     title: 'Add Asset',
-    body: '<div id="asset-map-form" style="width: 100%; height: 100%;"></div>',
-    width: 600, height: 300, showMax: false, resizable: false,
+    body: '<div id="container-asset-form" style="width: 100%; height: 100%;"></div>',
+    width: 600, height: 220, showMax: false, resizable: false,
   })
-    .then(() => form.render('#asset-map-form'))
+    .then(() => form.render('#container-asset-form'))
     .close(() => form.destroy())
 }
 
@@ -563,14 +601,14 @@ function openContainerPackagePopup(event) {
     focus: -1,
     fields: [
       {
-        field: 'package',
+        field: 'pkg_container',
         type: 'list',
         required: true,
-        options: helpers.remoteListOptions('/api/v1/package'),
+        options: helpers.remoteListOptions('/api/v1/container'),
         html: {
-          label: 'Package',
+          label: 'Package Container',
           attr: 'style="width:100%;" placeholder="Type to search..."',
-          span: 5,
+          span: 6,
           column: 0,
         },
       },
@@ -589,160 +627,10 @@ function openContainerPackagePopup(event) {
 
   w2popup.open({
     title: 'Add Package',
-    body: '<div id="package-form" style="width: 100%; height: 100%;"></div>',
-    width: 600, height: 300, showMax: false, resizable: false,
+    body: '<div id="container-package-form" style="width: 100%; height: 100%;"></div>',
+    width: 600, height: 170, showMax: false, resizable: false,
   })
-    .then(() => form.render('#package-form'))
-    .close(() => form.destroy())
-}
-
-export function createPackageLayout() {
-  const grid = new w2grid({
-    name: 'packageGrid',
-    url: {
-      get: '/api/v1/package/grid',
-      save: '/api/v1/package/grid',
-      remove: '/api/v1/package/remove',
-    },
-    recid: 'id',
-    recordHeight: 28,
-    multiSearch: true,
-    show: {
-      footer: true,
-      toolbar: true,
-      toolbarAdd: true,
-      toolbarEdit: false,
-      toolbarDelete: true,
-      toolbarSave: true,
-      toolbarSearch: true,
-      toolbarReload: true,
-      searchSave: false,
-    },
-    columns: [
-      {
-        field: 'id',
-        text: 'ID',
-        size: '60px',
-        sortable: true,
-        searchable: 'int',
-      },
-      {
-        field: 'name',
-        text: 'Name',
-        size: '135px',
-        render: 'text',
-        sortable: true,
-        searchable: 'text',
-        editable: { type: 'text' },
-      },
-      {
-        field: 'ptag',
-        text: 'PTag',
-        size: '135px',
-        render: 'text',
-        sortable: true,
-        searchable: 'text',
-        editable: { type: 'text' },
-      },
-      {
-        field: 'container',
-        text: 'Asset Container',
-        size: '400px',
-        render: 'dropdown',
-        sortable: true,
-        searchable: 'text',
-        editable: helpers.remoteListOptions('/api/v1/container'),
-      },
-      {
-        field: 'created_date',
-        text: 'Created Date',
-        size: '135px',
-        render: 'datetime',
-        sortable: true,
-      },
-    ],
-    defaultOperator: {
-      'text': 'contains',
-    },
-    sortData: [
-      { field: 'id', direction: 'desc' },
-    ],
-    onAdd: function(event) { openPackagePopup(event) },
-    onSave: function(event) { helpers.reloadOnSuccess(event) },
-  })
-
-  return new w2layout({
-    name: 'packageLayout',
-    panels: [
-      { type: 'left', html: grid, resizable: true, size: -420 },
-      { type: 'main' },
-    ],
-    onRender: async function(event) {
-      await event.complete
-      event.owner.load('main', '/admin/pages/asset_package.html')
-    },
-    onDestroy: function() {
-      grid.destroy()
-    }
-  })
-}
-
-function openPackagePopup(event) {
-  const form = new w2form({
-    name: 'packageForm',
-    url: '/api/v1/package/form',
-    fields: [
-      {
-        field: 'name',
-        type: 'text',
-        required: true,
-        html: {
-          label: 'Name',
-          span: 5,
-          column: 0,
-        },
-      },
-      {
-        field: 'ptag',
-        type: 'text',
-        required: true,
-        html: {
-          label: 'PTag',
-          span: 5,
-          column: 0,
-        },
-      },
-      {
-        field: 'container',
-        type: 'list',
-        required: true,
-        options: helpers.remoteListOptions('/api/v1/container'),
-        html: {
-          label: 'Asset Container',
-          attr: 'style="width:100%;" placeholder="Type to search..."',
-          span: 5,
-          column: 0,
-        },
-      },
-    ],
-    actions: {
-      async Save() {
-        const res = await this.save()
-        if (res.status == 'success') {
-          event.owner.reload()
-          w2popup.close()
-        }
-      },
-      Cancel() { w2popup.close() },
-    },
-  })
-
-  w2popup.open({
-    title: 'New Package',
-    body: '<div id="package-form" style="width: 100%; height: 100%;"></div>',
-    width: 600, height: 300, showMax: false, resizable: false,
-  })
-    .then(() => form.render('#package-form'))
+    .then(() => form.render('#container-package-form'))
     .close(() => form.destroy())
 }
 
