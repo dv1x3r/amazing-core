@@ -7,11 +7,11 @@ import (
 )
 
 var (
-	ErrContainerExists        = errors.New("asset container with this GSF OID already exists")
-	ErrContainerInUse         = errors.New("asset container is still in use and cannot be removed")
-	ErrContainerAssetExists   = errors.New("asset container already contains this primary asset")
-	ErrContainerPackageExists = errors.New("asset container already contains this package")
-	ErrContainerRecursion     = errors.New("asset container recursion detected")
+	ErrContainerExists         = errors.New("container with this GSF OID already exists")
+	ErrContainerInUse          = errors.New("container is still in use and cannot be removed")
+	ErrContainerAssetExists    = errors.New("container already contains this primary asset")
+	ErrContainerPackageExists  = errors.New("container already contains this package")
+	ErrPackageCyclicDependency = errors.New("circular dependency detected (A → B → A)")
 )
 
 type Asset struct {

@@ -374,6 +374,8 @@ func (h *Handler) PostContainerPackageForm(w http.ResponseWriter, r *http.Reques
 	err = h.assetService.AddContainerPackage(r.Context(), req, id)
 	if errors.Is(err, asset.ErrContainerPackageExists) {
 		return wrap.WithHTTPStatus(err, http.StatusConflict)
+	} else if errors.Is(err, asset.ErrPackageCyclicDependency) {
+		return wrap.WithHTTPStatus(err, http.StatusConflict)
 	} else if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
@@ -387,6 +389,8 @@ func (h *Handler) PostContainerPackageGrid(w http.ResponseWriter, r *http.Reques
 	}
 	err = h.assetService.UpdateContainerPackages(r.Context(), req)
 	if errors.Is(err, asset.ErrContainerPackageExists) {
+		return wrap.WithHTTPStatus(err, http.StatusConflict)
+	} else if errors.Is(err, asset.ErrPackageCyclicDependency) {
 		return wrap.WithHTTPStatus(err, http.StatusConflict)
 	} else if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)

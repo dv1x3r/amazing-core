@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/dv1x3r/amazing-core/internal/lib/db"
+	"github.com/dv1x3r/amazing-core/internal/lib/graph"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 	"github.com/dv1x3r/w2go/w2"
@@ -385,12 +386,12 @@ func (s *Service) UpdateContainers(ctx context.Context, req w2.SaveGridRequest[C
 	return wrap.IfErr(op, err)
 }
 
-func (s *Service) AddContainerAsset(ctx context.Context, req w2.SaveFormRequest[ContainerAsset], id int) error {
+func (s *Service) AddContainerAsset(ctx context.Context, req w2.SaveFormRequest[ContainerAsset], containerID int) error {
 	const op = "asset.Service.AddContainerAsset"
 	_, err := w2db.InsertFormContext(ctx, s.store.DB(), req, w2db.InsertFormOptions{
 		Into:   "asset_container_assetmap",
 		Cols:   []string{"container_id", "win_asset_id", "osx_asset_id"},
-		Values: []any{id, req.Record.WINAsset.ID, req.Record.OSXAsset.ID},
+		Values: []any{containerID, req.Record.WINAsset.ID, req.Record.OSXAsset.ID},
 	})
 	if s.store.IsErrConstraintUnique(err) {
 		return wrap.IfErr(op, ErrContainerAssetExists)
@@ -418,21 +419,25 @@ func (s *Service) UpdateContainerAssets(ctx context.Context, req w2.SaveGridRequ
 	return wrap.IfErr(op, err)
 }
 
-func (s *Service) AddContainerPackage(ctx context.Context, req w2.SaveFormRequest[ContainerPackage], id int) error {
+func (s *Service) AddContainerPackage(ctx context.Context, req w2.SaveFormRequest[ContainerPackage], containerID int) error {
 	const op = "asset.Service.AddContainerPackage"
 	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
 		_, err := w2db.InsertFormContext(ctx, tx, req, w2db.InsertFormOptions{
 			Into:   "asset_container_package",
 			Cols:   []string{"container_id", "pkg_container_id"},
-			Values: []any{id, req.Record.PkgContainer.ID},
+			Values: []any{containerID, req.Record.PkgContainer.ID},
 		})
 		if s.store.IsErrConstraintUnique(err) {
 			return ErrContainerPackageExists
-		}
-		if err != nil {
+		} else if err != nil {
 			return err
 		}
-		return s.validatePackageRecursion(ctx, tx)
+		if cycle, err := hasPackageCycle(ctx, tx, containerID); err != nil {
+			return err
+		} else if cycle {
+			return ErrPackageCyclicDependency
+		}
+		return nil
 	})
 	return wrap.IfErr(op, err)
 }
@@ -450,11 +455,31 @@ func (s *Service) UpdateContainerPackages(ctx context.Context, req w2.SaveGridRe
 		})
 		if s.store.IsErrConstraintUnique(err) {
 			return ErrContainerPackageExists
-		}
-		if err != nil {
+		} else if err != nil {
 			return err
 		}
-		return s.validatePackageRecursion(ctx, tx)
+
+		affectedContainerIDs := map[int]struct{}{}
+		for _, change := range req.Changes {
+			var containerID int
+			row := tx.QueryRowContext(ctx, "select container_id from asset_container_package where id = ?", change.ID)
+			if err := row.Scan(&containerID); err != nil {
+				return err
+			}
+			affectedContainerIDs[containerID] = struct{}{}
+		}
+
+		s.logger.Debug("affected", "affected containers", affectedContainerIDs)
+
+		for containerID := range affectedContainerIDs {
+			if cycle, err := hasPackageCycle(ctx, tx, containerID); err != nil {
+				return err
+			} else if cycle {
+				return ErrPackageCyclicDependency
+			}
+		}
+
+		return nil
 	})
 	return wrap.IfErr(op, err)
 }
@@ -517,7 +542,27 @@ func (s *Service) DeleteContainerPackages(ctx context.Context, req w2.RemoveGrid
 	return wrap.IfErr(op, err)
 }
 
-func (s *Service) validatePackageRecursion(ctx context.Context, tx *sql.Tx) error {
-	// TODO: ErrPackageRecursion
-	return nil
+func hasPackageCycle(ctx context.Context, tx *sql.Tx, updatedContainerID int) (bool, error) {
+	// build complete adjacency map: { container_id: [pkg_container_id, ...] }
+	rows, err := tx.QueryContext(ctx, "select container_id, pkg_container_id from asset_container_package")
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+
+	nodes := graph.AdjacencyMap{}
+
+	for rows.Next() {
+		var nodeID, childID int
+		if err := rows.Scan(&nodeID, &childID); err != nil {
+			return false, err
+		}
+		nodes.Add(nodeID, childID)
+	}
+
+	if err := rows.Err(); err != nil {
+		return false, err
+	}
+
+	return nodes.HasCycleFrom(updatedContainerID), nil
 }
