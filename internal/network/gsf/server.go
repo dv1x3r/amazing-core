@@ -63,6 +63,10 @@ func (s *Server) ListenAndServe() error {
 }
 
 func (s *Server) Shutdown(ctx context.Context) error {
+	if s.listener == nil {
+		return nil
+	}
+
 	s.listener.Close()
 	s.cancel()
 
