@@ -34,26 +34,26 @@ type Handler struct {
 	authService      *auth.Service
 	assetService     *asset.Service
 	blobService      *blob.Service
-	siteFrameService *siteframe.Service
 	dummyService     *dummy.Service
 	randnameService  *randname.Service
+	siteFrameService *siteframe.Service
 }
 
 func NewHandler(
 	authService *auth.Service,
 	assetService *asset.Service,
 	blobService *blob.Service,
-	siteFrameService *siteframe.Service,
 	dummyService *dummy.Service,
 	randnameService *randname.Service,
+	siteFrameService *siteframe.Service,
 ) *Handler {
 	return &Handler{
 		authService:      authService,
 		assetService:     assetService,
 		blobService:      blobService,
-		siteFrameService: siteFrameService,
 		dummyService:     dummyService,
 		randnameService:  randnameService,
+		siteFrameService: siteFrameService,
 	}
 }
 

@@ -158,9 +158,9 @@ func main() {
 
 	// ── Services & Servers ──────────────────────────────────────────────────────
 	authService := auth.NewService(cfg.Secure.Session.Secure, cfg.Secure.Session.Key, cfg.Secure.Auth.Username, cfg.Secure.Auth.Password)
-	dummyService := dummy.NewService(coreStore)
-	blobService := blob.NewService(logger.Get(), blobStore, cfg.Settings.AssetDeliveryURL)
 	assetService := asset.NewService(logger.Get(), coreStore, cfg.Settings.AssetDeliveryURL)
+	blobService := blob.NewService(logger.Get(), blobStore, cfg.Settings.AssetDeliveryURL)
+	dummyService := dummy.NewService(coreStore)
 	randnameService := randname.NewService(coreStore)
 	siteFrameService := siteframe.NewService(logger.Get(), coreStore)
 
@@ -168,9 +168,9 @@ func main() {
 		authService,
 		assetService,
 		blobService,
-		siteFrameService,
 		dummyService,
 		randnameService,
+		siteFrameService,
 	)
 
 	apiServer := api.NewServer(
@@ -181,8 +181,8 @@ func main() {
 	)
 
 	gameHandler := game.NewHandler(
-		dummyService,
 		assetService,
+		dummyService,
 		randnameService,
 	)
 

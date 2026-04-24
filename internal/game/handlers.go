@@ -11,19 +11,19 @@ import (
 )
 
 type Handler struct {
-	dummyService    *dummy.Service
 	assetService    *asset.Service
+	dummyService    *dummy.Service
 	randnameService *randname.Service
 }
 
 func NewHandler(
-	dummyService *dummy.Service,
 	assetService *asset.Service,
+	dummyService *dummy.Service,
 	randnameService *randname.Service,
 ) *Handler {
 	return &Handler{
-		dummyService:    dummyService,
 		assetService:    assetService,
+		dummyService:    dummyService,
 		randnameService: randnameService,
 	}
 }
