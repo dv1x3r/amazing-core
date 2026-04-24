@@ -1,10 +1,6 @@
 package types
 
-import (
-	"time"
-
-	"github.com/dv1x3r/amazing-core/internal/network/gsf"
-)
+import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
 type NPC struct {
 	RuleContainer
@@ -14,7 +10,7 @@ type NPC struct {
 	RelationshipPoints int32
 	Friend             bool
 	Ordinal            int32
-	PnrCreatedDate     time.Time
+	PnrCreatedDate     gsf.UnixTime
 	PlayerItem         PlayerItem
 }
 

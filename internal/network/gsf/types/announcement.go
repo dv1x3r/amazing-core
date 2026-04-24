@@ -1,14 +1,10 @@
 package types
 
-import (
-	"time"
-
-	"github.com/dv1x3r/amazing-core/internal/network/gsf"
-)
+import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
 type Announcement struct {
 	AssetContainer
-	CreateTS time.Time
+	CreateTS gsf.UnixTime
 	Ordinal  int32
 }
 

@@ -1,8 +1,6 @@
 package messages
 
 import (
-	"time"
-
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
@@ -11,9 +9,9 @@ type GetPublicItemsByOIDsRequest struct {
 	OIDs             []types.OID
 	LangLocalePairID types.OID
 	TierID           types.OID
-	BirthDate        time.Time
-	RegistrationDate time.Time
-	PreviewDate      time.Time
+	BirthDate        gsf.UnixTime
+	RegistrationDate gsf.UnixTime
+	PreviewDate      gsf.UnixTime
 	IsPreviewEnabled bool
 }
 

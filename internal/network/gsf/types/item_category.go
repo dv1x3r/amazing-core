@@ -1,14 +1,10 @@
 package types
 
-import (
-	"time"
-
-	"github.com/dv1x3r/amazing-core/internal/network/gsf"
-)
+import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
 type ItemCategory struct {
 	RuleContainer
-	CreateDate time.Time
+	CreateDate gsf.UnixTime
 	IsOutdoor  bool
 	IsWalkover bool
 	ParentID   OID

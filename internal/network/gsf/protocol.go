@@ -1,9 +1,6 @@
 package gsf
 
-import (
-	"io"
-	"time"
-)
+import "io"
 
 type Serializable interface {
 	Serialize(writer ProtocolWriter)
@@ -32,7 +29,7 @@ type ProtocolReader interface {
 	ReadChar() rune
 	ReadString() string
 	ReadBytes() []byte
-	ReadUtcDate() time.Time
+	ReadUtcDate() UnixTime
 }
 
 type ProtocolWriter interface {
@@ -48,7 +45,7 @@ type ProtocolWriter interface {
 	WriteChar(value rune)
 	WriteString(value string)
 	WriteBytes(value []byte)
-	WriteUtcDate(value time.Time)
+	WriteUtcDate(value UnixTime)
 }
 
 func ReadNullable[T any](reader ProtocolReader, readFn func() T) Null[T] {

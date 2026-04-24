@@ -1,10 +1,6 @@
 package types
 
-import (
-	"time"
-
-	"github.com/dv1x3r/amazing-core/internal/network/gsf"
-)
+import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
 type PlayerItem struct {
 	OID                     OID
@@ -25,12 +21,12 @@ type PlayerItem struct {
 	PlacedPlayerContainerID OID
 	SellPrice               int32
 	StoreThemeID            OID
-	CreateDate              time.Time
-	GrowthCompletionDate    time.Time
-	GrowthStartDate         time.Time
-	MatureEndDate           time.Time
-	DecayEndDate            time.Time
-	HarvestDate             time.Time
+	CreateDate              gsf.UnixTime
+	GrowthCompletionDate    gsf.UnixTime
+	GrowthStartDate         gsf.UnixTime
+	MatureEndDate           gsf.UnixTime
+	DecayEndDate            gsf.UnixTime
+	HarvestDate             gsf.UnixTime
 	AttachedItems           []PlayerItem
 	SendingID               OID
 	Quantity                int32

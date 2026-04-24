@@ -94,8 +94,7 @@ TCP game server protocol handling:
     - `protocol.go` — protocol interface and slice/map helpers
     - `types/` — DTO types and enums, used within messages
     - `messages/` — DTO message types that implement client-server interaction, may reference `types/`
-  - `bitprotocol/` — bit-level protocol encoding and decoding
-  - `middleware/` — game server middlewares
+    - `bitprotocol/` — bit-level protocol encoding and decoding
 - Use `ReadSlice`/`WriteSlice`, `ReadMap`/`WriteMap`, `ReadObject`/`WriteObject` helpers
 - **Do not break wire compatibility**
 - **Do not modify existing message structures** unless verified in client code or explicitly instructed.

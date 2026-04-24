@@ -2,9 +2,11 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
+type AssetMap map[string][]Asset
+
 type AssetContainer struct {
 	OID           OID
-	AssetMap      map[string][]Asset
+	AssetMap      AssetMap
 	AssetPackages []AssetPackage
 }
 

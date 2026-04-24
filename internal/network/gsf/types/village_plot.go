@@ -1,14 +1,10 @@
 package types
 
-import (
-	"time"
-
-	"github.com/dv1x3r/amazing-core/internal/network/gsf"
-)
+import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
 type VillagePlot struct {
 	OID        OID
-	CreateDate time.Time
+	CreateDate gsf.UnixTime
 	PlotNo     gsf.Null[int32]
 	VillageID  OID
 	PlotTypeID OID

@@ -1,15 +1,11 @@
 package types
 
-import (
-	"time"
-
-	"github.com/dv1x3r/amazing-core/internal/network/gsf"
-)
+import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
 type AssetPackage struct {
 	AssetContainer
 	PTag        string
-	CreatedDate time.Time
+	CreatedDate gsf.UnixTime
 }
 
 func (ap *AssetPackage) Serialize(writer gsf.ProtocolWriter) {

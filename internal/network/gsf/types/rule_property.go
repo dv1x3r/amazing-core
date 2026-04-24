@@ -1,18 +1,14 @@
 package types
 
-import (
-	"time"
-
-	"github.com/dv1x3r/amazing-core/internal/network/gsf"
-)
+import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
 type RuleProperty struct {
 	ID               OID
 	ParentID         OID
 	Components       []string
 	ParentComponents []string
-	CreateTime       time.Time
-	ModifiedTime     time.Time
+	CreateTime       gsf.UnixTime
+	ModifiedTime     gsf.UnixTime
 	Properties       map[string]string
 	ChildrenGroup    map[string][]RuleProperty
 }

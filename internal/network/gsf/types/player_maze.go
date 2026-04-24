@@ -1,17 +1,13 @@
 package types
 
-import (
-	"time"
-
-	"github.com/dv1x3r/amazing-core/internal/network/gsf"
-)
+import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
 type PlayerMaze struct {
 	OID              OID
 	Name             string
 	Size             int64
 	Thumbnail        []byte
-	PublishTimestamp time.Time
+	PublishTimestamp gsf.UnixTime
 	NumRooms         int16
 	NumTubes         int16
 	Rating           gsf.Null[int16]

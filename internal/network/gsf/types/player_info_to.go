@@ -1,10 +1,6 @@
 package types
 
-import (
-	"time"
-
-	"github.com/dv1x3r/amazing-core/internal/network/gsf"
-)
+import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
 type PlayerInfoTO struct {
 	TierID                     OID
@@ -12,17 +8,17 @@ type PlayerInfoTO struct {
 	WorldName                  string
 	CrispDataTO                CrispDataTO
 	Verified                   bool
-	VerificationExpiry         time.Time
-	ScsBlockExpiry             time.Time
+	VerificationExpiry         gsf.UnixTime
+	ScsBlockExpiry             gsf.UnixTime
 	EulaID                     OID
 	CurrentEulaID              OID
 	U13                        bool
 	ChatBlockedParent          bool
 	ChatAllowed                bool
-	ChatBlockedExpiry          time.Time
+	ChatBlockedExpiry          gsf.UnixTime
 	Findable                   bool
-	FindableDate               time.Time
-	UserSubscriptionExpiryDate time.Time
+	FindableDate               gsf.UnixTime
+	UserSubscriptionExpiryDate gsf.UnixTime
 	QA                         bool
 	PlayerSettings             []PlayerSetting
 }

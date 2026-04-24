@@ -1,10 +1,6 @@
 package types
 
-import (
-	"time"
-
-	"github.com/dv1x3r/amazing-core/internal/network/gsf"
-)
+import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
 type PlayerAvatar struct {
 	OID                  OID
@@ -13,11 +9,11 @@ type PlayerAvatar struct {
 	Name                 string
 	Bio                  string
 	SecretCode           string
-	CreateTS             time.Time
+	CreateTS             gsf.UnixTime
 	PlayerAvatarOutfitID OID
 	OutfitNo             int16
 	PlayTime             gsf.Null[int64]
-	LastPlay             time.Time
+	LastPlay             gsf.UnixTime
 }
 
 func (pa *PlayerAvatar) Serialize(writer gsf.ProtocolWriter) {

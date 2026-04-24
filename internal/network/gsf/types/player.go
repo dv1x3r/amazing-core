@@ -1,21 +1,17 @@
 package types
 
-import (
-	"time"
-
-	"github.com/dv1x3r/amazing-core/internal/network/gsf"
-)
+import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
 type Player struct {
 	OID                 OID
-	CreateDate          time.Time
+	CreateDate          gsf.UnixTime
 	ActivePlayerAvatar  PlayerAvatar
 	HomeThemeID         OID
 	CurrentRaceMode     RaceMode
 	WorkshopOptions     string
 	IsTutorialCompleted bool
 	YardBuildingID      OID
-	LastLogin           time.Time
+	LastLogin           gsf.UnixTime
 	PlayTime            gsf.Null[int64]
 	IsQA                bool
 	HomeVillagePlotID   OID

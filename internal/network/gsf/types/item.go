@@ -1,14 +1,10 @@
 package types
 
-import (
-	"time"
-
-	"github.com/dv1x3r/amazing-core/internal/network/gsf"
-)
+import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
 type Item struct {
 	AssetContainer
-	CreateDate         time.Time
+	CreateDate         gsf.UnixTime
 	Depth              int32
 	Height             int32
 	Width              int32

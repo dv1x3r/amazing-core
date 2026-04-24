@@ -1,8 +1,6 @@
 package messages
 
 import (
-	"time"
-
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/sessionstatus"
@@ -42,9 +40,9 @@ type LoginResponse struct {
 	MaxOutfit               int16
 	PlayerStats             []types.PlayerStats
 	PlayerInfoTO            types.PlayerInfoTO
-	CurrentServerTime       time.Time
-	SystemLockoutTime       time.Time
-	SystemShutdownTime      time.Time
+	CurrentServerTime       gsf.UnixTime
+	SystemLockoutTime       gsf.UnixTime
+	SystemShutdownTime      gsf.UnixTime
 	ClientInactivityTimeout int32
 	CNL                     string
 }

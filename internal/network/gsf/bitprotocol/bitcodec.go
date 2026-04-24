@@ -146,12 +146,12 @@ func (br *BitReader) ReadBytes() []byte {
 	return array
 }
 
-func (br *BitReader) ReadUtcDate() time.Time {
+func (br *BitReader) ReadUtcDate() gsf.UnixTime {
 	if br.stream.Get() {
-		return time.Time{}
+		return gsf.UnixTime{}
 	}
 	seconds := max(br.stream.GetInt(8)-31_622_400, 0)
-	return time.Unix(seconds+epochUnix, 0).In(time.UTC)
+	return gsf.UnixTime{Time: time.Unix(seconds+epochUnix, 0).UTC()}
 }
 
 type BitWriter struct {
@@ -224,10 +224,10 @@ func (bw *BitWriter) WriteBytes(array []byte) {
 	bw.stream.PutBytesAligned(array)
 }
 
-func (bw *BitWriter) WriteUtcDate(value time.Time) {
+func (bw *BitWriter) WriteUtcDate(value gsf.UnixTime) {
 	if bw.stream.Put(value.IsZero()) {
 		return
 	}
-	seconds := value.Unix() - epochUnix + 31_622_400
+	seconds := value.UTC().Unix() - epochUnix + 31_622_400
 	bw.stream.PutInt(seconds, 8)
 }

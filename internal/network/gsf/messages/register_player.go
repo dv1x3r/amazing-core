@@ -1,8 +1,6 @@
 package messages
 
 import (
-	"time"
-
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
@@ -11,7 +9,7 @@ type RegisterPlayerRequest struct {
 	Token               string
 	Password            string
 	ParentEmailAddress  string
-	BirthDate           time.Time
+	BirthDate           gsf.UnixTime
 	Gender              string
 	LocationID          types.OID
 	Username            string

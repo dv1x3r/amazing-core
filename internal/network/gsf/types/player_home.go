@@ -1,16 +1,12 @@
 package types
 
-import (
-	"time"
-
-	"github.com/dv1x3r/amazing-core/internal/network/gsf"
-)
+import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
 type PlayerHome struct {
 	PlayerMaze   PlayerMaze
 	PlayerName   string
 	Findable     bool
-	FindableDate time.Time
+	FindableDate gsf.UnixTime
 	HomeTheme    AssetContainer
 	PlayerID     OID
 	PlayerMazes  []PlayerMaze

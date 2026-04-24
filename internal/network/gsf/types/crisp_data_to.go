@@ -1,15 +1,11 @@
 package types
 
-import (
-	"time"
-
-	"github.com/dv1x3r/amazing-core/internal/network/gsf"
-)
+import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
 type CrispDataTO struct {
 	CrispActionID   OID
 	CrispMessage    string
-	CrispExpiryDate time.Time
+	CrispExpiryDate gsf.UnixTime
 	CrispConfirmed  bool
 }
 

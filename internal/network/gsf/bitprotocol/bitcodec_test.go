@@ -8,7 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dv1x3r/amazing-core/internal/network/bitprotocol"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf/bitprotocol"
 )
 
 func TestLength(t *testing.T) {
@@ -534,11 +535,11 @@ func TestUtcDate(t *testing.T) {
 	t.Run("BitReader.ReadUtcDate", func(t *testing.T) {
 		tests := []struct {
 			Input    string
-			Expected time.Time
+			Expected gsf.UnixTime
 		}{
-			{Input: "80", Expected: time.Time{}},
-			{Input: "000000076d1105c000", Expected: time.Date(2021, 7, 24, 0, 0, 0, 0, time.UTC)},
-			{Input: "00000007704d9c8000", Expected: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)},
+			{Input: "80", Expected: gsf.UnixTime{}},
+			{Input: "000000076d1105c000", Expected: gsf.UnixTime{Time: time.Date(2021, 7, 24, 0, 0, 0, 0, time.UTC)}},
+			{Input: "00000007704d9c8000", Expected: gsf.UnixTime{Time: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)}},
 		}
 		for _, test := range tests {
 			data, _ := hex.DecodeString(test.Input)
@@ -552,12 +553,12 @@ func TestUtcDate(t *testing.T) {
 
 	t.Run("BitWriter.WriteUtcDate", func(t *testing.T) {
 		tests := []struct {
-			Input    time.Time
+			Input    gsf.UnixTime
 			Expected string
 		}{
-			{Input: time.Time{}, Expected: "80"},
-			{Input: time.Date(2021, 7, 24, 0, 0, 0, 0, time.UTC), Expected: "000000076d1105c000"},
-			{Input: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC), Expected: "00000007704d9c8000"},
+			{Input: gsf.UnixTime{}, Expected: "80"},
+			{Input: gsf.UnixTime{Time: time.Date(2021, 7, 24, 0, 0, 0, 0, time.UTC)}, Expected: "000000076d1105c000"},
+			{Input: gsf.UnixTime{Time: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)}, Expected: "00000007704d9c8000"},
 		}
 		for _, test := range tests {
 			buf := &bytes.Buffer{}

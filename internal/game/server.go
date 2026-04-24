@@ -8,8 +8,8 @@ import (
 	"net"
 
 	"github.com/dv1x3r/amazing-core/internal/game/middleware"
-	"github.com/dv1x3r/amazing-core/internal/network/bitprotocol"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf/bitprotocol"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/serviceclass"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/syncmessagetype"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/usermessagetype"

@@ -1,17 +1,13 @@
 package types
 
-import (
-	"time"
-
-	"github.com/dv1x3r/amazing-core/internal/network/gsf"
-)
+import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
 type ClientEnvironmentData struct {
 	UnityVersion       string
 	UserAgent          string
 	ScreenResolution   string
 	MachineOS          string
-	UserTime           time.Time
+	UserTime           gsf.UnixTime
 	UtcOffsetInMinutes int32
 	IpAddress          string
 }
