@@ -280,7 +280,7 @@ func (s *Service) GetAssetsDropdown(ctx context.Context, req w2.GetDropdownReque
 				coalesce(a.res_name, '[NULL]'),
 				(am.metadata ->> '$.info.version_engine') || ' ' || (am.metadata ->> '$.assets[0].target_platform')
 			)`,
-		OrderByField: "at.name, a.gsfoid",
+		OrderByField: "at.name, a.gsfoid desc",
 		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("asset_type as at", "at.id = a.asset_type_id")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_metadata as am", "am.asset_id = a.id")
@@ -295,7 +295,7 @@ func (s *Service) GetContainersDropdown(ctx context.Context, req w2.GetDropdownR
 		From:         "asset_container",
 		IDField:      "id",
 		TextField:    "concat(gsfoid, ' - ', name, ' (' || ptag || ')')",
-		OrderByField: "gsfoid",
+		OrderByField: "gsfoid desc",
 	})
 	return res, wrap.IfErr(op, err)
 }
