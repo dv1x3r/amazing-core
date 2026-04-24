@@ -11,6 +11,10 @@ run:
 
 .PHONY: test
 test:
+	go test -v ./...
+
+.PHONY: test-race
+test-race:
 	CGO_ENABLED=1 go test -v -race ./...
 
 .PHONY: vet
