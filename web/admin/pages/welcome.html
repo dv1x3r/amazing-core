@@ -1,21 +1,33 @@
 <div class="w2ui-reset page">
 
-  <h2>Welcome to Amazing Core Dashboard!</h2>
+  <h2>Welcome to the Amazing Core Dashboard!</h2>
 
   <p>
-    This CMS dashboard lets you inspect and configure your Amazing Core server.
+    This CMS dashboard allows you to inspect and configure your Amazing Core server.
   </p>
 
   <section>
     <h3>Assets</h3>
     <p>
-      The <b>Assets</b> screen manages metadata stored in <code>core.db</code>:
-      GSF OIDs, CDN IDs, asset type, group, and other fields.
+      The <b>Assets</b> screen manages metadata stored in <code>core.db</code>.
+      <br><br>
+      <b>Asset</b> is a single resource file, such as Unity asset bundle, treenode, json, image, or audio file.
+      <br>
+      <b>Asset Container</b> is a group of assets. It can contain multiple assets and/or asset packages.
+      <br>
+      <b>Asset Package</b> is an asset container that is referenced by another asset container.
     </p>
   </section>
 
   <section>
-    <h3>Dummy Parameters</h3>
+    <h3>Collections</h3>
+    <p>
+      General object collections, such as Site Frames, Players, Items, Zones etc.
+    </p>
+  </section>
+
+  <section>
+    <h3>Parameters</h3>
     <p>
       <b>Dummy parameters</b> are small overrides used for testing hard-coded values.
     </p>
@@ -24,7 +36,7 @@
   <section>
     <h3>SQL Explorer and Asset Files</h3>
     <p>
-      <b>SQL Explorer</b> gives direct access to <code>core.db</code> with a few example queries.
+      The <b>SQL Explorer</b> provides direct access to <code>core.db</code>, along with a few example queries.
       <br>
       <b>Asset Files</b> manages <code>blob.db</code>, where uploaded cache files are stored for the built-in CDN.
     </p>

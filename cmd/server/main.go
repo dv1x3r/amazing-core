@@ -162,7 +162,7 @@ func main() {
 	blobService := blob.NewService(logger.Get(), blobStore, cfg.Settings.AssetDeliveryURL)
 	dummyService := dummy.NewService(coreStore)
 	randnameService := randname.NewService(coreStore)
-	siteFrameService := siteframe.NewService(logger.Get(), coreStore)
+	siteFrameService := siteframe.NewService(logger.Get(), coreStore, assetService)
 
 	apiHandler := api.NewHandler(
 		authService,
@@ -184,6 +184,7 @@ func main() {
 		assetService,
 		dummyService,
 		randnameService,
+		siteFrameService,
 	)
 
 	gameServer := game.NewServer(

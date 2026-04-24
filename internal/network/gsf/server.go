@@ -27,9 +27,9 @@ type Server struct {
 }
 
 type ServerHooks struct {
-	OnConnect    func(remoteIP string)
-	OnDisconnect func(remoteIP string, reason string)
-	OnUnhandled  func(remoteIP string, header *Header, data []byte)
+	OnConnect    func(conn *Connection)
+	OnDisconnect func(conn *Connection, reason string)
+	OnUnhandled  func(conn *Connection, header *Header, data []byte)
 }
 
 func (s *Server) ListenAndServe() error {
@@ -101,19 +101,20 @@ func (s *Server) Shutdown(ctx context.Context) error {
 func (s *Server) handleConn(ctx context.Context, conn net.Conn) {
 	stream := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
 	remoteAddr, _, _ := net.SplitHostPort(conn.RemoteAddr().String())
+	connState := &Connection{remoteIP: remoteAddr}
 	if s.Hooks.OnConnect != nil {
-		s.Hooks.OnConnect(remoteAddr)
+		s.Hooks.OnConnect(connState)
 	}
 
 	for {
-		err := s.processRequest(ctx, stream, remoteAddr)
+		err := s.processRequest(ctx, stream, connState)
 		if err == nil {
 			continue
 		}
 
 		if errors.Is(err, io.EOF) {
 			if s.Hooks.OnDisconnect != nil {
-				s.Hooks.OnDisconnect(remoteAddr, "eof")
+				s.Hooks.OnDisconnect(connState, "eof")
 			}
 			break
 		}
@@ -121,19 +122,19 @@ func (s *Server) handleConn(ctx context.Context, conn net.Conn) {
 		var netErr net.Error
 		if errors.As(err, &netErr) && netErr.Timeout() {
 			if s.Hooks.OnDisconnect != nil {
-				s.Hooks.OnDisconnect(remoteAddr, "timeout")
+				s.Hooks.OnDisconnect(connState, "timeout")
 			}
 			break
 		}
 
 		if s.Hooks.OnDisconnect != nil {
-			s.Hooks.OnDisconnect(remoteAddr, err.Error())
+			s.Hooks.OnDisconnect(connState, err.Error())
 		}
 		break
 	}
 }
 
-func (s *Server) processRequest(ctx context.Context, stream *bufio.ReadWriter, remoteAddr string) error {
+func (s *Server) processRequest(ctx context.Context, stream *bufio.ReadWriter, connState *Connection) error {
 	data, err := s.readMessage(stream)
 	if err != nil {
 		return err
@@ -157,14 +158,13 @@ func (s *Server) processRequest(ctx context.Context, stream *bufio.ReadWriter, r
 	handler, ok := s.Router.Lookup(header.SvcClass, header.MsgType)
 	if !ok {
 		if s.Hooks.OnUnhandled != nil {
-			s.Hooks.OnUnhandled(remoteAddr, header, data)
+			s.Hooks.OnUnhandled(connState, header, data)
 		}
 		return nil
 	}
 
-	req := NewRequest(ctx, header, reader)
+	req := NewRequest(ctx, header, reader, connState)
 	res := NewResponse(header, writer)
-	req.RemoteIP = remoteAddr
 
 	if err = handler(res, req); err != nil {
 		return err

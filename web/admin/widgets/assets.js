@@ -174,9 +174,9 @@ export function createAssetGrid() {
     sortData: [
       { field: 'oid', direction: 'desc' },
     ],
-    onDelete: function(event) { event.preventDefault() },
     onSave: function(event) { helpers.reloadOnSuccess(event) },
     onSearch: function(event) { helpers.searchAllFilter(event) },
+    onDelete: function(event) { event.preventDefault() },
     onExpand: function(event) {
       const row = event.owner.get(event.detail.recid)
       const box = query('#' + event.detail.box_id)

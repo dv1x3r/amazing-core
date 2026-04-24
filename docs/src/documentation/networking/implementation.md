@@ -20,7 +20,8 @@ header, err := gsf.ReadHeader(reader)
 handler, ok := router.Lookup(header.SvcClass, header.MsgType)
 
 // 6. Build request and response objects
-req := gsf.NewRequest(ctx, header, reader)
+conn := &gsf.Connection{remoteIP: remoteAddr}
+req := gsf.NewRequest(ctx, header, reader, conn)
 res := gsf.NewResponse(header, writer)
 
 // 7. Call the handler

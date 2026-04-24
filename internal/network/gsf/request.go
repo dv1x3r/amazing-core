@@ -11,15 +11,15 @@ type Request struct {
 	body   Deserializable
 	reader ProtocolReader
 	ctx    context.Context
-
-	RemoteIP string
+	conn   *Connection
 }
 
-func NewRequest(ctx context.Context, header *Header, reader ProtocolReader) *Request {
+func NewRequest(ctx context.Context, header *Header, reader ProtocolReader, conn *Connection) *Request {
 	return &Request{
 		header: header,
 		reader: reader,
 		ctx:    ctx,
+		conn:   conn,
 	}
 }
 
@@ -33,6 +33,18 @@ func (req *Request) Body() Deserializable {
 
 func (req *Request) Context() context.Context {
 	return req.ctx
+}
+
+func (req *Request) RemoteIP() string {
+	return req.conn.RemoteIP()
+}
+
+func (req *Request) Platform() Platform {
+	return req.conn.Platform()
+}
+
+func (req *Request) SetPlatform(platform Platform) {
+	req.conn.SetPlatform(platform)
 }
 
 func (req *Request) Read(body Deserializable) error {

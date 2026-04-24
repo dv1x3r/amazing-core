@@ -61,14 +61,14 @@ func NewServer(
 		Router: router,
 		Codec:  bitprotocol.NewBitCodec(),
 		Hooks: gsf.ServerHooks{
-			OnConnect: func(remoteIP string) {
-				logger.Info(fmt.Sprintf("tcp %s connected", remoteIP))
+			OnConnect: func(conn *gsf.Connection) {
+				logger.Info(fmt.Sprintf("tcp %s connected", conn.RemoteIP()))
 			},
-			OnDisconnect: func(remoteIP string, reason string) {
-				logger.Info(fmt.Sprintf("tcp %s disconnected: %s", remoteIP, reason))
+			OnDisconnect: func(conn *gsf.Connection, reason string) {
+				logger.Info(fmt.Sprintf("tcp %s disconnected: %s", conn.RemoteIP(), reason))
 			},
-			OnUnhandled: func(remoteIP string, header *gsf.Header, data []byte) {
-				logger.Warn(fmt.Sprintf("gsf %s unhandled: %+v", remoteIP, header),
+			OnUnhandled: func(conn *gsf.Connection, header *gsf.Header, data []byte) {
+				logger.Debug(fmt.Sprintf("gsf unhandled %s: %+v", conn.RemoteIP(), header),
 					slog.String("service_class", header.ServiceClassText()),
 					slog.String("message_type", header.MessageTypeText()),
 					slog.Any("hex", fmt.Sprintf("%x", data)),

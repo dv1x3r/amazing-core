@@ -84,6 +84,15 @@ const dashboardSidebar = new w2sidebar({
             setDashboardWidget(module.createWidget)
           },
         },
+        {
+          id: 'random-names',
+          text: 'Random Names',
+          icon: 'fa fa-dice',
+          onClick: async function() {
+            const module = await import('./widgets/random_names.js')
+            setDashboardWidget(module.createWidget)
+          },
+        },
       ]
     },
     {
@@ -98,23 +107,6 @@ const dashboardSidebar = new w2sidebar({
           icon: 'fa fa-person-digging',
           onClick: async function() {
             const module = await import('./widgets/dummy_params.js')
-            setDashboardWidget(module.createWidget)
-          },
-        },
-      ]
-    },
-    {
-      id: 'player-registration',
-      text: 'Player Registration',
-      group: true,
-      expanded: true,
-      nodes: [
-        {
-          id: 'random-names',
-          text: 'Random Names',
-          icon: 'fa fa-dice',
-          onClick: async function() {
-            const module = await import('./widgets/random_names.js')
             setDashboardWidget(module.createWidget)
           },
         },

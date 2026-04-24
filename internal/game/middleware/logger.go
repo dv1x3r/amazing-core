@@ -26,7 +26,8 @@ func Logger(logger *slog.Logger) gsf.Middleware {
 			}
 
 			attrs := []any{
-				slog.String("remote_ip", r.RemoteIP),
+				slog.String("remote_ip", r.RemoteIP()),
+				slog.String("platform", r.Platform().String()),
 				slog.Int("result_code", int(w.Header().ResultCode)),
 				slog.Int("app_code", int(w.Header().AppCode)),
 				slog.Int("request_id", int(r.Header().RequestID)),
