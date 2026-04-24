@@ -138,13 +138,13 @@ func main() {
 	logger.Get().Info(fmt.Sprintf("connected to the %s using the %s driver", cfg.Storage.Databases.Blob, blobStore.DriverName()))
 
 	// ── Database migrations ─────────────────────────────────────────────────────
-	if err := coreStore.MigrateBaseFile(logger.Get(), data.FS, "sql/core_db/base.sql"); err != nil {
+	if err := coreStore.MigrateFile(logger.Get(), data.FS, "sql/core_db/base.sql"); err != nil {
 		logger.Get().Error("unable to initialize core.db", "err", err)
 		fmt.Scanln()
 		os.Exit(1)
 	}
 
-	if err := blobStore.MigrateBaseFile(logger.Get(), data.FS, "sql/blob_db/base.sql"); err != nil {
+	if err := blobStore.MigrateFile(logger.Get(), data.FS, "sql/blob_db/base.sql"); err != nil {
 		logger.Get().Error("unable to initialize blob.db", "err", err)
 		fmt.Scanln()
 		os.Exit(1)

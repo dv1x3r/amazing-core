@@ -6,11 +6,15 @@ import (
 	"fmt"
 	"io/fs"
 	"log/slog"
-	"os"
 	"os/exec"
 
 	"github.com/pressly/goose/v3"
 )
+
+type SQLiteStore struct {
+	filePath string
+	sqlDB    *sql.DB
+}
 
 func (s *SQLiteStore) DB() *sql.DB {
 	return s.sqlDB
@@ -20,22 +24,8 @@ func (s *SQLiteStore) DumpTable(ctx context.Context, tableName string) ([]byte, 
 	return exec.CommandContext(ctx, "sqlite3", s.filePath, ".dump "+tableName).Output()
 }
 
-type gLogger struct {
-	logger *slog.Logger
-}
-
-func (l gLogger) Printf(format string, v ...any) {
-	l.logger.Info(fmt.Sprintf(format, v...))
-}
-
-func (l gLogger) Fatalf(format string, v ...any) {
-	l.logger.Error(fmt.Sprintf(format, v...))
-	fmt.Scanln()
-	os.Exit(1)
-}
-
 func (s *SQLiteStore) MigrateUp(logger *slog.Logger, fsys fs.FS, dir string) error {
-	goose.SetLogger(gLogger{logger: logger})
+	goose.SetLogger(Logger{logger})
 	goose.SetBaseFS(fsys)
 	if err := goose.SetDialect("sqlite"); err != nil {
 		return err
@@ -43,7 +33,7 @@ func (s *SQLiteStore) MigrateUp(logger *slog.Logger, fsys fs.FS, dir string) err
 	return goose.Up(s.sqlDB, dir)
 }
 
-func (s *SQLiteStore) MigrateBaseFile(logger *slog.Logger, fsys fs.FS, fileName string) error {
+func (s *SQLiteStore) MigrateFile(logger *slog.Logger, fsys fs.FS, fileName string) error {
 	ctx := context.Background()
 
 	conn, err := s.sqlDB.Conn(ctx)
@@ -59,7 +49,7 @@ func (s *SQLiteStore) MigrateBaseFile(logger *slog.Logger, fsys fs.FS, fileName 
 	}
 
 	if isInitialized {
-		logger.Info(fmt.Sprintf("skipping the base %s migration: already initialized", fileName))
+		logger.Info(fmt.Sprintf("skipping the %s migration: already initialized", fileName))
 		return nil
 	}
 
@@ -71,7 +61,7 @@ func (s *SQLiteStore) MigrateBaseFile(logger *slog.Logger, fsys fs.FS, fileName 
 	conn.ExecContext(ctx, "PRAGMA foreign_keys = OFF;")
 	defer conn.ExecContext(ctx, "PRAGMA foreign_keys = ON;")
 
-	logger.Info(fmt.Sprintf("applying the base %s migration", fileName))
+	logger.Info(fmt.Sprintf("applying the %s migration", fileName))
 	_, err = conn.ExecContext(ctx, string(data))
 	return err
 }

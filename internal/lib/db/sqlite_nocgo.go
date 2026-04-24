@@ -10,11 +10,6 @@ import (
 	sqliteLib "modernc.org/sqlite/lib"
 )
 
-type SQLiteStore struct {
-	filePath string
-	sqlDB    *sql.DB
-}
-
 func NewSQLiteStore(filePath string) (Store, error) {
 	const args = "?_pragma=journal_mode(WAL)&_pragma=foreign_keys(1)&_pragma=busy_timeout(10000)"
 	sqlDB, err := sql.Open("sqlite", filePath+args)

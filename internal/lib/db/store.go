@@ -12,7 +12,7 @@ type Store interface {
 	DriverName() string
 	DumpTable(ctx context.Context, tableName string) ([]byte, error)
 	MigrateUp(logger *slog.Logger, fsys fs.FS, dir string) error
-	MigrateBaseFile(logger *slog.Logger, fsys fs.FS, fileName string) error
+	MigrateFile(logger *slog.Logger, fsys fs.FS, fileName string) error
 	RecreateTableFromFile(logger *slog.Logger, fsys fs.FS, fileName string, tableName string, overwrite bool) error
 	RecreateTableFromQuery(logger *slog.Logger, query string, tableName string, overwrite bool) error
 	IsErrConstraintUnique(err error) bool

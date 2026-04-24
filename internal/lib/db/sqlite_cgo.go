@@ -9,11 +9,6 @@ import (
 	"github.com/mattn/go-sqlite3"
 )
 
-type SQLiteStore struct {
-	filePath string
-	sqlDB    *sql.DB
-}
-
 func NewSQLiteStore(filePath string) (Store, error) {
 	const args = "?_journal=WAL&_fk=1&_busy_timeout=10000"
 	sqlDB, err := sql.Open("sqlite3", filePath+args)
