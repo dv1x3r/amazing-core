@@ -37,7 +37,7 @@ The function returns the decoded length and any potential error encountered whil
 */
 func (BitCodec) ReadLength(reader io.ByteReader) (int, error) {
 	length := 0
-	for {
+	for i := 0; i < 4; i++ {
 		b, err := reader.ReadByte()
 		if err != nil {
 			return 0, err
@@ -52,10 +52,10 @@ func (BitCodec) ReadLength(reader io.ByteReader) (int, error) {
 
 		// Stop when MSB of 0 is encountered
 		if (0x80 & b) == 0 {
-			break
+			return length, nil
 		}
 	}
-	return length, nil
+	return 0, fmt.Errorf("length is out of range: more than 4 bytes")
 }
 
 /*
