@@ -262,7 +262,7 @@ func (s *Service) GetContainerGrid(ctx context.Context, req w2.GetGridRequest) (
 			"c.ptag",
 			"coalesce(a.assets, 0) as assets",
 			"coalesce(p.packages, 0) as packages",
-			"datetime(c.created_at, 'unixepoch', 'localtime') as created_at",
+			"c.created_at",
 		},
 		WhereMapping: map[string]string{
 			"id":   "c.id",

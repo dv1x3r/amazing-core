@@ -40,7 +40,7 @@ type Container struct {
 	PTag      w2.Field[string] `json:"ptag"`
 	Assets    int              `json:"assets"`
 	Packages  int              `json:"packages"`
-	CreatedAt string           `json:"created_at"`
+	CreatedAt w2.UnixTime      `json:"created_at"`
 }
 
 type ContainerAsset struct {

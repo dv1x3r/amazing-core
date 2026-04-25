@@ -1,16 +1,9 @@
-import { w2layout, w2sidebar, w2toolbar, w2utils } from '/lib/w2ui.es6.min.js'
+import { w2layout, w2sidebar, w2toolbar } from '/lib/w2ui.es6.min.js'
 import * as helpers from '/lib/w2ui.helpers.js'
+import * as widgets from '/lib/w2ui.widgets.js'
 
 helpers.w2init()
-
-// sorry my American friends,
-// I will parametrize this later somehow...
-w2utils.locale({
-  weekStarts: 'M',
-  dateFormat: 'yyyy-MM-dd',
-  datetimeFormat: 'yyyy-MM-dd|hh24:mi',
-  timeFormat: 'hh24:mi',
-})
+helpers.w2initLocale()
 
 const dashboardSidebar = new w2sidebar({
   name: 'dashboardSidebar',
@@ -209,6 +202,13 @@ const dashboardSidebar = new w2sidebar({
         },
         { type: 'spacer' },
         {
+          type: 'button',
+          id: 'locale',
+          icon: 'fa fa-language',
+          tooltip: 'Locale Settings',
+          onClick: () => widgets.openLocalePopup(),
+        },
+        {
           id: 'dark',
           type: 'check',
           icon: 'fa fa-moon',
@@ -231,7 +231,7 @@ const dashboardLayout = new w2layout({
   name: 'dashboardLayout',
   box: '#dashboard-layout',
   panels: [
-    { type: 'left', size: 240, html: dashboardSidebar },
+    { type: 'left', size: 250, html: dashboardSidebar },
     { type: 'main', style: 'border-left: 1px solid #e0e0e0;' },
   ],
   onRender: async function(event) {
