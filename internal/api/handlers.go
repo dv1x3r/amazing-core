@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/dv1x3r/amazing-core/internal/config"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/amazing-core/internal/services/asset"
 	"github.com/dv1x3r/amazing-core/internal/services/auth"
@@ -64,7 +65,8 @@ func (h *Handler) Admin(w http.ResponseWriter, r *http.Request) error {
 			return err
 		}
 	}
-	data := map[string]any{"username": username}
+	version := config.Get().Version
+	data := map[string]any{"username": username, "version": version}
 	return tmpl.ExecuteTemplate(w, "admin.gotmpl", data)
 }
 

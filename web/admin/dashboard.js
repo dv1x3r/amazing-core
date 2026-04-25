@@ -13,8 +13,9 @@ const dashboardSidebar = new w2sidebar({
         <div style="margin-bottom: 10px; font-size: 16px;">
           Amazing Core Dashboard
         </div>
-        <div id="sidebar-host" style="font-size: 12px;">
-          Loading...
+        <div style="display: flex; justify-content: space-between; font-size: 12px;">
+          <span id="sidebar-host">Loading...</span>
+          <span id="sidebar-version"></span>
         </div>
       </div>
       <div>
@@ -165,6 +166,7 @@ const dashboardSidebar = new w2sidebar({
   onRender: async function(event) {
     await event.complete
     document.getElementById('sidebar-host').innerText = '@' + window.location.host
+    document.getElementById('sidebar-version').innerText = document.getElementById('app-config').dataset.version
     new w2toolbar({
       name: 'logoutToolbar',
       box: '#logout-toolbar',

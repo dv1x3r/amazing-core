@@ -30,7 +30,7 @@ import (
 )
 
 var (
-	version = "nightly build"
+	version = "dev"
 )
 
 const AMAZING_CORE = `
@@ -45,6 +45,7 @@ const AMAZING_CORE = `
 `
 
 func main() {
+	config.SetVersion(version)
 	cfg := config.Get()
 
 	// ── Logger ──────────────────────────────────────────────────────────────────

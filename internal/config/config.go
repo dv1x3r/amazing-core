@@ -36,7 +36,8 @@ type Config struct {
 			Blob string `json:"blob"`
 		} `json:"databases"`
 	} `json:"storage"`
-	Secure Secure `json:"secure,omitzero"`
+	Secure  Secure `json:"secure,omitzero"`
+	Version string `json:"-"`
 }
 
 type Secure struct {
@@ -76,4 +77,8 @@ func Get() Config {
 	})
 
 	return config
+}
+
+func SetVersion(v string) {
+	config.Version = v
 }
