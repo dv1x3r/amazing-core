@@ -69,6 +69,7 @@ export function createAssetGrid() {
         text: 'OID Details',
         size: '200px',
         render: 'text',
+        sortable: true,
         hidden: true,
       },
       {
@@ -133,6 +134,7 @@ export function createAssetGrid() {
         size: '200px',
         render: 'text',
         sortable: true,
+        searchable: 'text',
       },
       {
         field: 'hash',
@@ -275,6 +277,7 @@ export function createContainerLayout() {
         text: 'OID Details',
         size: '200px',
         render: 'text',
+        sortable: true,
         hidden: true,
       },
       {

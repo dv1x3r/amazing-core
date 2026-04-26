@@ -187,7 +187,7 @@ func (s *Service) GetAssetGrid(ctx context.Context, req w2.GetGridRequest) (w2.G
 			"a.hash",
 			"a.size",
 			"json(am.metadata) as metadata",
-			"(am.metadata ->> '$.info.version_engine') || ' ' || (am.metadata ->> '$.assets[0].target_platform') as platform",
+			"(am.metadata ->> '$.assets[0].target_platform') || ' ' || (am.metadata ->> '$.info.version_engine') as platform",
 		},
 		WhereMapping: map[string]string{
 			"id":          "a.id",
@@ -200,11 +200,13 @@ func (s *Service) GetAssetGrid(ctx context.Context, req w2.GetGridRequest) (w2.G
 			"description": "a.description",
 			"hash":        "a.hash",
 			"size":        "a.size",
+			"version":     "(am.metadata ->> '$.assets[0].target_platform') || ' ' || (am.metadata ->> '$.info.version_engine')",
 			"metadata":    "json(am.metadata)",
 		},
 		OrderByMapping: map[string]string{
 			"id":          "a.id",
 			"oid":         "a.gsfoid",
+			"oid_str":     "a.gsfoid",
 			"cdnid":       "a.cdnid COLLATE BINARY",
 			"file_type":   "ft.name",
 			"asset_type":  "at.name",
@@ -214,7 +216,7 @@ func (s *Service) GetAssetGrid(ctx context.Context, req w2.GetGridRequest) (w2.G
 			"hash":        "a.hash",
 			"size":        "a.size",
 			"size_str":    "a.size",
-			"version":     "(am.metadata ->> '$.info.version_engine') || ' ' || (am.metadata ->> '$.assets[0].target_platform')",
+			"version":     "(am.metadata ->> '$.assets[0].target_platform') || ' ' || (am.metadata ->> '$.info.version_engine')",
 		},
 		BuildBase: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("file_type as ft", "ft.id = a.file_type_id")
@@ -273,11 +275,12 @@ func (s *Service) GetContainerGrid(ctx context.Context, req w2.GetGridRequest) (
 		OrderByMapping: map[string]string{
 			"id":         "c.id",
 			"oid":        "c.gsfoid",
+			"oid_str":    "c.gsfoid",
 			"name":       "c.name",
 			"ptag":       "c.ptag",
 			"assets":     "a.assets",
 			"packages":   "p.packages",
-			"created_at": "ac.created_at",
+			"created_at": "c.created_at",
 		},
 		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
 			sb.JoinWithOption(sqlbuilder.LeftJoin,
@@ -317,8 +320,8 @@ func (s *Service) GetContainerAssetGrid(ctx context.Context, req w2.GetGridReque
 			"ca.position",
 			"ca.win_asset_id",
 			"ca.osx_asset_id",
-			"concat_ws(' - ', at.name, a.gsfoid, coalesce(a.res_name, '[NULL]'), (am.metadata ->> '$.info.version_engine') || ' ' || (am.metadata ->> '$.assets[0].target_platform')) as windows",
-			"iif(ax.id is null, null, concat_ws(' - ', axt.name, ax.gsfoid, coalesce(ax.res_name, '[NULL]'), (axm.metadata ->> '$.info.version_engine') || ' ' || (axm.metadata ->> '$.assets[0].target_platform'))) as osx",
+			"concat_ws(' - ', at.name, a.gsfoid, coalesce(a.res_name, '[NULL]'), (am.metadata ->> '$.assets[0].target_platform') || ' ' || (am.metadata ->> '$.info.version_engine')) as windows",
+			"iif(ax.id is null, null, concat_ws(' - ', axt.name, ax.gsfoid, coalesce(ax.res_name, '[NULL]'), (axm.metadata ->> '$.assets[0].target_platform') || ' ' || (axm.metadata ->> '$.info.version_engine'))) as osx",
 		},
 		BuildBase: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Where(sb.EQ("ca.container_id", id))
@@ -385,9 +388,9 @@ func (s *Service) GetAssetsDropdown(ctx context.Context, req w2.GetDropdownReque
 				at.name,
 				a.gsfoid,
 				coalesce(a.res_name, '[NULL]'),
-				(am.metadata ->> '$.info.version_engine') || ' ' || (am.metadata ->> '$.assets[0].target_platform')
+				(am.metadata ->> '$.assets[0].target_platform') || ' ' || (am.metadata ->> '$.info.version_engine')
 			)`,
-		OrderByField: "at.name, a.gsfoid desc",
+		OrderByField: "at.name, a.gsfoid",
 		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("asset_type as at", "at.id = a.asset_type_id")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_metadata as am", "am.asset_id = a.id")
@@ -402,7 +405,7 @@ func (s *Service) GetContainersDropdown(ctx context.Context, req w2.GetDropdownR
 		From:         "asset_container",
 		IDField:      "id",
 		TextField:    "concat(gsfoid, ' - ', name, ' (' || ptag || ')')",
-		OrderByField: "gsfoid desc",
+		OrderByField: "gsfoid",
 	})
 	return res, wrap.IfErr(op, err)
 }
