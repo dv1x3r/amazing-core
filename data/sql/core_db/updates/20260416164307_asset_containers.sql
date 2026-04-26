@@ -2,7 +2,7 @@
 create table asset_container (
     [id] integer primary key,
     [gsfoid] integer not null unique,
-    [name] text not null collate nocase
+    [name] text not null unique collate nocase
     [ptag] text collate nocase,
     [created_at] integer not null default (unixepoch())
 ) strict;
@@ -31,7 +31,7 @@ create table site_frame (
     [id] integer primary key not null,
     [type_value] integer not null unique,
     [container_id] integer not null references asset_container(id) on delete restrict
-);
+) strict;
 
 insert into site_frame ([id], [type_value], [container_id])
 values (1, 1, 1);

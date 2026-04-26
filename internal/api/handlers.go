@@ -13,6 +13,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/amazing-core/internal/services/asset"
 	"github.com/dv1x3r/amazing-core/internal/services/auth"
+	"github.com/dv1x3r/amazing-core/internal/services/avatar"
 	"github.com/dv1x3r/amazing-core/internal/services/blob"
 	"github.com/dv1x3r/amazing-core/internal/services/dummy"
 	"github.com/dv1x3r/amazing-core/internal/services/randname"
@@ -34,6 +35,7 @@ func init() {
 type Handler struct {
 	authService      *auth.Service
 	assetService     *asset.Service
+	avatarService    *avatar.Service
 	blobService      *blob.Service
 	dummyService     *dummy.Service
 	randnameService  *randname.Service
@@ -43,6 +45,7 @@ type Handler struct {
 func NewHandler(
 	authService *auth.Service,
 	assetService *asset.Service,
+	avatarService *avatar.Service,
 	blobService *blob.Service,
 	dummyService *dummy.Service,
 	randnameService *randname.Service,
@@ -51,6 +54,7 @@ func NewHandler(
 	return &Handler{
 		authService:      authService,
 		assetService:     assetService,
+		avatarService:    avatarService,
 		blobService:      blobService,
 		dummyService:     dummyService,
 		randnameService:  randnameService,
@@ -420,6 +424,59 @@ func (h *Handler) PostContainerPackageReorder(w http.ResponseWriter, r *http.Req
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)
+}
+
+// ── Avatars ──────────────────────────────────────────────────────────────────
+
+func (h *Handler) GetAvatarGrid(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseGetGridRequest(r.URL.Query().Get("request"))
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	res, err := h.avatarService.GetAvatarGrid(r.Context(), req)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return res.Write(w)
+}
+
+func (h *Handler) PostAvatarGrid(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseSaveGridRequest[avatar.Avatar](r.Body)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	err = h.avatarService.UpdateAvatars(r.Context(), req)
+	if errors.Is(err, avatar.ErrAvatarExists) {
+		return wrap.WithHTTPStatus(err, http.StatusConflict)
+	} else if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return w2.NewSuccessResponse().Write(w, http.StatusOK)
+}
+
+func (h *Handler) PostAvatarRemove(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseRemoveGridRequest(r.Body)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	if err := h.avatarService.DeleteAvatars(r.Context(), req); err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return w2.NewSuccessResponse().Write(w, http.StatusOK)
+}
+
+func (h *Handler) PostAvatarForm(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseSaveFormRequest[avatar.Avatar](r.Body)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	_, err = h.avatarService.CreateAvatar(r.Context(), req)
+	if errors.Is(err, avatar.ErrAvatarExists) {
+		return wrap.WithHTTPStatus(err, http.StatusConflict)
+	} else if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return w2.NewSaveFormResponse(req.RecID).Write(w)
 }
 
 // ── Site Frame ───────────────────────────────────────────────────────────────

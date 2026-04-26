@@ -79,6 +79,11 @@ func NewServer(
 	v1.HandleFunc("POST /container/package/remove", errorHandler(handler.PostContainerPackageRemove))
 	v1.HandleFunc("POST /container/package/reorder", errorHandler(handler.PostContainerPackageReorder))
 
+	v1.HandleFunc("GET /avatar/grid", errorHandler(handler.GetAvatarGrid))
+	v1.HandleFunc("POST /avatar/grid", errorHandler(handler.PostAvatarGrid))
+	v1.HandleFunc("POST /avatar/remove", errorHandler(handler.PostAvatarRemove))
+	v1.HandleFunc("POST /avatar/form", errorHandler(handler.PostAvatarForm))
+
 	v1.HandleFunc("GET /siteframe/grid", errorHandler(handler.GetSiteFrameGrid))
 	v1.HandleFunc("POST /siteframe/grid", errorHandler(handler.PostSiteFrameGrid))
 	v1.HandleFunc("POST /siteframe/remove", errorHandler(handler.PostSiteFrameRemove))

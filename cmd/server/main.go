@@ -23,6 +23,7 @@ import (
 
 	"github.com/dv1x3r/amazing-core/internal/services/asset"
 	"github.com/dv1x3r/amazing-core/internal/services/auth"
+	"github.com/dv1x3r/amazing-core/internal/services/avatar"
 	"github.com/dv1x3r/amazing-core/internal/services/blob"
 	"github.com/dv1x3r/amazing-core/internal/services/dummy"
 	"github.com/dv1x3r/amazing-core/internal/services/randname"
@@ -160,6 +161,7 @@ func main() {
 	// ── Services & Servers ──────────────────────────────────────────────────────
 	authService := auth.NewService(cfg.Secure.Session.Secure, cfg.Secure.Session.Key, cfg.Secure.Auth.Username, cfg.Secure.Auth.Password)
 	assetService := asset.NewService(logger.Get(), coreStore, cfg.Settings.AssetDeliveryURL)
+	avatarService := avatar.NewService(logger.Get(), coreStore, assetService)
 	blobService := blob.NewService(logger.Get(), blobStore, cfg.Settings.AssetDeliveryURL)
 	dummyService := dummy.NewService(coreStore)
 	randnameService := randname.NewService(coreStore)
@@ -168,6 +170,7 @@ func main() {
 	apiHandler := api.NewHandler(
 		authService,
 		assetService,
+		avatarService,
 		blobService,
 		dummyService,
 		randnameService,

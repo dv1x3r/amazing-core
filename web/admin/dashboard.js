@@ -38,8 +38,8 @@ const dashboardSidebar = new w2sidebar({
       },
     },
     {
-      id: 'assets-group',
-      text: 'Assets',
+      id: 'content',
+      text: 'Content',
       group: true,
       expanded: true,
       nodes: [
@@ -69,6 +69,15 @@ const dashboardSidebar = new w2sidebar({
       group: true,
       expanded: true,
       nodes: [
+        {
+          id: 'avatars',
+          text: 'Avatars',
+          icon: 'fa fa-user-astronaut',
+          onClick: async function() {
+            const module = await import('./widgets/avatars.js')
+            setDashboardWidget(module.createWidget)
+          },
+        },
         {
           id: 'site-frame',
           text: 'Site Frame',
