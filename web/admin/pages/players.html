@@ -1,0 +1,43 @@
+<div class="w2ui-reset page">
+
+  <h2><i class="fa fa-circle-info"></i> Players</h2>
+
+  <p>
+    A player related collections, such as details, info, avatars, outfits and items.
+  </p>
+
+  <section>
+    <h3>Details</h3>
+
+    <p>
+      The main GSFPlayer attributes for the selected player, including
+      <code>ActivePlayerAvatar</code>, <code>CreateDate</code> for profile widget,
+      <code>IsTutorialCompleted</code> for enabling social events, and
+      <code>IsQA</code> used in <code>ConsumableItemsManager.cs:102</code>.
+      <br>
+      Other player fields, such as
+      <code>HomeThemeID</code>, <code>CurrentRaceMode</code>,
+      <code>WorkshopOptions</code>, <code>YardBuildingID</code>,
+      <code>LastLogin</code>, <code>PlayTime</code>,
+      <code>HomeVillagePlotID</code>, <code>StoreVillagePlotID</code>,
+      <code>PlayerStoreID</code>, <code>PlayerMazeID</code>, and
+      <code>VillageID</code>, are serialized by the client but do not appear to be used by game code.
+    </p>
+  </section>
+
+  <section>
+    <h3>Avatars</h3>
+    <p>
+      List of Zings/avatars available to the selected player. Each one has it's own name etc.
+    </p>
+  </section>
+
+  <section>
+    <h3>Outfits</h3>
+    <p>
+      Saved outfit presets for the selected player avatars.
+      Each row links an outfit OID to a player avatar and outfit number.
+    </p>
+  </section>
+
+</div>

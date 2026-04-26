@@ -16,18 +16,11 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/api"
 	"github.com/dv1x3r/amazing-core/internal/config"
 	"github.com/dv1x3r/amazing-core/internal/game"
+	"github.com/dv1x3r/amazing-core/internal/services"
 
 	"github.com/dv1x3r/amazing-core/internal/lib/db"
 	"github.com/dv1x3r/amazing-core/internal/lib/downloader"
 	"github.com/dv1x3r/amazing-core/internal/lib/logger"
-
-	"github.com/dv1x3r/amazing-core/internal/services/asset"
-	"github.com/dv1x3r/amazing-core/internal/services/auth"
-	"github.com/dv1x3r/amazing-core/internal/services/avatar"
-	"github.com/dv1x3r/amazing-core/internal/services/blob"
-	"github.com/dv1x3r/amazing-core/internal/services/dummy"
-	"github.com/dv1x3r/amazing-core/internal/services/randname"
-	"github.com/dv1x3r/amazing-core/internal/services/siteframe"
 )
 
 var (
@@ -159,42 +152,9 @@ func main() {
 	}
 
 	// ── Services & Servers ──────────────────────────────────────────────────────
-	authService := auth.NewService(cfg.Secure.Session.Secure, cfg.Secure.Session.Key, cfg.Secure.Auth.Username, cfg.Secure.Auth.Password)
-	assetService := asset.NewService(logger.Get(), coreStore, cfg.Settings.AssetDeliveryURL)
-	avatarService := avatar.NewService(logger.Get(), coreStore, assetService)
-	blobService := blob.NewService(logger.Get(), blobStore, cfg.Settings.AssetDeliveryURL)
-	dummyService := dummy.NewService(coreStore)
-	randnameService := randname.NewService(coreStore)
-	siteFrameService := siteframe.NewService(logger.Get(), coreStore, assetService)
-
-	apiHandler := api.NewHandler(
-		authService,
-		assetService,
-		avatarService,
-		blobService,
-		dummyService,
-		randnameService,
-		siteFrameService,
-	)
-
-	apiServer := api.NewServer(
-		logger.Get(),
-		coreStore,
-		apiHandler,
-		authService,
-	)
-
-	gameHandler := game.NewHandler(
-		assetService,
-		dummyService,
-		randnameService,
-		siteFrameService,
-	)
-
-	gameServer := game.NewServer(
-		logger.Get(),
-		gameHandler,
-	)
+	svc := services.New(logger.Get(), coreStore, blobStore, cfg)
+	apiServer := api.NewServer(logger.Get(), coreStore, api.NewHandler(svc))
+	gameServer := game.NewServer(logger.Get(), game.NewHandler(svc))
 
 	interruptCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()

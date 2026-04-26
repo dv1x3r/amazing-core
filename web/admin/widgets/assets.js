@@ -10,7 +10,6 @@ export function createAssetGrid() {
     },
     recid: 'id',
     recordHeight: 28,
-    multiSearch: true,
     show: {
       footer: true,
       toolbar: true,
@@ -243,7 +242,6 @@ export function createContainerLayout() {
     },
     recid: 'id',
     recordHeight: 28,
-    multiSearch: true,
     show: {
       footer: true,
       toolbar: true,
@@ -399,12 +397,6 @@ export function createContainerLayout() {
         editable: helpers.remoteListOptions('/api/v1/asset'),
       },
     ],
-    defaultOperator: {
-      'text': 'contains',
-    },
-    sortData: [
-      { field: 'position', direction: 'asc' },
-    ],
     onAdd: function(event) { openContainerAssetPopup(event) },
     onSave: function(event) { helpers.reloadOnSuccess(event) },
     onReorderRow: function(event) { helpers.w2reorder(event, { url: '/api/v1/container/asset/reorder' }) },
@@ -449,12 +441,6 @@ export function createContainerLayout() {
         editable: helpers.remoteListOptions('/api/v1/container'),
       },
     ],
-    defaultOperator: {
-      'text': 'contains',
-    },
-    sortData: [
-      { field: 'position', direction: 'asc' },
-    ],
     onAdd: function(event) { openContainerPackagePopup(event) },
     onSave: function(event) { helpers.reloadOnSuccess(event) },
     onReorderRow: function(event) { helpers.w2reorder(event, { url: '/api/v1/container/package/reorder' }) },
@@ -468,6 +454,10 @@ export function createContainerLayout() {
       { type: 'top', size: '50%', html: containerAssetGrid },
       { type: 'main', size: '50%', html: containerPackageGrid },
     ],
+    onDestroy: function() {
+      containerAssetGrid.destroy()
+      containerPackageGrid.destroy()
+    },
   })
 
   return new w2layout({
@@ -479,10 +469,8 @@ export function createContainerLayout() {
     onRender: function() { clearSubGrids() },
     onDestroy: function() {
       containerGrid.destroy()
-      containerAssetGrid.destroy()
-      containerPackageGrid.destroy()
       subLayout.destroy()
-    }
+    },
   })
 }
 

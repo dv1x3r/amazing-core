@@ -55,7 +55,7 @@ export function createWidget() {
     },
     onDestroy: function() {
       grid.destroy()
-    }
+    },
   })
 }
 

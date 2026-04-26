@@ -9,7 +9,6 @@ export function createWidget() {
     },
     recid: 'id',
     recordHeight: 28,
-    multiSearch: true,
     show: {
       footer: true,
       toolbar: true,
@@ -70,7 +69,7 @@ export function createWidget() {
     },
     onDestroy: function() {
       grid.destroy()
-    }
+    },
   })
 }
 

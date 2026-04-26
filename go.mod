@@ -9,7 +9,7 @@ tool (
 
 require (
 	github.com/dustin/go-humanize v1.0.1
-	github.com/dv1x3r/w2go v0.2.58
+	github.com/dv1x3r/w2go v0.2.63
 	github.com/gorilla/sessions v1.4.0
 	github.com/huandu/go-sqlbuilder v1.40.2
 	github.com/mattn/go-sqlite3 v1.14.42

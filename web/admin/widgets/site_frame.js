@@ -11,7 +11,6 @@ export function createWidget() {
     },
     recid: 'id',
     recordHeight: 28,
-    multiSearch: true,
     show: {
       footer: true,
       toolbar: true,
@@ -43,7 +42,7 @@ export function createWidget() {
       {
         field: 'container',
         text: 'Asset Container',
-        size: '400px',
+        size: '250px',
         render: 'dropdown',
         sortable: true,
         searchable: 'text',
@@ -72,7 +71,7 @@ export function createWidget() {
     },
     onDestroy: function() {
       grid.destroy()
-    }
+    },
   })
 }
 
@@ -88,7 +87,7 @@ function openSiteFramePopup(event) {
         html: {
           label: 'Type Value',
           attr: 'size="10"',
-          span: 5,
+          span: 6,
           column: 0,
         },
       },
@@ -100,7 +99,7 @@ function openSiteFramePopup(event) {
         html: {
           label: 'Asset Container',
           attr: 'style="width:100%;" placeholder="Type to search..."',
-          span: 5,
+          span: 6,
           column: 0,
         },
       },

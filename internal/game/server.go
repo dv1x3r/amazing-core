@@ -56,6 +56,8 @@ func NewServer(
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_PLAYER_NPCS), handler.GetPlayerNPCs)
 	router.HandleFunc(int32(serviceclass.SYNC_SERVER), int32(syncmessagetype.LOGIN), handler.SyncLogin)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.LOGOUT), handler.Logout)
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.UPDATE_PLAYER_ACTIVE_AVATAR), handler.UpdatePlayerActiveAvatar)
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_AVATAR_ITEMS), handler.GetAvatarItems)
 
 	server := &gsf.Server{
 		Router: router,

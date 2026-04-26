@@ -12,7 +12,8 @@ create table asset_container_assetmap (
     [container_id] integer not null references asset_container(id) on delete cascade,
     [win_asset_id] integer not null references asset(id) on delete cascade,
     [osx_asset_id] integer references asset(id) on delete set null,
-    [position] integer not null default 0,
+    [position] integer not null default 1,
+    unique([container_id], [position]),
     unique([container_id], [win_asset_id])
 ) strict;
 
@@ -20,7 +21,8 @@ create table asset_container_package (
     [id] integer primary key not null,
     [container_id] integer not null references asset_container(id) on delete cascade,
     [pkg_container_id] integer not null references asset_container(id) on delete cascade,
-    [position] integer not null default 0,
+    [position] integer not null default 1,
+    unique([container_id], [position]),
     unique([container_id], [pkg_container_id])
 ) strict;
 

@@ -11,7 +11,6 @@ export function createWidget() {
     },
     recid: 'id',
     recordHeight: 28,
-    multiSearch: true,
     show: {
       footer: true,
       toolbar: true,
@@ -44,6 +43,7 @@ export function createWidget() {
         field: 'max_outfits',
         text: 'Max Outfits',
         size: '120px',
+        render: 'int',
         sortable: true,
         searchable: 'int',
         editable: { type: 'int' },
@@ -51,7 +51,7 @@ export function createWidget() {
       {
         field: 'container',
         text: 'Asset Container',
-        size: '400px',
+        size: '250px',
         render: 'dropdown',
         sortable: true,
         searchable: 'text',
@@ -80,7 +80,7 @@ export function createWidget() {
     },
     onDestroy: function() {
       grid.destroy()
-    }
+    },
   })
 }
 

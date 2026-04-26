@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"log/slog"
 
 	"github.com/dv1x3r/amazing-core/internal/lib/db"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
@@ -17,12 +18,14 @@ var (
 )
 
 type Service struct {
-	store db.Store
+	logger *slog.Logger
+	store  db.Store
 }
 
-func NewService(store db.Store) *Service {
+func NewService(logger *slog.Logger, store db.Store) *Service {
 	return &Service{
-		store: store,
+		logger: logger,
+		store:  store,
 	}
 }
 
@@ -116,8 +119,7 @@ func (s *Service) UpdateRandomName(ctx context.Context, req w2.SaveFormRequest[R
 	})
 	if s.store.IsErrConstraintUnique(err) {
 		return wrap.IfErr(op, ErrNameExists)
-	}
-	if affected == 0 && err == nil {
+	} else if affected == 0 && err == nil {
 		return wrap.IfErr(op, ErrNameNotFound)
 	}
 	return wrap.IfErr(op, err)

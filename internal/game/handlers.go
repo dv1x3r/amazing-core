@@ -5,37 +5,26 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/messages"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
-	"github.com/dv1x3r/amazing-core/internal/services/asset"
-	"github.com/dv1x3r/amazing-core/internal/services/dummy"
-	"github.com/dv1x3r/amazing-core/internal/services/randname"
-	"github.com/dv1x3r/amazing-core/internal/services/siteframe"
+	"github.com/dv1x3r/amazing-core/internal/services"
 )
 
 type Handler struct {
-	assetService     *asset.Service
-	dummyService     *dummy.Service
-	randnameService  *randname.Service
-	siteFrameService *siteframe.Service
+	svc services.Set
 }
 
-func NewHandler(
-	assetService *asset.Service,
-	dummyService *dummy.Service,
-	randnameService *randname.Service,
-	siteFrameService *siteframe.Service,
-) *Handler {
+func NewHandler(svc services.Set) *Handler {
 	return &Handler{
-		assetService:     assetService,
-		dummyService:     dummyService,
-		randnameService:  randnameService,
-		siteFrameService: siteFrameService,
+		svc: svc,
 	}
 }
 
+const playerID = 1
+const maxOutfit = 1
+
 var (
-	dummyPlayerID      = types.OIDFromInt64(72057594037927937)
-	dummyAvatarID      = types.OIDFromInt64(72057594037927938)
-	dummyOutfitID      = types.OIDFromInt64(72057594037927939)
+	dummyPlayerID      = types.OIDFromInt64(1)
+	dummyAvatarID      = types.OIDFromInt64(1)
+	dummyOutfitID      = types.OIDFromInt64(1)
 	dummyHatItemID     = types.OIDFromInt64(72057594037927940)
 	dummyHatTemplateID = types.OIDFromInt64(72057594037927941)
 	dummyClothingCatID = types.OIDFromInt64(72057594037927942)
@@ -71,25 +60,6 @@ func normalizeImageAsset(asset types.Asset) types.Asset {
 		asset.GroupName = "Inventory Icon"
 	}
 	return asset
-}
-
-func dummyAvatarWithAsset(avatarAsset types.Asset) types.PlayerAvatar {
-	return types.PlayerAvatar{
-		OID:                  dummyAvatarID,
-		PlayerID:             dummyPlayerID,
-		Name:                 "dummy-zing",
-		PlayerAvatarOutfitID: dummyOutfitID,
-		OutfitNo:             1,
-		Avatar: types.Avatar{
-			AssetContainer: types.AssetContainer{
-				AssetMap: map[string][]types.Asset{
-					"Prefab_Unity3D": {avatarAsset},
-				},
-			},
-			MaxOutfits: 1,
-			Name:       "dummy-zing",
-		},
-	}
 }
 
 func dummyHatPlayerItem(hatAsset, hatIcon types.Asset) types.PlayerItem {
@@ -162,7 +132,7 @@ func (h *Handler) GetRandomNames(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	names, err := h.randnameService.GetNStringsByType(r.Context(), req.NamePartType, int(req.Amount))
+	names, err := h.svc.RandName.GetNStringsByType(r.Context(), req.NamePartType, int(req.Amount))
 	if err != nil {
 		return err
 	}
@@ -222,19 +192,15 @@ func (h *Handler) Login(w gsf.ResponseWriter, r *gsf.Request) error {
 	// Could be restored via SessionOID during the Relogin
 	r.SetPlatform(gsf.ParsePlatformFromMachineOS(req.ClientEnvInfo.MachineOS))
 
-	res := &messages.LoginResponse{}
-	res.AssetDeliveryURL = h.assetService.DeliveryURL()
-
-	avatarAsset, err := h.assetService.GetGSFAssetByCDNID(r.Context(), dummyAvatarCDNID)
+	player, err := h.svc.Player.GetGSFPlayer(r.Context(), r.Platform(), playerID)
 	if err != nil {
 		return err
 	}
-	avatarAsset = normalizePrefabAsset(avatarAsset)
 
-	res.Player.OID = dummyPlayerID
-	res.Player.ActivePlayerAvatar = dummyAvatarWithAsset(avatarAsset)
-	res.Player.IsQA = true
-	res.MaxOutfit = 1
+	res := &messages.LoginResponse{}
+	res.AssetDeliveryURL = h.svc.Asset.DeliveryURL()
+	res.MaxOutfit = maxOutfit
+	res.Player = player
 
 	return w.Write(res)
 }
@@ -254,12 +220,12 @@ func (h *Handler) GetSiteFrame(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	siteFrame, err := h.siteFrameService.GetGSFSiteFrame(r.Context(), r.Platform(), req.TypeValue)
+	siteFrame, err := h.svc.SiteFrame.GetGSFSiteFrame(r.Context(), r.Platform(), req.TypeValue)
 	if err != nil {
 		return err
 	}
 	res := &messages.GetSiteFrameResponse{}
-	res.AssetDeliveryURL = h.assetService.DeliveryURL()
+	res.AssetDeliveryURL = h.svc.Asset.DeliveryURL()
 	res.SiteFrame = siteFrame
 	return w.Write(res)
 }
@@ -269,12 +235,12 @@ func (h *Handler) GetOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	hatAsset, err := h.assetService.GetGSFAssetByCDNID(r.Context(), dummyHatAssetCDNID)
+	hatAsset, err := h.svc.Asset.GetGSFAssetByCDNID(r.Context(), dummyHatAssetCDNID)
 	if err != nil {
 		return err
 	}
 	hatAsset = normalizePrefabAsset(hatAsset)
-	hatIcon, err := h.assetService.GetGSFAssetByCDNID(r.Context(), dummyHatIconCDNID)
+	hatIcon, err := h.svc.Asset.GetGSFAssetByCDNID(r.Context(), dummyHatIconCDNID)
 	if err != nil {
 		return err
 	}
@@ -289,13 +255,12 @@ func (h *Handler) GetAvatars(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	avatarAsset, err := h.assetService.GetGSFAssetByCDNID(r.Context(), dummyAvatarCDNID)
+	avatars, err := h.svc.Player.GetGSFAvatars(r.Context(), r.Platform(), playerID)
 	if err != nil {
 		return err
 	}
-	avatarAsset = normalizePrefabAsset(avatarAsset)
 	res := &messages.GetAvatarsResponse{}
-	res.Avatars = []types.PlayerAvatar{dummyAvatarWithAsset(avatarAsset)}
+	res.Avatars = avatars
 	return w.Write(res)
 }
 
@@ -345,12 +310,12 @@ func (h *Handler) InitLocation(w gsf.ResponseWriter, r *gsf.Request) error {
 	// dummyScene := "OTYxMTQ4NDU5NDE5MA" // HomeLotSmall.unity3d
 	// dummyScene := "OTQ1MDc3NTY0MjEyNg" // HomeLot_Winter.unity3d
 
-	dummyScene, err := h.dummyService.GetValue(r.Context(), "map")
+	dummyScene, err := h.svc.Dummy.GetValue(r.Context(), "map")
 	if err != nil {
 		return err
 	}
 
-	scene, err := h.assetService.GetGSFAssetByCDNID(r.Context(), dummyScene)
+	scene, err := h.svc.Asset.GetGSFAssetByCDNID(r.Context(), dummyScene)
 	if err != nil {
 		return err
 	}
@@ -449,5 +414,31 @@ func (h *Handler) Logout(w gsf.ResponseWriter, r *gsf.Request) error {
 		return err
 	}
 	res := &messages.LogoutResponse{}
+	return w.Write(res)
+}
+
+func (h *Handler) UpdatePlayerActiveAvatar(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.UpdatePlayerActiveAvatarRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	// 1. TODO: Update Player.ActiveAvatar
+	// 2. Return new avatar
+	newAvatar, err := h.svc.Player.GetGSFAvatarByOID(r.Context(), r.Platform(), req.PlayerAvatarID)
+	if err != nil {
+		return err
+	}
+	res := &messages.UpdatePlayerActiveAvatarResponse{}
+	res.ActivePlayerAvatar = newAvatar
+	return w.Write(res)
+}
+
+func (h *Handler) GetAvatarItems(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.GetAvatarItemsRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	res := &messages.GetAvatarItemsResponse{}
+	res.AvatarItems = []types.PlayerItem{}
 	return w.Write(res)
 }

@@ -99,8 +99,25 @@ const dashboardSidebar = new w2sidebar({
       ]
     },
     {
-      id: 'general',
-      text: 'Parameters',
+      id: 'player-data',
+      text: 'Player Data',
+      group: true,
+      expanded: true,
+      nodes: [
+        {
+          id: 'players',
+          text: 'Players',
+          icon: 'fa fa-users',
+          onClick: async function() {
+            const module = await import('./widgets/players.js')
+            setDashboardWidget(module.createWidget)
+          },
+        },
+      ],
+    },
+    {
+      id: 'configuration',
+      text: 'Configuration',
       group: true,
       expanded: true,
       nodes: [
@@ -128,12 +145,11 @@ const dashboardSidebar = new w2sidebar({
           expanded: false,
           onClick: async function() {
             const module = await import('/lib/w2ui.widgets.js')
-            setDashboardWidget(() => module.createSqlExplorerLayout({
-              url: '/api/v1/sql',
-            }))
+            const createWidget = () => module.createSqlExplorerLayout({ url: '/api/v1/sql' })
+            setDashboardWidget(createWidget)
           },
           nodes: await (async () => {
-            const res = await fetch('/queries')
+            const res = await fetch('/queries/')
             const text = await res.text()
             const filenames = [...text.matchAll(/href="([^"]+)"/g)].map(m => m[1]).sort()
             return filenames.map(filename => ({
@@ -144,10 +160,8 @@ const dashboardSidebar = new w2sidebar({
                 const res = await fetch(`/queries/${filename}`)
                 const initialQuery = await res.text()
                 const module = await import('/lib/w2ui.widgets.js')
-                setDashboardWidget(() => module.createSqlExplorerLayout({
-                  url: '/api/v1/sql',
-                  initialQuery,
-                }))
+                const createWidget = () => module.createSqlExplorerLayout({ url: '/api/v1/sql', initialQuery })
+                setDashboardWidget(createWidget)
               },
             }))
           })(),

@@ -8,7 +8,6 @@ import (
 
 	"github.com/dv1x3r/amazing-core/internal/lib/db"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
-	"github.com/dv1x3r/amazing-core/internal/services/asset"
 	"github.com/dv1x3r/w2go/w2"
 	"github.com/dv1x3r/w2go/w2db"
 	"github.com/dv1x3r/w2go/w2sql"
@@ -23,14 +22,12 @@ var (
 type Service struct {
 	logger *slog.Logger
 	store  db.Store
-	assets *asset.Service
 }
 
-func NewService(logger *slog.Logger, store db.Store, assets *asset.Service) *Service {
+func NewService(logger *slog.Logger, store db.Store) *Service {
 	return &Service{
 		logger: logger,
 		store:  store,
-		assets: assets,
 	}
 }
 
@@ -39,6 +36,17 @@ type Avatar struct {
 	Name       w2.Field[string] `json:"name"`
 	MaxOutfits w2.Field[int]    `json:"max_outfits"`
 	Container  w2.Dropdown      `json:"container"`
+}
+
+func (s *Service) GetAvatarsDropdown(ctx context.Context, req w2.GetDropdownRequest) (w2.GetDropdownResponse[w2.Dropdown], error) {
+	const op = "avatar.Service.GetAvatarsDropdown"
+	res, err := w2db.GetDropdownContext(ctx, s.store.DB(), req, w2db.GetDropdownOptions{
+		From:         "avatar",
+		IDField:      "id",
+		TextField:    "name",
+		OrderByField: "name",
+	})
+	return res, wrap.IfErr(op, err)
 }
 
 func (s *Service) GetAvatarGrid(ctx context.Context, req w2.GetGridRequest) (w2.GetGridResponse[Avatar], error) {
@@ -95,22 +103,19 @@ func (s *Service) CreateAvatar(ctx context.Context, req w2.SaveFormRequest[Avata
 
 func (s *Service) UpdateAvatars(ctx context.Context, req w2.SaveGridRequest[Avatar]) error {
 	const op = "avatar.Service.UpdateAvatars"
-	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
-		_, err := w2db.SaveGridContext(ctx, tx, req, w2db.SaveGridOptions[Avatar]{
-			BuildUpdate: func(change Avatar) *sqlbuilder.UpdateBuilder {
-				ub := sqlbuilder.Update("avatar")
-				w2sql.Set(ub, change.Name, "name")
-				w2sql.Set(ub, change.MaxOutfits, "max_outfits")
-				w2sql.Set(ub, change.Container.ID, "container_id")
-				ub.Where(ub.EQ("id", change.ID))
-				return ub
-			},
-		})
-		if s.store.IsErrConstraintUnique(err) {
-			return ErrAvatarExists
-		}
-		return err
+	_, err := w2db.SaveGridContext(ctx, s.store.DB(), req, w2db.SaveGridOptions[Avatar]{
+		BuildUpdate: func(change Avatar) *sqlbuilder.UpdateBuilder {
+			ub := sqlbuilder.Update("avatar")
+			w2sql.Set(ub, change.Name, "name")
+			w2sql.Set(ub, change.MaxOutfits, "max_outfits")
+			w2sql.Set(ub, change.Container.ID, "container_id")
+			ub.Where(ub.EQ("id", change.ID))
+			return ub
+		},
 	})
+	if s.store.IsErrConstraintUnique(err) {
+		return ErrAvatarExists
+	}
 	return wrap.IfErr(op, err)
 }
 

@@ -13,7 +13,6 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/config"
 	"github.com/dv1x3r/amazing-core/internal/lib/db"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
-	"github.com/dv1x3r/amazing-core/internal/services/auth"
 	"github.com/dv1x3r/amazing-core/web"
 
 	"github.com/dv1x3r/w2go/w2"
@@ -26,12 +25,7 @@ type Server struct {
 	server *http.Server
 }
 
-func NewServer(
-	logger *slog.Logger,
-	store db.Store,
-	handler *Handler,
-	authService *auth.Service,
-) *Server {
+func NewServer(logger *slog.Logger, store db.Store, handler *Handler) *Server {
 	router := http.NewServeMux()
 
 	router.HandleFunc("GET /{$}", errorHandler(handler.Admin))
@@ -63,9 +57,9 @@ func NewServer(
 
 	v1.HandleFunc("GET /container", errorHandler(handler.GetContainer))
 	v1.HandleFunc("GET /container/grid", errorHandler(handler.GetContainerGrid))
+	v1.HandleFunc("POST /container/form", errorHandler(handler.PostContainerForm))
 	v1.HandleFunc("POST /container/grid", errorHandler(handler.PostContainerGrid))
 	v1.HandleFunc("POST /container/remove", errorHandler(handler.PostContainerRemove))
-	v1.HandleFunc("POST /container/form", errorHandler(handler.PostContainerForm))
 
 	v1.HandleFunc("GET /container/{id}/asset/grid", errorHandler(handler.GetContainerAssetGrid))
 	v1.HandleFunc("POST /container/{id}/asset/form", errorHandler(handler.PostContainerAssetForm))
@@ -79,23 +73,39 @@ func NewServer(
 	v1.HandleFunc("POST /container/package/remove", errorHandler(handler.PostContainerPackageRemove))
 	v1.HandleFunc("POST /container/package/reorder", errorHandler(handler.PostContainerPackageReorder))
 
+	v1.HandleFunc("GET /avatar", errorHandler(handler.GetAvatar))
 	v1.HandleFunc("GET /avatar/grid", errorHandler(handler.GetAvatarGrid))
+	v1.HandleFunc("POST /avatar/form", errorHandler(handler.PostAvatarForm))
 	v1.HandleFunc("POST /avatar/grid", errorHandler(handler.PostAvatarGrid))
 	v1.HandleFunc("POST /avatar/remove", errorHandler(handler.PostAvatarRemove))
-	v1.HandleFunc("POST /avatar/form", errorHandler(handler.PostAvatarForm))
 
 	v1.HandleFunc("GET /siteframe/grid", errorHandler(handler.GetSiteFrameGrid))
+	v1.HandleFunc("POST /siteframe/form", errorHandler(handler.PostSiteFrameForm))
 	v1.HandleFunc("POST /siteframe/grid", errorHandler(handler.PostSiteFrameGrid))
 	v1.HandleFunc("POST /siteframe/remove", errorHandler(handler.PostSiteFrameRemove))
-	v1.HandleFunc("POST /siteframe/form", errorHandler(handler.PostSiteFrameForm))
 
 	v1.HandleFunc("GET /dummy/grid", errorHandler(handler.GetDummyGrid))
 	v1.HandleFunc("POST /dummy/grid", errorHandler(handler.PostDummyGrid))
 
+	v1.HandleFunc("GET /player/grid", errorHandler(handler.GetPlayerGrid))
+	v1.HandleFunc("GET /player/form", errorHandler(handler.GetPlayerForm))
+	v1.HandleFunc("POST /player/form", errorHandler(handler.PostPlayerForm))
+
+	v1.HandleFunc("GET /player/{id}/avatar", errorHandler(handler.GetPlayerAvatar))
+	v1.HandleFunc("GET /player/{id}/avatar/grid", errorHandler(handler.GetPlayerAvatarGrid))
+	v1.HandleFunc("POST /player/{id}/avatar/form", errorHandler(handler.PostPlayerAvatarForm))
+	v1.HandleFunc("POST /player/avatar/grid", errorHandler(handler.PostPlayerAvatarGrid))
+	v1.HandleFunc("POST /player/avatar/remove", errorHandler(handler.PostPlayerAvatarRemove))
+
+	v1.HandleFunc("GET /player/{id}/outfit/grid", errorHandler(handler.GetPlayerOutfitGrid))
+	v1.HandleFunc("POST /player/outfit/form", errorHandler(handler.PostPlayerOutfitForm))
+	v1.HandleFunc("POST /player/outfit/grid", errorHandler(handler.PostPlayerOutfitGrid))
+	v1.HandleFunc("POST /player/outfit/remove", errorHandler(handler.PostPlayerOutfitRemove))
+
 	v1.HandleFunc("GET /randname/grid", errorHandler(handler.GetRandnameGrid))
-	v1.HandleFunc("POST /randname/remove", errorHandler(handler.PostRandnameRemove))
 	v1.HandleFunc("GET /randname/form", errorHandler(handler.GetRandnameForm))
 	v1.HandleFunc("POST /randname/form", errorHandler(handler.PostRandnameForm))
+	v1.HandleFunc("POST /randname/remove", errorHandler(handler.PostRandnameRemove))
 
 	v1.HandleFunc("GET /blob/grid", errorHandler(handler.GetBlobGrid))
 	v1.HandleFunc("POST /blob/remove", errorHandler(handler.PostBlobRemove))
@@ -108,7 +118,7 @@ func NewServer(
 		v1.HandleFunc("POST /sql", errorHandler(w2widget.SQLExecHandler(store.DB())))
 	}
 
-	protected := middleware.Protected(authService)
+	protected := middleware.Protected(handler.svc.Auth)
 	router.Handle("/api/v1/", http.StripPrefix("/api/v1", protected(v1)))
 
 	stack := middleware.CreateStack(

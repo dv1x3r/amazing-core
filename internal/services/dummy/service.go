@@ -3,6 +3,7 @@ package dummy
 import (
 	"context"
 	"database/sql"
+	"log/slog"
 
 	"github.com/dv1x3r/amazing-core/internal/lib/db"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
@@ -13,12 +14,14 @@ import (
 )
 
 type Service struct {
-	store db.Store
+	logger *slog.Logger
+	store  db.Store
 }
 
-func NewService(store db.Store) *Service {
+func NewService(logger *slog.Logger, store db.Store) *Service {
 	return &Service{
-		store: store,
+		logger: logger,
+		store:  store,
 	}
 }
 
@@ -53,16 +56,13 @@ func (s *Service) GetDummyParametersGrid(ctx context.Context, req w2.GetGridRequ
 
 func (s *Service) UpdateDummyParameters(ctx context.Context, req w2.SaveGridRequest[Param]) error {
 	const op = "dummy.Service.UpdateDummyParameters"
-	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
-		_, err := w2db.SaveGridContext(ctx, tx, req, w2db.SaveGridOptions[Param]{
-			BuildUpdate: func(change Param) *sqlbuilder.UpdateBuilder {
-				ub := sqlbuilder.Update("dummy_config")
-				ub.Set(ub.Assign("value", change.Value))
-				ub.Where(ub.EQ("rowid", change.RowID))
-				return ub
-			},
-		})
-		return err
+	_, err := w2db.SaveGridContext(ctx, s.store.DB(), req, w2db.SaveGridOptions[Param]{
+		BuildUpdate: func(change Param) *sqlbuilder.UpdateBuilder {
+			ub := sqlbuilder.Update("dummy_config")
+			ub.Set(ub.Assign("value", change.Value))
+			ub.Where(ub.EQ("rowid", change.RowID))
+			return ub
+		},
 	})
 	return wrap.IfErr(op, err)
 }

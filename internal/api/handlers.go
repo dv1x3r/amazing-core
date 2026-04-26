@@ -11,11 +11,13 @@ import (
 
 	"github.com/dv1x3r/amazing-core/internal/config"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
+	"github.com/dv1x3r/amazing-core/internal/services"
 	"github.com/dv1x3r/amazing-core/internal/services/asset"
 	"github.com/dv1x3r/amazing-core/internal/services/auth"
 	"github.com/dv1x3r/amazing-core/internal/services/avatar"
 	"github.com/dv1x3r/amazing-core/internal/services/blob"
 	"github.com/dv1x3r/amazing-core/internal/services/dummy"
+	"github.com/dv1x3r/amazing-core/internal/services/player"
 	"github.com/dv1x3r/amazing-core/internal/services/randname"
 	"github.com/dv1x3r/amazing-core/internal/services/siteframe"
 
@@ -33,39 +35,19 @@ func init() {
 }
 
 type Handler struct {
-	authService      *auth.Service
-	assetService     *asset.Service
-	avatarService    *avatar.Service
-	blobService      *blob.Service
-	dummyService     *dummy.Service
-	randnameService  *randname.Service
-	siteFrameService *siteframe.Service
+	svc services.Set
 }
 
-func NewHandler(
-	authService *auth.Service,
-	assetService *asset.Service,
-	avatarService *avatar.Service,
-	blobService *blob.Service,
-	dummyService *dummy.Service,
-	randnameService *randname.Service,
-	siteFrameService *siteframe.Service,
-) *Handler {
+func NewHandler(svc services.Set) *Handler {
 	return &Handler{
-		authService:      authService,
-		assetService:     assetService,
-		avatarService:    avatarService,
-		blobService:      blobService,
-		dummyService:     dummyService,
-		randnameService:  randnameService,
-		siteFrameService: siteFrameService,
+		svc: svc,
 	}
 }
 
 func (h *Handler) Admin(w http.ResponseWriter, r *http.Request) error {
-	username, ok := h.authService.GetSessionUsername(w, r)
+	username, ok := h.svc.Auth.GetSessionUsername(w, r)
 	if ok {
-		if err := h.authService.RefreshSession(w, r); err != nil {
+		if err := h.svc.Auth.RefreshSession(w, r); err != nil {
 			return err
 		}
 	}
@@ -79,21 +61,21 @@ func (h *Handler) PostLogin(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	if _, err := h.authService.AuthenticateSession(w, r, form.Record); err != nil {
+	if _, err := h.svc.Auth.AuthenticateSession(w, r, form.Record); err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)
 }
 
 func (h *Handler) PostLogout(w http.ResponseWriter, r *http.Request) error {
-	if err := h.authService.DeauthenticateSession(w, r); err != nil {
+	if err := h.svc.Auth.DeauthenticateSession(w, r); err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)
 }
 
 func (h *Handler) GetBlob(w http.ResponseWriter, r *http.Request) error {
-	data, err := h.blobService.GetBlobFile(r.Context(), r.PathValue("cdnid"))
+	data, err := h.svc.Blob.GetBlobFile(r.Context(), r.PathValue("cdnid"))
 	if errors.Is(err, blob.ErrFileNotFound) {
 		return wrap.WithHTTPStatus(err, http.StatusNotFound)
 	} else if err != nil {
@@ -111,7 +93,7 @@ func (h *Handler) GetAsset(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.assetService.GetAssetsDropdown(r.Context(), req)
+	res, err := h.svc.Asset.GetAssetsDropdown(r.Context(), req)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
@@ -123,7 +105,7 @@ func (h *Handler) GetAssetGrid(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.assetService.GetAssetGrid(r.Context(), req)
+	res, err := h.svc.Asset.GetAssetGrid(r.Context(), req)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
@@ -135,7 +117,7 @@ func (h *Handler) PostAssetGrid(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	if err := h.assetService.UpdateAssets(r.Context(), req); err != nil {
+	if err := h.svc.Asset.UpdateAssets(r.Context(), req); err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)
@@ -162,7 +144,7 @@ func (h *Handler) PostAssetCacheJSON(w http.ResponseWriter, r *http.Request) err
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
 
-	result, err := h.assetService.ImportCacheItems(r.Context(), items)
+	result, err := h.svc.Asset.ImportCacheItems(r.Context(), items)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
@@ -179,7 +161,7 @@ func (h *Handler) GetAssetFileType(w http.ResponseWriter, r *http.Request) error
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.assetService.GetFileTypesDropdown(r.Context(), req)
+	res, err := h.svc.Asset.GetFileTypesDropdown(r.Context(), req)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
@@ -191,7 +173,7 @@ func (h *Handler) GetAssetType(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.assetService.GetAssetTypesDropdown(r.Context(), req)
+	res, err := h.svc.Asset.GetAssetTypesDropdown(r.Context(), req)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
@@ -203,7 +185,7 @@ func (h *Handler) GetAssetGroup(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.assetService.GetAssetGroupsDropdown(r.Context(), req)
+	res, err := h.svc.Asset.GetAssetGroupsDropdown(r.Context(), req)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
@@ -217,7 +199,7 @@ func (h *Handler) GetContainer(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.assetService.GetContainersDropdown(r.Context(), req)
+	res, err := h.svc.Asset.GetContainersDropdown(r.Context(), req)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
@@ -229,11 +211,25 @@ func (h *Handler) GetContainerGrid(w http.ResponseWriter, r *http.Request) error
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.assetService.GetContainerGrid(r.Context(), req)
+	res, err := h.svc.Asset.GetContainerGrid(r.Context(), req)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 	return res.Write(w)
+}
+
+func (h *Handler) PostContainerForm(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseSaveFormRequest[asset.Container](r.Body)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	_, err = h.svc.Asset.CreateContainer(r.Context(), req)
+	if errors.Is(err, asset.ErrContainerExists) {
+		return wrap.WithHTTPStatus(err, http.StatusConflict)
+	} else if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return w2.NewSaveFormResponse(req.RecID).Write(w)
 }
 
 func (h *Handler) PostContainerGrid(w http.ResponseWriter, r *http.Request) error {
@@ -241,7 +237,7 @@ func (h *Handler) PostContainerGrid(w http.ResponseWriter, r *http.Request) erro
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	err = h.assetService.UpdateContainers(r.Context(), req)
+	err = h.svc.Asset.UpdateContainers(r.Context(), req)
 	if errors.Is(err, asset.ErrContainerExists) {
 		return wrap.WithHTTPStatus(err, http.StatusConflict)
 	} else if err != nil {
@@ -255,27 +251,13 @@ func (h *Handler) PostContainerRemove(w http.ResponseWriter, r *http.Request) er
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	err = h.assetService.DeleteContainers(r.Context(), req)
+	err = h.svc.Asset.DeleteContainers(r.Context(), req)
 	if errors.Is(err, asset.ErrContainerInUse) {
 		return wrap.WithHTTPStatus(err, http.StatusConflict)
 	} else if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)
-}
-
-func (h *Handler) PostContainerForm(w http.ResponseWriter, r *http.Request) error {
-	req, err := w2.ParseSaveFormRequest[asset.Container](r.Body)
-	if err != nil {
-		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
-	}
-	_, err = h.assetService.CreateContainer(r.Context(), req)
-	if errors.Is(err, asset.ErrContainerExists) {
-		return wrap.WithHTTPStatus(err, http.StatusConflict)
-	} else if err != nil {
-		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
-	}
-	return w2.NewSaveFormResponse(req.RecID).Write(w)
 }
 
 // ── Container Assets ─────────────────────────────────────────────────────────
@@ -289,7 +271,7 @@ func (h *Handler) GetContainerAssetGrid(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.assetService.GetContainerAssetGrid(r.Context(), req, id)
+	res, err := h.svc.Asset.GetContainerAssetGrid(r.Context(), req, id)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
@@ -305,7 +287,7 @@ func (h *Handler) PostContainerAssetForm(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	err = h.assetService.AddContainerAsset(r.Context(), req, id)
+	err = h.svc.Asset.AddContainerAsset(r.Context(), req, id)
 	if errors.Is(err, asset.ErrContainerAssetExists) {
 		return wrap.WithHTTPStatus(err, http.StatusConflict)
 	} else if err != nil {
@@ -319,7 +301,7 @@ func (h *Handler) PostContainerAssetGrid(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	err = h.assetService.UpdateContainerAssets(r.Context(), req)
+	err = h.svc.Asset.UpdateContainerAssets(r.Context(), req)
 	if errors.Is(err, asset.ErrContainerAssetExists) {
 		return wrap.WithHTTPStatus(err, http.StatusConflict)
 	} else if err != nil {
@@ -333,7 +315,7 @@ func (h *Handler) PostContainerAssetRemove(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	if err = h.assetService.DeleteContainerAssets(r.Context(), req); err != nil {
+	if err = h.svc.Asset.DeleteContainerAssets(r.Context(), req); err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)
@@ -344,7 +326,7 @@ func (h *Handler) PostContainerAssetReorder(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	if err = h.assetService.ReorderContainerAssets(r.Context(), req); err != nil {
+	if err = h.svc.Asset.ReorderContainerAssets(r.Context(), req); err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)
@@ -361,7 +343,7 @@ func (h *Handler) GetContainerPackageGrid(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.assetService.GetContainerPackageGrid(r.Context(), req, id)
+	res, err := h.svc.Asset.GetContainerPackageGrid(r.Context(), req, id)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
@@ -377,7 +359,7 @@ func (h *Handler) PostContainerPackageForm(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	err = h.assetService.AddContainerPackage(r.Context(), req, id)
+	err = h.svc.Asset.AddContainerPackage(r.Context(), req, id)
 	if errors.Is(err, asset.ErrContainerPackageExists) {
 		return wrap.WithHTTPStatus(err, http.StatusConflict)
 	} else if errors.Is(err, asset.ErrPackageCyclicDependency) {
@@ -393,7 +375,7 @@ func (h *Handler) PostContainerPackageGrid(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	err = h.assetService.UpdateContainerPackages(r.Context(), req)
+	err = h.svc.Asset.UpdateContainerPackages(r.Context(), req)
 	if errors.Is(err, asset.ErrContainerPackageExists) {
 		return wrap.WithHTTPStatus(err, http.StatusConflict)
 	} else if errors.Is(err, asset.ErrPackageCyclicDependency) {
@@ -409,7 +391,7 @@ func (h *Handler) PostContainerPackageRemove(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	if err = h.assetService.DeleteContainerPackages(r.Context(), req); err != nil {
+	if err = h.svc.Asset.DeleteContainerPackages(r.Context(), req); err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)
@@ -420,7 +402,7 @@ func (h *Handler) PostContainerPackageReorder(w http.ResponseWriter, r *http.Req
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	if err = h.assetService.ReorderContainerPackages(r.Context(), req); err != nil {
+	if err = h.svc.Asset.ReorderContainerPackages(r.Context(), req); err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)
@@ -428,16 +410,42 @@ func (h *Handler) PostContainerPackageReorder(w http.ResponseWriter, r *http.Req
 
 // ── Avatars ──────────────────────────────────────────────────────────────────
 
+func (h *Handler) GetAvatar(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseGetDropdownRequest(r.URL.Query().Get("request"))
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	res, err := h.svc.Avatar.GetAvatarsDropdown(r.Context(), req)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return res.Write(w)
+}
+
 func (h *Handler) GetAvatarGrid(w http.ResponseWriter, r *http.Request) error {
 	req, err := w2.ParseGetGridRequest(r.URL.Query().Get("request"))
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.avatarService.GetAvatarGrid(r.Context(), req)
+	res, err := h.svc.Avatar.GetAvatarGrid(r.Context(), req)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 	return res.Write(w)
+}
+
+func (h *Handler) PostAvatarForm(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseSaveFormRequest[avatar.Avatar](r.Body)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	_, err = h.svc.Avatar.CreateAvatar(r.Context(), req)
+	if errors.Is(err, avatar.ErrAvatarExists) {
+		return wrap.WithHTTPStatus(err, http.StatusConflict)
+	} else if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return w2.NewSaveFormResponse(req.RecID).Write(w)
 }
 
 func (h *Handler) PostAvatarGrid(w http.ResponseWriter, r *http.Request) error {
@@ -445,7 +453,7 @@ func (h *Handler) PostAvatarGrid(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	err = h.avatarService.UpdateAvatars(r.Context(), req)
+	err = h.svc.Avatar.UpdateAvatars(r.Context(), req)
 	if errors.Is(err, avatar.ErrAvatarExists) {
 		return wrap.WithHTTPStatus(err, http.StatusConflict)
 	} else if err != nil {
@@ -459,24 +467,10 @@ func (h *Handler) PostAvatarRemove(w http.ResponseWriter, r *http.Request) error
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	if err := h.avatarService.DeleteAvatars(r.Context(), req); err != nil {
+	if err := h.svc.Avatar.DeleteAvatars(r.Context(), req); err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)
-}
-
-func (h *Handler) PostAvatarForm(w http.ResponseWriter, r *http.Request) error {
-	req, err := w2.ParseSaveFormRequest[avatar.Avatar](r.Body)
-	if err != nil {
-		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
-	}
-	_, err = h.avatarService.CreateAvatar(r.Context(), req)
-	if errors.Is(err, avatar.ErrAvatarExists) {
-		return wrap.WithHTTPStatus(err, http.StatusConflict)
-	} else if err != nil {
-		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
-	}
-	return w2.NewSaveFormResponse(req.RecID).Write(w)
 }
 
 // ── Site Frame ───────────────────────────────────────────────────────────────
@@ -486,11 +480,25 @@ func (h *Handler) GetSiteFrameGrid(w http.ResponseWriter, r *http.Request) error
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.siteFrameService.GetSiteFrameGrid(r.Context(), req)
+	res, err := h.svc.SiteFrame.GetSiteFrameGrid(r.Context(), req)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 	return res.Write(w)
+}
+
+func (h *Handler) PostSiteFrameForm(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseSaveFormRequest[siteframe.SiteFrame](r.Body)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	_, err = h.svc.SiteFrame.CreateSiteFrame(r.Context(), req)
+	if errors.Is(err, siteframe.ErrSiteFrameExists) {
+		return wrap.WithHTTPStatus(err, http.StatusConflict)
+	} else if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return w2.NewSaveFormResponse(req.RecID).Write(w)
 }
 
 func (h *Handler) PostSiteFrameGrid(w http.ResponseWriter, r *http.Request) error {
@@ -498,7 +506,7 @@ func (h *Handler) PostSiteFrameGrid(w http.ResponseWriter, r *http.Request) erro
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	err = h.siteFrameService.UpdateSiteFrames(r.Context(), req)
+	err = h.svc.SiteFrame.UpdateSiteFrames(r.Context(), req)
 	if errors.Is(err, siteframe.ErrSiteFrameExists) {
 		return wrap.WithHTTPStatus(err, http.StatusConflict)
 	} else if err != nil {
@@ -512,24 +520,10 @@ func (h *Handler) PostSiteFrameRemove(w http.ResponseWriter, r *http.Request) er
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	if err := h.siteFrameService.DeleteSiteFrames(r.Context(), req); err != nil {
+	if err := h.svc.SiteFrame.DeleteSiteFrames(r.Context(), req); err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)
-}
-
-func (h *Handler) PostSiteFrameForm(w http.ResponseWriter, r *http.Request) error {
-	req, err := w2.ParseSaveFormRequest[siteframe.SiteFrame](r.Body)
-	if err != nil {
-		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
-	}
-	_, err = h.siteFrameService.CreateSiteFrame(r.Context(), req)
-	if errors.Is(err, siteframe.ErrSiteFrameExists) {
-		return wrap.WithHTTPStatus(err, http.StatusConflict)
-	} else if err != nil {
-		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
-	}
-	return w2.NewSaveFormResponse(req.RecID).Write(w)
 }
 
 // ── Dummy Parameters ─────────────────────────────────────────────────────────
@@ -539,7 +533,7 @@ func (h *Handler) GetDummyGrid(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.dummyService.GetDummyParametersGrid(r.Context(), req)
+	res, err := h.svc.Dummy.GetDummyParametersGrid(r.Context(), req)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
@@ -551,7 +545,187 @@ func (h *Handler) PostDummyGrid(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	if err := h.dummyService.UpdateDummyParameters(r.Context(), req); err != nil {
+	if err := h.svc.Dummy.UpdateDummyParameters(r.Context(), req); err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return w2.NewSuccessResponse().Write(w, http.StatusOK)
+}
+
+// ── Players ──────────────────────────────────────────────────────────────────
+
+func (h *Handler) GetPlayerGrid(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseGetGridRequest(r.URL.Query().Get("request"))
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	res, err := h.svc.Player.GetPlayerListGrid(r.Context(), req)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return res.Write(w)
+}
+
+func (h *Handler) GetPlayerForm(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseGetFormRequest(r.URL.Query().Get("request"))
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	res, err := h.svc.Player.GetPlayerDetailsForm(r.Context(), req)
+	if errors.Is(err, player.ErrPlayerNotFound) {
+		return wrap.WithHTTPStatus(err, http.StatusNotFound)
+	} else if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return res.Write(w)
+}
+
+func (h *Handler) PostPlayerForm(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseSaveFormRequest[player.PlayerDetails](r.Body)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	err = h.svc.Player.UpdatePlayerDetails(r.Context(), req)
+	if errors.Is(err, player.ErrPlayerExists) {
+		return wrap.WithHTTPStatus(err, http.StatusConflict)
+	} else if errors.Is(err, player.ErrPlayerNotFound) {
+		return wrap.WithHTTPStatus(err, http.StatusNotFound)
+	} else if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return w2.NewSaveFormResponse(req.RecID).Write(w)
+}
+
+// ── Player Avatars ───────────────────────────────────────────────────────────
+
+func (h *Handler) GetPlayerAvatar(w http.ResponseWriter, r *http.Request) error {
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	req, err := w2.ParseGetDropdownRequest(r.URL.Query().Get("request"))
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	res, err := h.svc.Player.GetPlayerAvatarsDropdown(r.Context(), req, id)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return res.Write(w)
+}
+
+func (h *Handler) GetPlayerAvatarGrid(w http.ResponseWriter, r *http.Request) error {
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	req, err := w2.ParseGetGridRequest(r.URL.Query().Get("request"))
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	res, err := h.svc.Player.GetPlayerAvatarGrid(r.Context(), req, id)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return res.Write(w)
+}
+
+func (h *Handler) PostPlayerAvatarForm(w http.ResponseWriter, r *http.Request) error {
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	req, err := w2.ParseSaveFormRequest[player.PlayerAvatar](r.Body)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	err = h.svc.Player.CreatePlayerAvatar(r.Context(), req, id)
+	if errors.Is(err, player.ErrPlayerAvatarExists) {
+		return wrap.WithHTTPStatus(err, http.StatusConflict)
+	} else if errors.Is(err, asset.ErrPackageCyclicDependency) {
+		return wrap.WithHTTPStatus(err, http.StatusConflict)
+	} else if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return w2.NewSaveFormResponse(req.RecID).Write(w)
+}
+
+func (h *Handler) PostPlayerAvatarGrid(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseSaveGridRequest[player.PlayerAvatar](r.Body)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	err = h.svc.Player.UpdatePlayerAvatars(r.Context(), req)
+	if errors.Is(err, player.ErrPlayerAvatarExists) {
+		return wrap.WithHTTPStatus(err, http.StatusConflict)
+	} else if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return w2.NewSuccessResponse().Write(w, http.StatusOK)
+}
+
+func (h *Handler) PostPlayerAvatarRemove(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseRemoveGridRequest(r.Body)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	if err := h.svc.Player.DeletePlayerAvatars(r.Context(), req); err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return w2.NewSuccessResponse().Write(w, http.StatusOK)
+}
+
+// ── Player Outfits ───────────────────────────────────────────────────────────
+
+func (h *Handler) GetPlayerOutfitGrid(w http.ResponseWriter, r *http.Request) error {
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	req, err := w2.ParseGetGridRequest(r.URL.Query().Get("request"))
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	res, err := h.svc.Player.GetPlayerOutfitGrid(r.Context(), req, id)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return res.Write(w)
+}
+
+func (h *Handler) PostPlayerOutfitForm(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseSaveFormRequest[player.PlayerOutfit](r.Body)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	err = h.svc.Player.CreatePlayerOutfit(r.Context(), req)
+	if errors.Is(err, player.ErrPlayerOutfitExists) {
+		return wrap.WithHTTPStatus(err, http.StatusConflict)
+	} else if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return w2.NewSaveFormResponse(req.RecID).Write(w)
+}
+
+func (h *Handler) PostPlayerOutfitGrid(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseSaveGridRequest[player.PlayerOutfit](r.Body)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	err = h.svc.Player.UpdatePlayerOutfits(r.Context(), req)
+	if errors.Is(err, player.ErrPlayerOutfitExists) {
+		return wrap.WithHTTPStatus(err, http.StatusConflict)
+	} else if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return w2.NewSuccessResponse().Write(w, http.StatusOK)
+}
+
+func (h *Handler) PostPlayerOutfitRemove(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseRemoveGridRequest(r.Body)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	if err := h.svc.Player.DeletePlayerOutfits(r.Context(), req); err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)
@@ -564,22 +738,11 @@ func (h *Handler) GetRandnameGrid(w http.ResponseWriter, r *http.Request) error 
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.randnameService.GetRandomNameGrid(r.Context(), req)
+	res, err := h.svc.RandName.GetRandomNameGrid(r.Context(), req)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 	return res.Write(w)
-}
-
-func (h *Handler) PostRandnameRemove(w http.ResponseWriter, r *http.Request) error {
-	req, err := w2.ParseRemoveGridRequest(r.Body)
-	if err != nil {
-		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
-	}
-	if err := h.randnameService.DeleteRandomNames(r.Context(), req); err != nil {
-		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
-	}
-	return w2.NewSuccessResponse().Write(w, http.StatusOK)
 }
 
 func (h *Handler) GetRandnameForm(w http.ResponseWriter, r *http.Request) error {
@@ -587,7 +750,7 @@ func (h *Handler) GetRandnameForm(w http.ResponseWriter, r *http.Request) error 
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.randnameService.GetRandomNameForm(r.Context(), req)
+	res, err := h.svc.RandName.GetRandomNameForm(r.Context(), req)
 	if errors.Is(err, randname.ErrNameNotFound) {
 		return wrap.WithHTTPStatus(err, http.StatusNotFound)
 	} else if err != nil {
@@ -602,12 +765,12 @@ func (h *Handler) PostRandnameForm(w http.ResponseWriter, r *http.Request) error
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
 	if req.RecID == 0 {
-		req.RecID, err = h.randnameService.CreateRandomName(r.Context(), req)
+		req.RecID, err = h.svc.RandName.CreateRandomName(r.Context(), req)
 		if errors.Is(err, randname.ErrNameExists) {
 			return wrap.WithHTTPStatus(err, http.StatusConflict)
 		}
 	} else {
-		err = h.randnameService.UpdateRandomName(r.Context(), req)
+		err = h.svc.RandName.UpdateRandomName(r.Context(), req)
 		if errors.Is(err, randname.ErrNameExists) {
 			return wrap.WithHTTPStatus(err, http.StatusConflict)
 		} else if errors.Is(err, randname.ErrNameNotFound) {
@@ -620,6 +783,17 @@ func (h *Handler) PostRandnameForm(w http.ResponseWriter, r *http.Request) error
 	return w2.NewSaveFormResponse(req.RecID).Write(w)
 }
 
+func (h *Handler) PostRandnameRemove(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseRemoveGridRequest(r.Body)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	if err := h.svc.RandName.DeleteRandomNames(r.Context(), req); err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return w2.NewSuccessResponse().Write(w, http.StatusOK)
+}
+
 // ── Blob ─────────────────────────────────────────────────────────────────────
 
 func (h *Handler) GetBlobGrid(w http.ResponseWriter, r *http.Request) error {
@@ -627,7 +801,7 @@ func (h *Handler) GetBlobGrid(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.blobService.GetBlobGrid(r.Context(), req)
+	res, err := h.svc.Blob.GetBlobGrid(r.Context(), req)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
@@ -639,7 +813,7 @@ func (h *Handler) PostBlobRemove(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	if err := h.blobService.DeleteFiles(r.Context(), req); err != nil {
+	if err := h.svc.Blob.DeleteFiles(r.Context(), req); err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)
@@ -650,7 +824,7 @@ func (h *Handler) PostBlobUpload(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	err = h.blobService.SaveFiles(r.Context(), headers)
+	err = h.svc.Blob.SaveFiles(r.Context(), headers)
 	if errors.Is(err, blob.ErrFileExists) {
 		return wrap.WithHTTPStatus(err, http.StatusConflict)
 	} else if err != nil {
@@ -660,7 +834,7 @@ func (h *Handler) PostBlobUpload(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (h *Handler) PostBlobImport(w http.ResponseWriter, r *http.Request) error {
-	result, err := h.blobService.ImportFromFolder(r.Context())
+	result, err := h.svc.Blob.ImportFromFolder(r.Context())
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
@@ -670,7 +844,7 @@ func (h *Handler) PostBlobImport(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (h *Handler) PostBlobExport(w http.ResponseWriter, r *http.Request) error {
-	result, err := h.blobService.ExportToFolder(r.Context())
+	result, err := h.svc.Blob.ExportToFolder(r.Context())
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}

@@ -44,8 +44,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dustin/go-humanize v1.0.1 h1:GzkhY7T5VNhEkwH0PVJgjz+fX1rhBrR7pRT3mDkpeCY=
 github.com/dustin/go-humanize v1.0.1/go.mod h1:Mu1zIs6XwVuF/gI1OepvI0qD18qycQx+mFykh5fBlto=
-github.com/dv1x3r/w2go v0.2.58 h1:1tYhZ1vysAtTo3YNohE0MZDwNph9Em0YAdYFREO+/UM=
-github.com/dv1x3r/w2go v0.2.58/go.mod h1:AkfJ63m4H7+E+hb60UTuxdVgzi3F4JVRcQDJMGX7NDQ=
+github.com/dv1x3r/w2go v0.2.63 h1:CN3bzYrXgk23wypCD8RHS6p3pFv3pTdqOhshofZ2LJQ=
+github.com/dv1x3r/w2go v0.2.63/go.mod h1:AkfJ63m4H7+E+hb60UTuxdVgzi3F4JVRcQDJMGX7NDQ=
 github.com/elastic/go-sysinfo v1.8.1/go.mod h1:JfllUnzoQV/JRYymbH3dO1yggI3mV2oTKSXsDHM+uIM=
 github.com/elastic/go-sysinfo v1.15.4 h1:A3zQcunCxik14MgXu39cXFXcIw2sFXZ0zL886eyiv1Q=
 github.com/elastic/go-sysinfo v1.15.4/go.mod h1:ZBVXmqS368dOn/jvijV/zHLfakWTYHBZPk3G244lHrU=
