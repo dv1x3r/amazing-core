@@ -465,9 +465,13 @@ func (s *Service) UpdateAssets(ctx context.Context, req w2.SaveGridRequest[Asset
 func (s *Service) CreateContainer(ctx context.Context, req w2.SaveFormRequest[Container]) (int, error) {
 	const op = "asset.Service.CreateContainer"
 	id, err := w2db.InsertFormContext(ctx, s.store.DB(), req, w2db.InsertFormOptions{
-		Into:   "asset_container",
-		Cols:   []string{"gsfoid", "name", "ptag"},
-		Values: []any{req.Record.OID, req.Record.Name, req.Record.PTag},
+		Into: "asset_container",
+		Cols: []string{"gsfoid", "name", "ptag"},
+		Values: []any{
+			sqlbuilder.Raw("(select coalesce(max(gsfoid) + 1, 1) from asset_container)"),
+			req.Record.Name,
+			req.Record.PTag,
+		},
 	})
 	if s.store.IsErrConstraintUnique(err) {
 		return 0, wrap.IfErr(op, ErrContainerExists)

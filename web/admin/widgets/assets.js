@@ -492,16 +492,6 @@ function openContainerPopup(event) {
     url: '/api/v1/container/form',
     fields: [
       {
-        field: 'oid',
-        type: 'int',
-        required: true,
-        html: {
-          label: 'Container OID',
-          span: 6,
-          column: 0,
-        },
-      },
-      {
         field: 'name',
         type: 'text',
         required: true,
@@ -538,7 +528,7 @@ function openContainerPopup(event) {
   w2popup.open({
     title: 'New Container',
     body: '<div id="container-form" style="width: 100%; height: 100%;"></div>',
-    width: 600, height: 300, showMax: false, resizable: false,
+    width: 600, height: 220, showMax: false, resizable: false,
   })
     .then(() => form.render('#container-form'))
     .close(() => form.destroy())
