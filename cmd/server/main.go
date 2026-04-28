@@ -110,8 +110,8 @@ func main() {
 	}
 
 	// ── Download blob.db ────────────────────────────────────────────────────────
-	if cfg.Blob.Download {
-		if err := downloader.DownloadIfNotExists(logger.Get(), cfg.Storage.Databases.Blob, cfg.Blob.DownloadURL); err != nil {
+	if cfg.Storage.Blob.Download {
+		if err := downloader.DownloadIfNotExists(logger.Get(), cfg.Storage.Databases.Blob, cfg.Storage.Blob.URL); err != nil {
 			logger.Get().Error("unable to download blob.db", "err", err)
 			fmt.Scanln()
 			os.Exit(1)

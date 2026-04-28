@@ -12,16 +12,16 @@
     "syncServerIP": "localhost",
     "syncServerPort": 8182
   },
-  "blob": {
-    "download": true,
-    "downloadURL": "https://cdn.amazingcore.org/blob.db"
-  },
   "storage": {
-    "explorer": true,
+    "blob": {
+      "download": true,
+      "url": "https://cdn.amazingcore.org/blob.db"
+    },
     "databases": {
       "core": "./data_db/core.db",
       "blob": "./data_db/blob.db"
-    }
+    },
+    "explorer": true
   },
   "secure": {
     "auth": {

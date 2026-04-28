@@ -23,8 +23,8 @@ Guidelines for AI agents working on the Amazing Core repository.
 
 - Language: **Go 1.25** (pinned, do not modify go.mod or go.sum without permission)
 - Database: **SQLite** (migrations via goose)
-  - `CGO_ENABLED=0` → `modernc.org/sqlite` (release)
-  - `CGO_ENABLED=1` → `github.com/mattn/go-sqlite3` (dev)
+  - `CGO_ENABLED=0` → `modernc.org/sqlite` (default)
+  - `CGO_ENABLED=1` → `github.com/mattn/go-sqlite3`
 - Driver-specific logic:
   - `internal/lib/db/sqlite_nocgo.go` — `CGO_ENABLED=0`
   - `internal/lib/db/sqlite_cgo.go` — `CGO_ENABLED=1`
@@ -36,7 +36,7 @@ Server binary:
 - `make build` — compile binary to `./build/server`
 - `make run` — build & run server
 - `make test` — run tests (verbose)
-- `make generate` — run Go code generators (e.g., `stringer` for enums in `internal/game/types/`)
+- `make generate` — run Go code generators (e.g., `stringer` for enums in `internal/gsf/types/`)
 
 Database migrations (`./data_db/core.db`):
 
@@ -70,18 +70,11 @@ SQL schemas and migrations:
 
 HTTP API & admin dashboard backend:
 
-- `admin/` — templates and handlers
-- `middleware/` — middlewares
-- `server.go` — server bootstrap
 - **Keep API handlers thin**; delegate logic to services
 
 ### internal/game/
 
 Game server message routing.
-
-### internal/dummy/
-
-Placeholder handlers returning mock responses; used during development until real implementations are complete.
 
 ### internal/network/
 
@@ -109,7 +102,7 @@ Centralized config from `config.json` (ports, DB paths, logger)
 
 ### internal/lib/
 
-- Utilities: `db/`, `logger/`, `wrap/`
+- Utilities: `db/`, `logger/`, `wrap/` etc.
 - Reusable across the codebase
 
 ### tools/
@@ -138,6 +131,7 @@ Agents must NOT:
 
 - Invent gameplay rules, formulas, progression, or economy logic
 - Guess protocol semantics or message usage
+- Run any build/test commands without explicit permission or instruction
 
 For any non-trivial change:
 

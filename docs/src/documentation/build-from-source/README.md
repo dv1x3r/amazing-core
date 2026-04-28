@@ -42,7 +42,6 @@ amazing-core/
 ├── internal/
 │   ├── api/                  - http server for admin dashboard and asset streaming
 │   ├── game/                 - game server and gsf messages handling
-│   ├── dummy/                - placeholder game handlers
 │   ├── network/              - tcp server protocol implementation
 │   ├── services/             - business logic and database interaction
 │   ├── config/               - configuration variables
