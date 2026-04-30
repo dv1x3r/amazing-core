@@ -2,6 +2,7 @@ package types
 
 import (
 	"database/sql"
+	"database/sql/driver"
 	"encoding/base64"
 	"fmt"
 	"strconv"
@@ -59,6 +60,10 @@ func (oid *OID) Scan(value any) error {
 		*oid = OIDFromInt64(n.Int64)
 	}
 	return nil
+}
+
+func (oid OID) Value() (driver.Value, error) {
+	return oid.Int64(), nil
 }
 
 func (oid *OID) Serialize(writer gsf.ProtocolWriter) {
