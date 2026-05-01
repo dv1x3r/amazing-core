@@ -85,6 +85,8 @@ func dummyHatPlayerItem(hatAsset, hatIcon types.Asset) types.PlayerItem {
 	}
 }
 
+// ── Startup ──────────────────────────────────────────────────────────────────
+
 func (h *Handler) GetClientVersionInfo(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetClientVersionInfoRequest{}
 	if err := r.Read(req); err != nil {
@@ -97,6 +99,25 @@ func (h *Handler) GetClientVersionInfo(w gsf.ResponseWriter, r *gsf.Request) err
 	return w.Write(res)
 }
 
+// ── General ──────────────────────────────────────────────────────────────────
+
+func (h *Handler) GetSiteFrame(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.GetSiteFrameRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	siteFrame, err := h.svc.SiteFrame.GetGSFSiteFrame(r.Context(), r.Platform(), req.TypeValue)
+	if err != nil {
+		return err
+	}
+	res := &messages.GetSiteFrameResponse{}
+	res.AssetDeliveryURL = h.svc.Asset.DeliveryURL()
+	res.SiteFrame = siteFrame
+	return w.Write(res)
+}
+
+// ── Registration ─────────────────────────────────────────────────────────────
+
 func (h *Handler) GetPublicItemCategories(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetPublicItemCategoriesRequest{}
 	if err := r.Read(req); err != nil {
@@ -104,26 +125,6 @@ func (h *Handler) GetPublicItemCategories(w gsf.ResponseWriter, r *gsf.Request) 
 	}
 	res := &messages.GetPublicItemCategoriesResponse{}
 	res.ItemCategories = dummyItemCategories()
-	return w.Write(res)
-}
-
-func (h *Handler) GetCMSItemCategories(w gsf.ResponseWriter, r *gsf.Request) error {
-	req := &messages.GetCMSItemCategoriesRequest{}
-	if err := r.Read(req); err != nil {
-		return err
-	}
-	res := &messages.GetCMSItemCategoriesResponse{}
-	res.ItemCategories = dummyItemCategories()
-	return w.Write(res)
-}
-
-func (h *Handler) GetPublicItemsByOIDs(w gsf.ResponseWriter, r *gsf.Request) error {
-	req := &messages.GetPublicItemsByOIDsRequest{}
-	if err := r.Read(req); err != nil {
-		return err
-	}
-	res := &messages.GetPublicItemsByOIDsResponse{}
-	res.Items = []types.Item{}
 	return w.Write(res)
 }
 
@@ -181,6 +182,8 @@ func (h *Handler) RegisterPlayer(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
+// ── Login ────────────────────────────────────────────────────────────────────
+
 func (h *Handler) Login(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.LoginRequest{}
 	if err := r.Read(req); err != nil {
@@ -215,18 +218,23 @@ func (h *Handler) GetTiers(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-func (h *Handler) GetSiteFrame(w gsf.ResponseWriter, r *gsf.Request) error {
-	req := &messages.GetSiteFrameRequest{}
+func (h *Handler) GetCMSItemCategories(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.GetCMSItemCategoriesRequest{}
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	siteFrame, err := h.svc.SiteFrame.GetGSFSiteFrame(r.Context(), r.Platform(), req.TypeValue)
-	if err != nil {
+	res := &messages.GetCMSItemCategoriesResponse{}
+	res.ItemCategories = dummyItemCategories()
+	return w.Write(res)
+}
+
+func (h *Handler) GetPublicItemsByOIDs(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.GetPublicItemsByOIDsRequest{}
+	if err := r.Read(req); err != nil {
 		return err
 	}
-	res := &messages.GetSiteFrameResponse{}
-	res.AssetDeliveryURL = h.svc.Asset.DeliveryURL()
-	res.SiteFrame = siteFrame
+	res := &messages.GetPublicItemsByOIDsResponse{}
+	res.Items = []types.Item{}
 	return w.Write(res)
 }
 
@@ -340,6 +348,15 @@ func (h *Handler) InitLocation(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
+func (h *Handler) SyncLogin(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.SyncLoginRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	res := &messages.SyncLoginResponse{}
+	return w.Write(res)
+}
+
 func (h *Handler) GetMazeItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetMazeItemsRequest{}
 	if err := r.Read(req); err != nil {
@@ -367,15 +384,6 @@ func (h *Handler) GetAnnouncements(w gsf.ResponseWriter, r *gsf.Request) error {
 	}
 	res := &messages.GetAnnouncementsResponse{}
 	res.Announcements = []types.Announcement{}
-	return w.Write(res)
-}
-
-func (h *Handler) SyncLogin(w gsf.ResponseWriter, r *gsf.Request) error {
-	req := &messages.SyncLoginRequest{}
-	if err := r.Read(req); err != nil {
-		return err
-	}
-	res := &messages.SyncLoginResponse{}
 	return w.Write(res)
 }
 
@@ -416,6 +424,8 @@ func (h *Handler) Logout(w gsf.ResponseWriter, r *gsf.Request) error {
 	res := &messages.LogoutResponse{}
 	return w.Write(res)
 }
+
+// ── Change Avatar ────────────────────────────────────────────────────────────
 
 func (h *Handler) UpdatePlayerActiveAvatar(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.UpdatePlayerActiveAvatarRequest{}

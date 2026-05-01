@@ -31,31 +31,40 @@ func NewServer(
 		middleware.Recover(),
 	)
 
+	// ── Startup ──────────────────────────────────────────────────────────────────
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_CLIENT_VERSION_INFO), handler.GetClientVersionInfo)
+
+	// ── General ──────────────────────────────────────────────────────────────────
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_SITE_FRAME), handler.GetSiteFrame)
+
+	// ── Registration ─────────────────────────────────────────────────────────────
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_PUBLIC_ITEM_CATEGORIES), handler.GetPublicItemCategories)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_PUBLIC_ITEMS_BY_OIDS), handler.GetPublicItemsByOIDs)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_RANDOM_NAMES), handler.GetRandomNames)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.VALIDATE_NAME), handler.ValidateName)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.SELECT_PLAYER_NAME), handler.SelectPlayerName)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.CHECK_USERNAME), handler.CheckUsername)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.REGISTER_PLAYER), handler.RegisterPlayer)
+
+	// ── Login ────────────────────────────────────────────────────────────────────
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.LOGIN), handler.Login)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_TIERS), handler.GetTiers)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_SITE_FRAME), handler.GetSiteFrame)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_CMS_ITEMCATEGORIES), handler.GetCMSItemCategories)
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_PUBLIC_ITEMS_BY_OIDS), handler.GetPublicItemsByOIDs)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_OUTFIT_ITEMS), handler.GetOutfitItems)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_AVATARS), handler.GetAvatars)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_OUTFITS), handler.GetOutfits)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_ZONES), handler.GetZones)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.INIT_LOCATION), handler.InitLocation)
+	router.HandleFunc(int32(serviceclass.SYNC_SERVER), int32(syncmessagetype.LOGIN), handler.SyncLogin)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_MAZE_ITEMS), handler.GetMazeItems)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_CHAT_CHANNEL_TYPES), handler.GetChatChannelTypes)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_ANNOUNCEMENTS), handler.GetAnnouncements)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.ENTER_BUILDING), handler.EnterBuilding)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_ONLINE_STATUSES), handler.GetOnlineStatuses)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_PLAYER_NPCS), handler.GetPlayerNPCs)
-	router.HandleFunc(int32(serviceclass.SYNC_SERVER), int32(syncmessagetype.LOGIN), handler.SyncLogin)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.LOGOUT), handler.Logout)
+
+	// ── Change Avatar ────────────────────────────────────────────────────────────
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.UPDATE_PLAYER_ACTIVE_AVATAR), handler.UpdatePlayerActiveAvatar)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_AVATAR_ITEMS), handler.GetAvatarItems)
 
