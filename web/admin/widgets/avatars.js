@@ -40,15 +40,6 @@ export function createWidget() {
         editable: { type: 'text' },
       },
       {
-        field: 'max_outfits',
-        text: 'Max Outfits',
-        size: '120px',
-        render: 'int',
-        sortable: true,
-        searchable: 'int',
-        editable: { type: 'int' },
-      },
-      {
         field: 'container',
         text: 'Asset Container',
         size: '250px',
@@ -56,6 +47,15 @@ export function createWidget() {
         sortable: true,
         searchable: 'text',
         editable: helpers.remoteListOptions('/api/v1/container'),
+      },
+      {
+        field: 'max_outfits',
+        text: 'Max Outfits',
+        size: '120px',
+        render: 'int',
+        sortable: true,
+        searchable: 'int',
+        editable: { type: 'int' },
       },
     ],
     defaultOperator: {

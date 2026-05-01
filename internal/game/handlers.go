@@ -27,7 +27,7 @@ var (
 	dummyOutfitID      = types.OIDFromInt64(1)
 	dummyHatItemID     = types.OIDFromInt64(72057594037927940)
 	dummyHatTemplateID = types.OIDFromInt64(72057594037927941)
-	dummyClothingCatID = types.OIDFromInt64(72057594037927942)
+	dummyClothingCatID = types.OIDFromInt64(1)
 	dummyHatSlotID     = types.OIDFromInt64(289356276061314068)
 	dummyAvatarCDNID   = "OTQ3ODg2NDg5NjAxNA"
 	dummyHatAssetCDNID = "OTYyOTU0MTA3MjkxMA"

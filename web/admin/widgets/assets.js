@@ -395,6 +395,7 @@ export function createContainerLayout() {
         render: 'dropdown-tooltip',
         size: '50%',
         editable: helpers.remoteListOptions('/api/v1/asset'),
+        tooltip: 'macOS asset overrides the Windows asset on macOS; otherwise, the Windows asset is used on all platforms',
       },
     ],
     onAdd: function(event) { openContainerAssetPopup(event) },
