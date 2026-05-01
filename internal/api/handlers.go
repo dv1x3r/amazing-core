@@ -17,6 +17,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/services/avatar"
 	"github.com/dv1x3r/amazing-core/internal/services/blob"
 	"github.com/dv1x3r/amazing-core/internal/services/dummy"
+	"github.com/dv1x3r/amazing-core/internal/services/item"
 	"github.com/dv1x3r/amazing-core/internal/services/player"
 	"github.com/dv1x3r/amazing-core/internal/services/randname"
 	"github.com/dv1x3r/amazing-core/internal/services/siteframe"
@@ -526,26 +527,68 @@ func (h *Handler) PostSiteFrameRemove(w http.ResponseWriter, r *http.Request) er
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)
 }
 
-// ── Dummy Parameters ─────────────────────────────────────────────────────────
+// ── Items ────────────────────────────────────────────────────────────────────
 
-func (h *Handler) GetDummyGrid(w http.ResponseWriter, r *http.Request) error {
-	req, err := w2.ParseGetGridRequest(r.URL.Query().Get("request"))
+func (h *Handler) GetItemCategory(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseGetDropdownRequest(r.URL.Query().Get("request"))
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.svc.Dummy.GetDummyParametersGrid(r.Context(), req)
+	res, err := h.svc.Item.GetCategoriesDropdown(r.Context(), req)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 	return res.Write(w)
 }
 
-func (h *Handler) PostDummyGrid(w http.ResponseWriter, r *http.Request) error {
-	req, err := w2.ParseSaveGridRequest[dummy.Param](r.Body)
+func (h *Handler) GetItemCategoryGrid(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseGetGridRequest(r.URL.Query().Get("request"))
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	if err := h.svc.Dummy.UpdateDummyParameters(r.Context(), req); err != nil {
+	res, err := h.svc.Item.GetCategoryGrid(r.Context(), req)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return res.Write(w)
+}
+
+func (h *Handler) PostItemCategoryForm(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseSaveFormRequest[item.Category](r.Body)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	_, err = h.svc.Item.CreateCategory(r.Context(), req)
+	if errors.Is(err, item.ErrCategoryExists) {
+		return wrap.WithHTTPStatus(err, http.StatusConflict)
+	} else if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return w2.NewSaveFormResponse(req.RecID).Write(w)
+}
+
+func (h *Handler) PostItemCategoryGrid(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseSaveGridRequest[item.Category](r.Body)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	err = h.svc.Item.UpdateCategories(r.Context(), req)
+	if errors.Is(err, item.ErrCategoryExists) {
+		return wrap.WithHTTPStatus(err, http.StatusConflict)
+	} else if errors.Is(err, item.ErrCategoryCyclicDependency) {
+		return wrap.WithHTTPStatus(err, http.StatusConflict)
+	} else if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return w2.NewSuccessResponse().Write(w, http.StatusOK)
+}
+
+func (h *Handler) PostItemCategoryRemove(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseRemoveGridRequest(r.Body)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	if err := h.svc.Item.DeleteCategories(r.Context(), req); err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)
@@ -789,6 +832,31 @@ func (h *Handler) PostRandnameRemove(w http.ResponseWriter, r *http.Request) err
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
 	if err := h.svc.RandName.DeleteRandomNames(r.Context(), req); err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return w2.NewSuccessResponse().Write(w, http.StatusOK)
+}
+
+// ── Dummy Parameters ─────────────────────────────────────────────────────────
+
+func (h *Handler) GetDummyGrid(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseGetGridRequest(r.URL.Query().Get("request"))
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	res, err := h.svc.Dummy.GetDummyParametersGrid(r.Context(), req)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return res.Write(w)
+}
+
+func (h *Handler) PostDummyGrid(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseSaveGridRequest[dummy.Param](r.Body)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	if err := h.svc.Dummy.UpdateDummyParameters(r.Context(), req); err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
 	}
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)

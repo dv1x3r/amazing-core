@@ -84,8 +84,11 @@ func NewServer(logger *slog.Logger, store db.Store, handler *Handler) *Server {
 	v1.HandleFunc("POST /siteframe/grid", errorHandler(handler.PostSiteFrameGrid))
 	v1.HandleFunc("POST /siteframe/remove", errorHandler(handler.PostSiteFrameRemove))
 
-	v1.HandleFunc("GET /dummy/grid", errorHandler(handler.GetDummyGrid))
-	v1.HandleFunc("POST /dummy/grid", errorHandler(handler.PostDummyGrid))
+	v1.HandleFunc("GET /item/category", errorHandler(handler.GetItemCategory))
+	v1.HandleFunc("GET /item/category/grid", errorHandler(handler.GetItemCategoryGrid))
+	v1.HandleFunc("POST /item/category/form", errorHandler(handler.PostItemCategoryForm))
+	v1.HandleFunc("POST /item/category/grid", errorHandler(handler.PostItemCategoryGrid))
+	v1.HandleFunc("POST /item/category/remove", errorHandler(handler.PostItemCategoryRemove))
 
 	v1.HandleFunc("GET /player/grid", errorHandler(handler.GetPlayerGrid))
 	v1.HandleFunc("GET /player/form", errorHandler(handler.GetPlayerForm))
@@ -106,6 +109,9 @@ func NewServer(logger *slog.Logger, store db.Store, handler *Handler) *Server {
 	v1.HandleFunc("GET /randname/form", errorHandler(handler.GetRandnameForm))
 	v1.HandleFunc("POST /randname/form", errorHandler(handler.PostRandnameForm))
 	v1.HandleFunc("POST /randname/remove", errorHandler(handler.PostRandnameRemove))
+
+	v1.HandleFunc("GET /dummy/grid", errorHandler(handler.GetDummyGrid))
+	v1.HandleFunc("POST /dummy/grid", errorHandler(handler.PostDummyGrid))
 
 	v1.HandleFunc("GET /blob/grid", errorHandler(handler.GetBlobGrid))
 	v1.HandleFunc("POST /blob/remove", errorHandler(handler.PostBlobRemove))

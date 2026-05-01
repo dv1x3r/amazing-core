@@ -38,8 +38,8 @@ const dashboardSidebar = new w2sidebar({
       },
     },
     {
-      id: 'content',
-      text: 'Content',
+      id: 'assets-group',
+      text: 'Assets',
       group: true,
       expanded: true,
       nodes: [
@@ -61,11 +61,46 @@ const dashboardSidebar = new w2sidebar({
             setDashboardWidget(module.createContainerLayout)
           },
         },
+        {
+          id: 'site-frame',
+          text: 'Site Frame',
+          icon: 'fa fa-layer-group',
+          onClick: async function() {
+            const module = await import('./widgets/site_frame.js')
+            setDashboardWidget(module.createWidget)
+          },
+        },
       ],
     },
     {
-      id: 'collections',
-      text: 'Collections',
+      id: 'items-group',
+      text: 'Items',
+      group: true,
+      expanded: true,
+      nodes: [
+        {
+          id: 'items',
+          text: 'Items',
+          icon: 'fa fa-football',
+          onClick: async function() {
+            const module = await import('./widgets/items.js')
+            setDashboardWidget(module.createItemLayout)
+          },
+        },
+        {
+          id: 'item-categories',
+          text: 'Categories',
+          icon: 'fa fa-tags',
+          onClick: async function() {
+            const module = await import('./widgets/items.js')
+            setDashboardWidget(module.createCategoryLayout)
+          },
+        },
+      ],
+    },
+    {
+      id: 'players-group',
+      text: 'Players',
       group: true,
       expanded: true,
       nodes: [
@@ -79,11 +114,11 @@ const dashboardSidebar = new w2sidebar({
           },
         },
         {
-          id: 'site-frame',
-          text: 'Site Frame',
-          icon: 'fa fa-layer-group',
+          id: 'players',
+          text: 'Players',
+          icon: 'fa fa-users',
           onClick: async function() {
-            const module = await import('./widgets/site_frame.js')
+            const module = await import('./widgets/players.js')
             setDashboardWidget(module.createWidget)
           },
         },
@@ -93,23 +128,6 @@ const dashboardSidebar = new w2sidebar({
           icon: 'fa fa-dice',
           onClick: async function() {
             const module = await import('./widgets/random_names.js')
-            setDashboardWidget(module.createWidget)
-          },
-        },
-      ]
-    },
-    {
-      id: 'player-data',
-      text: 'Player Data',
-      group: true,
-      expanded: true,
-      nodes: [
-        {
-          id: 'players',
-          text: 'Players',
-          icon: 'fa fa-users',
-          onClick: async function() {
-            const module = await import('./widgets/players.js')
             setDashboardWidget(module.createWidget)
           },
         },

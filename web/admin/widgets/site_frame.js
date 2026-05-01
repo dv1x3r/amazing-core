@@ -53,7 +53,7 @@ export function createWidget() {
       'text': 'contains',
     },
     sortData: [
-      { field: 'id', direction: 'desc' },
+      { field: 'id', direction: 'asc' },
     ],
     onAdd: function(event) { openSiteFramePopup(event) },
     onSave: function(event) { helpers.reloadOnSuccess(event) },

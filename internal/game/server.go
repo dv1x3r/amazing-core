@@ -38,12 +38,15 @@ func NewServer(
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.LOGOUT), handler.Logout)
 
 	// ── Registration ─────────────────────────────────────────────────────────────
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_PUBLIC_ITEM_CATEGORIES), handler.GetPublicItemCategories)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_RANDOM_NAMES), handler.GetRandomNames)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.VALIDATE_NAME), handler.ValidateName)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.SELECT_PLAYER_NAME), handler.SelectPlayerName)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.CHECK_USERNAME), handler.CheckUsername)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.REGISTER_PLAYER), handler.RegisterPlayer)
+
+	// ── Items & Categories ───────────────────────────────────────────────────────
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_PUBLIC_ITEM_CATEGORIES), handler.GetPublicItemCategories)
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_CMS_ITEMCATEGORIES), handler.GetCMSItemCategories)
 
 	// ── Avatars & Outfits ────────────────────────────────────────────────────────
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_AVATARS), handler.GetAvatars)
@@ -54,7 +57,6 @@ func NewServer(
 
 	// ── Login ────────────────────────────────────────────────────────────────────
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_TIERS), handler.GetTiers)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_CMS_ITEMCATEGORIES), handler.GetCMSItemCategories)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_PUBLIC_ITEMS_BY_OIDS), handler.GetPublicItemsByOIDs)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_ZONES), handler.GetZones)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.INIT_LOCATION), handler.InitLocation)

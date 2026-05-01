@@ -27,26 +27,11 @@ var (
 	dummyOutfitID      = types.OIDFromInt64(1)
 	dummyHatItemID     = types.OIDFromInt64(72057594037927940)
 	dummyHatTemplateID = types.OIDFromInt64(72057594037927941)
-	dummyClothingCatID = types.OIDFromInt64(72057594037927942)
+	dummyClothingCatID = types.OIDFromInt64(1)
 	dummyHatSlotID     = types.OIDFromInt64(289356276061314068)
-	dummyAvatarCDNID   = "OTQ3ODg2NDg5NjAxNA"
 	dummyHatAssetCDNID = "OTYyOTU0MTA3MjkxMA"
 	dummyHatIconCDNID  = "OTYyOTM4NjkzMjIzOA"
 )
-
-func dummyItemCategories() []types.ItemCategory {
-	return []types.ItemCategory{
-		{
-			RuleContainer: types.RuleContainer{
-				AssetContainer: types.AssetContainer{
-					OID:      dummyClothingCatID,
-					AssetMap: map[string][]types.Asset{},
-				},
-			},
-			Name: "Clothing",
-		},
-	}
-}
 
 func normalizePrefabAsset(asset types.Asset) types.Asset {
 	asset.AssetTypeName = "Prefab_Unity3D"
@@ -77,8 +62,18 @@ func dummyHatPlayerItem(hatAsset, hatIcon types.Asset) types.PlayerItem {
 					"Images":         {hatIcon},
 				},
 			},
-			Name:              "dummy-hat",
-			ItemCategories:    dummyItemCategories(),
+			Name: "dummy-hat",
+			ItemCategories: []types.ItemCategory{
+				{
+					RuleContainer: types.RuleContainer{
+						AssetContainer: types.AssetContainer{
+							OID: dummyClothingCatID,
+							// AssetMap: map[string][]types.Asset{},
+						},
+					},
+					Name: "Clothing",
+				},
+			},
 			AcceptableSlotIds: []types.OID{dummyHatSlotID},
 		},
 		Quantity: 1,
@@ -154,18 +149,6 @@ func (h *Handler) Logout(w gsf.ResponseWriter, r *gsf.Request) error {
 
 // ── Registration ─────────────────────────────────────────────────────────────
 
-// GetPublicItemCategories sends public item categories to classify temporary player items.
-// Requested during the new player registration.
-func (h *Handler) GetPublicItemCategories(w gsf.ResponseWriter, r *gsf.Request) error {
-	req := &messages.GetPublicItemCategoriesRequest{}
-	if err := r.Read(req); err != nil {
-		return err
-	}
-	res := &messages.GetPublicItemCategoriesResponse{}
-	res.ItemCategories = dummyItemCategories()
-	return w.Write(res)
-}
-
 // GetRandomNames sends random Zing names or family name parts.
 // Requested during the new player registration or Zing rename.
 func (h *Handler) GetRandomNames(w gsf.ResponseWriter, r *gsf.Request) error {
@@ -224,6 +207,40 @@ func (h *Handler) RegisterPlayer(w gsf.ResponseWriter, r *gsf.Request) error {
 	}
 	res := &messages.RegisterPlayerResponse{}
 	res.PlayerID = types.OID{Class: 1, Type: 2, Server: 3, Number: 4}
+	return w.Write(res)
+}
+
+// ── Items & Categories ───────────────────────────────────────────────────────
+
+// GetPublicItemCategories sends public item categories to classify temporary player items.
+// Requested during the new player registration.
+func (h *Handler) GetPublicItemCategories(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.GetPublicItemCategoriesRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	categories, err := h.svc.Item.GetGSFItemCategories(r.Context(), true)
+	if err != nil {
+		return err
+	}
+	res := &messages.GetPublicItemCategoriesResponse{}
+	res.ItemCategories = categories
+	return w.Write(res)
+}
+
+// GetCMSItemCategories fetches the main item-category lookup into the InventoryManager.itemCategories.
+// Systems rely on that to map category OIDs to item types such as Clothing, Decoration, Yard, MazePiece, and so on.
+func (h *Handler) GetCMSItemCategories(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.GetCMSItemCategoriesRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	categories, err := h.svc.Item.GetGSFItemCategories(r.Context(), false)
+	if err != nil {
+		return err
+	}
+	res := &messages.GetCMSItemCategoriesResponse{}
+	res.ItemCategories = categories
 	return w.Write(res)
 }
 
@@ -320,18 +337,6 @@ func (h *Handler) GetTiers(w gsf.ResponseWriter, r *gsf.Request) error {
 	}
 	res := &messages.GetTiersResponse{}
 	res.Tiers = []types.Tier{}
-	return w.Write(res)
-}
-
-// GetCMSItemCategories fetches the main item-category lookup into the InventoryManager.itemCategories.
-// Systems rely on that to map category OIDs to item types such as Clothing, Decoration, Yard, MazePiece, and so on.
-func (h *Handler) GetCMSItemCategories(w gsf.ResponseWriter, r *gsf.Request) error {
-	req := &messages.GetCMSItemCategoriesRequest{}
-	if err := r.Read(req); err != nil {
-		return err
-	}
-	res := &messages.GetCMSItemCategoriesResponse{}
-	res.ItemCategories = dummyItemCategories()
 	return w.Write(res)
 }
 
