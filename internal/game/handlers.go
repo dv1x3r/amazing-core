@@ -244,6 +244,32 @@ func (h *Handler) GetAvatars(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
+// GetAvatarItems fetches item instances owned by the active player avatar.
+func (h *Handler) GetAvatarItems(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.GetAvatarItemsRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	res := &messages.GetAvatarItemsResponse{}
+	res.AvatarItems = []types.PlayerItem{}
+	return w.Write(res)
+}
+
+// UpdatePlayerActiveAvatar handles the active-avatar change request and returns avatar data.
+func (h *Handler) UpdatePlayerActiveAvatar(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.UpdatePlayerActiveAvatarRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	avatar, err := h.svc.Player.SetGSFPlayerActiveAvatar(r.Context(), r.Platform(), req.PlayerAvatarID)
+	if err != nil {
+		return err
+	}
+	res := &messages.UpdatePlayerActiveAvatarResponse{}
+	res.ActivePlayerAvatar = avatar
+	return w.Write(res)
+}
+
 // GetOutfits fetches the saved outfits for a given player avatar.
 // The results are stored as PresetOutfits on the AvatarAssets object.
 func (h *Handler) GetOutfits(w gsf.ResponseWriter, r *gsf.Request) error {
@@ -281,32 +307,6 @@ func (h *Handler) GetOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	hatIcon = normalizeImageAsset(hatIcon)
 	res := &messages.GetOutfitItemsResponse{}
 	res.OutfitItems = []types.PlayerItem{dummyHatPlayerItem(hatAsset, hatIcon)}
-	return w.Write(res)
-}
-
-// UpdatePlayerActiveAvatar handles the active-avatar change request and returns avatar data.
-func (h *Handler) UpdatePlayerActiveAvatar(w gsf.ResponseWriter, r *gsf.Request) error {
-	req := &messages.UpdatePlayerActiveAvatarRequest{}
-	if err := r.Read(req); err != nil {
-		return err
-	}
-	avatar, err := h.svc.Player.SetGSFPlayerActiveAvatar(r.Context(), r.Platform(), req.PlayerAvatarID)
-	if err != nil {
-		return err
-	}
-	res := &messages.UpdatePlayerActiveAvatarResponse{}
-	res.ActivePlayerAvatar = avatar
-	return w.Write(res)
-}
-
-// GetAvatarItems fetches item instances owned by the active player avatar.
-func (h *Handler) GetAvatarItems(w gsf.ResponseWriter, r *gsf.Request) error {
-	req := &messages.GetAvatarItemsRequest{}
-	if err := r.Read(req); err != nil {
-		return err
-	}
-	res := &messages.GetAvatarItemsResponse{}
-	res.AvatarItems = []types.PlayerItem{}
 	return w.Write(res)
 }
 
