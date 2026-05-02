@@ -82,7 +82,7 @@ func (s *Service) GetGSFAvatars(ctx context.Context, platform gsf.Platform, play
 		avatars = append(avatars, avatar)
 	}
 
-	return avatars, wrap.IfErr(op, err)
+	return avatars, wrap.IfErr(op, rows.Err())
 }
 
 func (s *Service) GetGSFActiveAvatar(ctx context.Context, platform gsf.Platform, playerID int) (types.PlayerAvatar, error) {
@@ -123,40 +123,29 @@ func (s *Service) GetGSFActiveAvatar(ctx context.Context, platform gsf.Platform,
 	return avatar, nil
 }
 
-func (s *Service) GetGSFAvatarByOID(ctx context.Context, platform gsf.Platform, oid types.OID) (types.PlayerAvatar, error) {
-	const op = "player.Service.GetGSFAvatarByOID"
+func (s *Service) SetGSFPlayerActiveAvatar(ctx context.Context, platform gsf.Platform, oid types.OID) (types.PlayerAvatar, error) {
+	const op = "player.Service.SetGSFPlayerActiveAvatar"
 
-	row := s.store.DB().QueryRowContext(ctx, `
-			select
-				pa.gsfoid,
-				pl.gsfoid as player_oid,
-				pa.name as player_name,
-				av.name as avatar_name,
-				av.container_id
-			from player_avatar as pa
-			join player as pl on pl.id = pa.player_id
-			join avatar as av on av.id = pa.avatar_id
-			where pa.gsfoid = ?;
-		`, oid)
-
-	var avatar types.PlayerAvatar
-	var containerID int
-
-	if err := row.Scan(
-		&avatar.OID,
-		&avatar.PlayerID,
-		&avatar.Name,
-		&avatar.Avatar.Name,
-		&containerID,
-	); err != nil {
-		return avatar, wrap.IfErr(op, err)
-	}
-
-	container, err := s.assets.GetGSFAssetContainer(ctx, platform, containerID)
+	tx, err := s.store.DB().BeginTx(ctx, nil)
 	if err != nil {
-		return avatar, wrap.IfErr(op, err)
+		return types.PlayerAvatar{}, wrap.IfErr(op, err)
 	}
-	avatar.Avatar.AssetContainer = container
+	defer tx.Rollback()
 
-	return avatar, nil
+	var playerAvatarID, playerID int
+	row := tx.QueryRowContext(ctx, "select id, player_id from player_avatar where gsfoid = ?;", oid)
+	if err := row.Scan(&playerAvatarID, &playerID); err != nil {
+		return types.PlayerAvatar{}, wrap.IfErr(op, err)
+	}
+
+	if err := s.setActivePlayerAvatarByID(ctx, tx, playerAvatarID, playerID); err != nil {
+		return types.PlayerAvatar{}, wrap.IfErr(op, err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return types.PlayerAvatar{}, wrap.IfErr(op, err)
+	}
+
+	avatar, err := s.GetGSFActiveAvatar(ctx, platform, playerID)
+	return avatar, wrap.IfErr(op, err)
 }

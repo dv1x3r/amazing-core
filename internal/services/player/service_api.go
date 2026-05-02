@@ -242,12 +242,7 @@ func (s *Service) UpdatePlayerDetails(ctx context.Context, req w2.SaveFormReques
 		} else if err != nil {
 			return err
 		}
-		_, err = tx.ExecContext(ctx,
-			"update player_avatar set is_active = case when id = ? then 1 else 0 end where player_id = ?;",
-			req.Record.ActiveAvatar.ID,
-			req.RecID,
-		)
-		return err
+		return s.setActivePlayerAvatarByID(ctx, tx, req.Record.ActiveAvatar.ID.V, req.RecID)
 	})
 	return wrap.IfErr(op, err)
 }

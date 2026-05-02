@@ -290,14 +290,12 @@ func (h *Handler) UpdatePlayerActiveAvatar(w gsf.ResponseWriter, r *gsf.Request)
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	// 1. TODO: Update Player.ActiveAvatar
-	// 2. Return new avatar
-	newAvatar, err := h.svc.Player.GetGSFAvatarByOID(r.Context(), r.Platform(), req.PlayerAvatarID)
+	avatar, err := h.svc.Player.SetGSFPlayerActiveAvatar(r.Context(), r.Platform(), req.PlayerAvatarID)
 	if err != nil {
 		return err
 	}
 	res := &messages.UpdatePlayerActiveAvatarResponse{}
-	res.ActivePlayerAvatar = newAvatar
+	res.ActivePlayerAvatar = avatar
 	return w.Write(res)
 }
 
