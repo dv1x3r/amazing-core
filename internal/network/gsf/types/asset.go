@@ -2,13 +2,25 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
+// Asset is a single resource file, such as Unity asset bundle, treenode, json, image, or audio file.
 type Asset struct {
-	OID           OID
+	// OID identifier.
+	OID OID
+
+	// Asset classification (e.g. "Prefab_Unity3D").
 	AssetTypeName string
-	CDNID         string
-	ResName       string
-	GroupName     string
-	FileSize      int64
+
+	// CDN identifier used to construct the download URL: AssetDeliveryURL + CDNID.
+	CDNID string
+
+	// Resource name.
+	ResName string
+
+	// Group classification (e.g. "Main_Scene", "3D Components", "Locked").
+	GroupName string
+
+	// File size in bytes.
+	FileSize int64
 }
 
 func (a *Asset) Serialize(writer gsf.ProtocolWriter) {

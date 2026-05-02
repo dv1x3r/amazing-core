@@ -2,6 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
+// VillageRolePlayer assigns a player to a village role.
 type VillageRolePlayer struct {
 	OID           OID
 	VillageRoleID OID

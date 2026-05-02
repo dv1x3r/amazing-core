@@ -2,6 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
+// SiteInfo contains site account identity data returned during login.
 type SiteInfo struct {
 	SiteID        OID
 	NicknameFirst string

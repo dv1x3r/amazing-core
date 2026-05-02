@@ -5,6 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
+// EnterBuildingRequest is sent when the client enters a building location.
 type EnterBuildingRequest struct {
 	LocID       types.OID
 	BuildingID  types.OID
@@ -19,6 +20,7 @@ func (req *EnterBuildingRequest) Deserialize(reader gsf.ProtocolReader) {
 	reader.ReadObject(&req.Orientation)
 }
 
+// EnterBuildingResponse contains the building ID for the entered building.
 type EnterBuildingResponse struct {
 	BuildingID types.OID
 }

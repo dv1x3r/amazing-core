@@ -2,6 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
+// RuleProperty contains the rule metadata attached to rule containers.
 type RuleProperty struct {
 	ID               OID
 	ParentID         OID

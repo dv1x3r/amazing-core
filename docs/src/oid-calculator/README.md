@@ -1,9 +1,15 @@
-# GSFOID Calculator
+# OID Calculator
 
-A simple calculator for checking the [`OID`](../documentation/gsf-classes/types/oid.md) (a unique object identifier) used by the game.
+A simple calculator for checking the `OID` (a unique object identifier) used by the game.
+It is usually stored as a big `int64` number, that can be sliced into specific groups of bits to get the Class, Type, Server and Object number.
+
+```
+[Class][Type][Server][Number...]
+  8b     8b     8b       40b
+```
 
 - The `CDN ID` is a `base64` representation of `GSF OID`.
-- The `GSF OID` is an `int64` number that is sliced into specific [groups of bits](../documentation/gsf-classes/types/oid.md).
+- The `GSF OID` is an `int64` number that is sliced into specific groups of bits.
 
 <div style="display:flex; flex-direction: column; gap: 1.5rem; max-width: 420px;">
     <label style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 1.75rem;">

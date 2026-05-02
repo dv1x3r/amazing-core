@@ -2,6 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
+// Dimensions is a six-field dimension and bounds tuple used by GSF objects.
 type Dimensions struct {
 	CX  int32
 	CY  int32

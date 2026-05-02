@@ -5,6 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
+// GetPublicItemsByOIDsRequest requests public item definitions by object ID.
 type GetPublicItemsByOIDsRequest struct {
 	OIDs             []types.OID
 	LangLocalePairID types.OID
@@ -29,6 +30,7 @@ func (req *GetPublicItemsByOIDsRequest) Deserialize(reader gsf.ProtocolReader) {
 	req.IsPreviewEnabled = reader.ReadBool()
 }
 
+// GetPublicItemsByOIDsResponse contains public item definitions.
 type GetPublicItemsByOIDsResponse struct {
 	Items []types.Item
 }

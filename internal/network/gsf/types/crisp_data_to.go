@@ -2,6 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
+// CrispDataTO is the client transfer object for CRISP account data.
 type CrispDataTO struct {
 	CrispActionID   OID
 	CrispMessage    string

@@ -10,6 +10,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
 )
 
+// OID is the GSF object identifier split into class, type, server, and number.
 type OID struct {
 	Class  byte
 	Type   byte
@@ -17,6 +18,7 @@ type OID struct {
 	Number int64
 }
 
+// OIDFromInt64 decodes a packed int64 into an OID.
 func OIDFromInt64(v int64) OID {
 	var oid OID
 	oid.Class = byte((v >> 56) & 0xFF)
@@ -26,6 +28,7 @@ func OIDFromInt64(v int64) OID {
 	return oid
 }
 
+// OIDFromCDNID decodes a CDN ID string into an OID.
 func OIDFromCDNID(cdnid string) (OID, error) {
 	str, err := base64.RawStdEncoding.DecodeString(cdnid)
 	if err != nil {
@@ -38,6 +41,7 @@ func OIDFromCDNID(cdnid string) (OID, error) {
 	return OIDFromInt64(v), nil
 }
 
+// Int64 returns the packed int64 representation of oid.
 func (oid OID) Int64() int64 {
 	var value int64
 	value |= int64(oid.Class) << 56
@@ -47,10 +51,12 @@ func (oid OID) Int64() int64 {
 	return value
 }
 
+// String returns the dashed class-type-server-number representation of oid.
 func (oid OID) String() string {
 	return fmt.Sprintf("%d-%d-%d-%d", oid.Class, oid.Type, oid.Server, oid.Number)
 }
 
+// Scan implements sql.Scanner for OID.
 func (oid *OID) Scan(value any) error {
 	var n sql.NullInt64
 	if err := n.Scan(value); err != nil {
@@ -62,6 +68,7 @@ func (oid *OID) Scan(value any) error {
 	return nil
 }
 
+// Value implements driver.Valuer for OID.
 func (oid OID) Value() (driver.Value, error) {
 	return oid.Int64(), nil
 }

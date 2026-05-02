@@ -2,6 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
+// PlayerItem is a player-owned item instance.
 type PlayerItem struct {
 	OID                     OID
 	Item                    Item

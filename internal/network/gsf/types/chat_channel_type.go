@@ -5,6 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/chatchanneltypevalue"
 )
 
+// ChatChannelType maps a chat channel object ID to a client channel value.
 type ChatChannelType struct {
 	OID   OID
 	Value chatchanneltypevalue.ChatChannelTypeValue

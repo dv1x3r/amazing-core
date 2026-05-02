@@ -2,6 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
+// ItemCategory categorizes item definitions for client inventory and shop logic.
 type ItemCategory struct {
 	RuleContainer
 	CreateDate gsf.UnixTime

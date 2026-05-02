@@ -2,6 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
+// PlayerMazePiece is an item placement within a player maze.
 type PlayerMazePiece struct {
 	OID          OID
 	X            float64

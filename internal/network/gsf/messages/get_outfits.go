@@ -5,6 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
+// GetOutfitsRequest requests saved outfit presets for a player avatar.
 type GetOutfitsRequest struct {
 	PlayerAvatarID types.OID
 	PlayerID       types.OID
@@ -15,6 +16,7 @@ func (req *GetOutfitsRequest) Deserialize(reader gsf.ProtocolReader) {
 	reader.ReadObject(&req.PlayerID)
 }
 
+// GetOutfitsResponse contains saved outfit presets for a player avatar.
 type GetOutfitsResponse struct {
 	PlayerAvatarOutfits []types.PlayerAvatarOutfit
 }

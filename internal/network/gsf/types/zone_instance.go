@@ -2,6 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
+// ZoneInstance is a runtime instance of a zone.
 type ZoneInstance struct {
 	OID       OID
 	Zone      Zone

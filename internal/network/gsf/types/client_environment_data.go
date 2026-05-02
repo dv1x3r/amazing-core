@@ -2,6 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
+// ClientEnvironmentData describes the client runtime environment sent during login.
 type ClientEnvironmentData struct {
 	UnityVersion       string
 	UserAgent          string

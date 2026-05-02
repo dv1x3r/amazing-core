@@ -2,6 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
+// PlayerMaze is a player-owned maze or home layout.
 type PlayerMaze struct {
 	OID              OID
 	Name             string

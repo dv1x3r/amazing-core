@@ -6,16 +6,29 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/sessionstatus"
 )
 
+// LoginRequest is the client login payload sent to the USER server.
 type LoginRequest struct {
-	LoginID              string
-	Password             string
-	SitePIN              int32
+	// Player username.
+	LoginID string
+
+	// Player password.
+	Password string
+
+	// The client always sends 1234.
+	SitePIN int32
+
+	// The client always sends 293578400718237473.
 	LanguageLocalePairID types.OID
-	UserQueueingToken    string
-	ClientEnvInfo        types.ClientEnvironmentData
-	Token                string
-	LoginType            int32
-	CNL                  string
+
+	// The client always sends "Token".
+	UserQueueingToken string
+
+	// OS, resolution, Unity version, etc.
+	ClientEnvInfo types.ClientEnvironmentData
+
+	Token     string
+	LoginType int32
+	CNL       string
 }
 
 func (req *LoginRequest) Deserialize(reader gsf.ProtocolReader) {
@@ -30,14 +43,22 @@ func (req *LoginRequest) Deserialize(reader gsf.ProtocolReader) {
 	req.CNL = reader.ReadString()
 }
 
+// LoginResponse is the server payload that initializes the client session.
 type LoginResponse struct {
-	SiteInfo                types.SiteInfo
-	Status                  sessionstatus.SessionStatus
-	SessionID               types.OID
-	ConversationID          int64
-	AssetDeliveryURL        string
-	Player                  types.Player
-	MaxOutfit               int16
+	SiteInfo       types.SiteInfo
+	Status         sessionstatus.SessionStatus
+	SessionID      types.OID
+	ConversationID int64
+
+	// Base URL used for asset downloads.
+	AssetDeliveryURL string
+
+	// Information about the player including his active avatar.
+	Player types.Player
+
+	// Number of maximum outfit presets available (subscription based).
+	MaxOutfit int16
+
 	PlayerStats             []types.PlayerStats
 	PlayerInfoTO            types.PlayerInfoTO
 	CurrentServerTime       gsf.UnixTime

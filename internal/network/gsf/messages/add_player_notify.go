@@ -5,6 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
+// AddPlayerNotify is a SYNC notification payload for a player entering visibility.
 type AddPlayerNotify struct {
 	PID              types.OID
 	PlayerVillagerID types.OID

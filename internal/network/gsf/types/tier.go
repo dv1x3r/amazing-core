@@ -2,6 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
+// Tier is a subscription tier definition.
 type Tier struct {
 	AssetContainer
 	RotationDays     int16

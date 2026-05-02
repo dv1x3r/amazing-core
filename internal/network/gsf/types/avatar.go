@@ -2,6 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
+// Avatar is a base avatar definition with appearance asset data.
 type Avatar struct {
 	AssetContainer
 	Dimensions string

@@ -15,4 +15,4 @@ level = 1
 
 [output.html.search.chapter]
 "cache-archive/README.md" = { enable = false }
-"gsfoid-calculator/README.md" = { enable = false }
+"oid-calculator/README.md" = { enable = false }

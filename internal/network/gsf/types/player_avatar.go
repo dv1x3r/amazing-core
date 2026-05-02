@@ -2,6 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
+// PlayerAvatar is a player-owned avatar record with avatar definition and play state.
 type PlayerAvatar struct {
 	OID                  OID
 	Avatar               Avatar

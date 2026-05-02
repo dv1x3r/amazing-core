@@ -5,9 +5,15 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
+// GetSiteFrameRequest requests the core site frame asset container.
 type GetSiteFrameRequest struct {
-	TypeValue        int32
+	// The client always sends 1.
+	TypeValue int32
+
+	// The client always sends 293578400718237473.
 	LangLocalePairID types.OID
+
+	// The following fields are serialized but not used.
 	TierID           types.OID
 	BirthDate        gsf.UnixTime
 	RegistrationDate gsf.UnixTime
@@ -25,8 +31,12 @@ func (req *GetSiteFrameRequest) Deserialize(reader gsf.ProtocolReader) {
 	req.IsPreviewEnabled = reader.ReadBool()
 }
 
+// GetSiteFrameResponse contains the core site frame and asset delivery URL.
 type GetSiteFrameResponse struct {
-	SiteFrame        types.SiteFrame
+	// Contains the core assets for the current platform.
+	SiteFrame types.SiteFrame
+
+	// Base URL used for asset downloads.
 	AssetDeliveryURL string
 }
 

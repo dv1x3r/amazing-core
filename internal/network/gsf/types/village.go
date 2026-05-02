@@ -2,6 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
+// Village is a client-visible village state object.
 type Village struct {
 	OID                OID
 	NextVillageID      OID

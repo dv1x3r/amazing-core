@@ -5,6 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
+// RemovePlayerNotify is a SYNC notification payload for a player leaving visibility.
 type RemovePlayerNotify struct {
 	PID              types.OID
 	PlayerVillagerID types.OID

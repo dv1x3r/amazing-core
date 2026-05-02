@@ -5,8 +5,12 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
+// GetPublicItemCategoriesRequest requests public item category definitions.
 type GetPublicItemCategoriesRequest struct {
+	// The client always sends 293578400718237473.
 	LangLocalePairID types.OID
+
+	// The following fields are serialized but not used.
 	TierID           types.OID
 	BirthDate        gsf.UnixTime
 	RegistrationDate gsf.UnixTime
@@ -23,6 +27,7 @@ func (req *GetPublicItemCategoriesRequest) Deserialize(reader gsf.ProtocolReader
 	req.IsPreviewEnabled = reader.ReadBool()
 }
 
+// GetPublicItemCategoriesResponse contains public item category definitions.
 type GetPublicItemCategoriesResponse struct {
 	ItemCategories []types.ItemCategory
 }

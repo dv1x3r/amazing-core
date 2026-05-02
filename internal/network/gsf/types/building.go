@@ -2,6 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
+// Building is a rule-backed building object within a zone.
 type Building struct {
 	RuleContainer
 	Position   Position

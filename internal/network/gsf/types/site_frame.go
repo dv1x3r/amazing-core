@@ -2,6 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
+// SiteFrame is the root asset container loaded during client startup.
 type SiteFrame struct {
 	AssetContainer
 	TypeValue int32

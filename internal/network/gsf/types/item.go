@@ -2,6 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
+// Item is a public item definition with asset, placement, and pricing fields.
 type Item struct {
 	AssetContainer
 	CreateDate         gsf.UnixTime

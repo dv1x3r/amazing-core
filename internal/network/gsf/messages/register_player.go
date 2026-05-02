@@ -5,6 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
+// RegisterPlayerRequest is the client payload for account registration.
 type RegisterPlayerRequest struct {
 	Token               string
 	Password            string
@@ -35,6 +36,7 @@ func (req *RegisterPlayerRequest) Deserialize(reader gsf.ProtocolReader) {
 	req.LoginType = reader.ReadInt32()
 }
 
+// RegisterPlayerResponse contains the object ID assigned to the registered player.
 type RegisterPlayerResponse struct {
 	PlayerID types.OID
 }

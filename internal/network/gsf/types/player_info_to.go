@@ -2,6 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
+// PlayerInfoTO contains account and policy data returned during login.
 type PlayerInfoTO struct {
 	TierID                     OID
 	PlayerName                 string
