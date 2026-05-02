@@ -48,7 +48,7 @@ func (oid OID) Int64() int64 {
 }
 
 func (oid OID) String() string {
-	return fmt.Sprintf("C:%d T:%d S:%d N:%d", oid.Class, oid.Type, oid.Server, oid.Number)
+	return fmt.Sprintf("%d-%d-%d-%d", oid.Class, oid.Type, oid.Server, oid.Number)
 }
 
 func (oid *OID) Scan(value any) error {

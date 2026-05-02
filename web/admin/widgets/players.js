@@ -42,7 +42,7 @@ export function createWidget() {
       {
         field: 'oid_str',
         text: 'OID Details',
-        size: '200px',
+        size: '135px',
         render: 'text',
         hidden: true,
       },
@@ -255,7 +255,7 @@ function createPlayerAvatarsGrid() {
       {
         field: 'oid_str',
         text: 'OID Details',
-        size: '200px',
+        size: '135px',
         render: 'text',
         hidden: true,
       },
@@ -385,7 +385,7 @@ function createPlayerOutfitsGrid() {
       {
         field: 'oid_str',
         text: 'OID Details',
-        size: '200px',
+        size: '135px',
         render: 'text',
         hidden: true,
       },

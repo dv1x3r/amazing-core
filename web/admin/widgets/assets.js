@@ -66,7 +66,7 @@ export function createAssetGrid() {
       {
         field: 'oid_str',
         text: 'OID Details',
-        size: '200px',
+        size: '135px',
         render: 'text',
         sortable: true,
         hidden: true,
@@ -273,7 +273,7 @@ export function createContainerLayout() {
       {
         field: 'oid_str',
         text: 'OID Details',
-        size: '200px',
+        size: '135px',
         render: 'text',
         sortable: true,
         hidden: true,
