@@ -132,7 +132,7 @@ func NewServer(logger *slog.Logger, store db.Store, handler *Handler) *Server {
 		middleware.IPExtractor(),
 		middleware.Logger(logger),
 		middleware.Recover(),
-		middleware.RateLimiter(50, 100, 3*time.Minute),
+		middleware.RateLimiter(100, 200, 3*time.Minute),
 	)
 
 	server := &http.Server{
