@@ -52,8 +52,12 @@ func (h *Handler) Admin(w http.ResponseWriter, r *http.Request) error {
 			return err
 		}
 	}
-	version := config.Get().Version
-	data := map[string]any{"username": username, "version": version}
+	cfg := config.Get()
+	data := map[string]any{
+		"username": username,
+		"version":  cfg.Version,
+		"explorer": cfg.Storage.Explorer,
+	}
 	return tmpl.ExecuteTemplate(w, "admin.gotmpl", data)
 }
 

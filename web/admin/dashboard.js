@@ -208,6 +208,9 @@ const dashboardSidebar = new w2sidebar({
     await event.complete
     document.getElementById('sidebar-host').innerText = '@' + window.location.host
     document.getElementById('sidebar-version').innerText = document.getElementById('app-config').dataset.version
+    if (document.getElementById('app-config').dataset.explorer == 'false') {
+      event.owner.hide('core-db')
+    }
     new w2toolbar({
       name: 'logoutToolbar',
       box: '#logout-toolbar',
