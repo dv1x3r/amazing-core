@@ -10,7 +10,6 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/w2go/w2"
 	"github.com/dv1x3r/w2go/w2db"
-	"github.com/dv1x3r/w2go/w2sql"
 
 	"github.com/huandu/go-sqlbuilder"
 )
@@ -90,7 +89,7 @@ func (s *Service) GetAvatarGrid(ctx context.Context, req w2.GetGridRequest) (w2.
 
 func (s *Service) CreateAvatar(ctx context.Context, req w2.SaveFormRequest[Avatar]) (int, error) {
 	const op = "avatar.Service.CreateAvatar"
-	id, err := w2db.InsertFormContext(ctx, s.store.DB(), req, w2db.InsertFormOptions{
+	id, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{
 		Into:   "avatar",
 		Cols:   []string{"name", "max_outfits", "container_id"},
 		Values: []any{req.Record.Name, req.Record.MaxOutfits, req.Record.Container.ID},
@@ -104,13 +103,14 @@ func (s *Service) CreateAvatar(ctx context.Context, req w2.SaveFormRequest[Avata
 func (s *Service) UpdateAvatars(ctx context.Context, req w2.SaveGridRequest[Avatar]) error {
 	const op = "avatar.Service.UpdateAvatars"
 	_, err := w2db.SaveGridContext(ctx, s.store.DB(), req, w2db.SaveGridOptions[Avatar]{
-		BuildUpdate: func(change Avatar) *sqlbuilder.UpdateBuilder {
-			ub := sqlbuilder.Update("avatar")
-			w2sql.Set(ub, change.Name, "name")
-			w2sql.Set(ub, change.MaxOutfits, "max_outfits")
-			w2sql.Set(ub, change.Container.ID, "container_id")
-			ub.Where(ub.EQ("id", change.ID))
-			return ub
+		BuildOptions: func(change Avatar) w2db.UpdateOptions {
+			return w2db.UpdateOptions{
+				Update:  "avatar",
+				Cols:    []string{"name", "max_outfits", "container_id"},
+				Values:  []any{change.Name, change.MaxOutfits, change.Container.ID},
+				IDField: "id",
+				IDValue: change.ID,
+			}
 		},
 	})
 	if s.store.IsErrConstraintUnique(err) {

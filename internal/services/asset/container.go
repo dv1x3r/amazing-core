@@ -11,7 +11,6 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 	"github.com/dv1x3r/w2go/w2"
 	"github.com/dv1x3r/w2go/w2db"
-	"github.com/dv1x3r/w2go/w2sql"
 
 	"github.com/huandu/go-sqlbuilder"
 )
@@ -180,7 +179,7 @@ func (s *Service) GetContainersDropdown(ctx context.Context, req w2.GetDropdownR
 
 func (s *Service) CreateContainer(ctx context.Context, req w2.SaveFormRequest[Container]) (int, error) {
 	const op = "asset.Service.CreateContainer"
-	id, err := w2db.InsertFormContext(ctx, s.store.DB(), req, w2db.InsertFormOptions{
+	id, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{
 		Into: "asset_container",
 		Cols: []string{"gsfoid", "name", "ptag"},
 		Values: []any{
@@ -198,13 +197,14 @@ func (s *Service) CreateContainer(ctx context.Context, req w2.SaveFormRequest[Co
 func (s *Service) UpdateContainers(ctx context.Context, req w2.SaveGridRequest[Container]) error {
 	const op = "asset.Service.UpdateContainers"
 	_, err := w2db.SaveGridContext(ctx, s.store.DB(), req, w2db.SaveGridOptions[Container]{
-		BuildUpdate: func(change Container) *sqlbuilder.UpdateBuilder {
-			ub := sqlbuilder.Update("asset_container")
-			w2sql.Set(ub, change.OID, "gsfoid")
-			w2sql.Set(ub, change.Name, "name")
-			w2sql.Set(ub, change.PTag, "ptag")
-			ub.Where(ub.EQ("id", change.ID))
-			return ub
+		BuildOptions: func(change Container) w2db.UpdateOptions {
+			return w2db.UpdateOptions{
+				Update:  "asset_container",
+				Cols:    []string{"gsfoid", "name", "ptag"},
+				Values:  []any{change.OID, change.Name, change.PTag},
+				IDField: "id",
+				IDValue: change.ID,
+			}
 		},
 	})
 	if s.store.IsErrConstraintUnique(err) {
@@ -215,7 +215,7 @@ func (s *Service) UpdateContainers(ctx context.Context, req w2.SaveGridRequest[C
 
 func (s *Service) AddContainerAsset(ctx context.Context, req w2.SaveFormRequest[ContainerAsset], containerID int) error {
 	const op = "asset.Service.AddContainerAsset"
-	_, err := w2db.InsertFormContext(ctx, s.store.DB(), req, w2db.InsertFormOptions{
+	_, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{
 		Into: "asset_container_assetmap",
 		Cols: []string{"container_id", "win_asset_id", "osx_asset_id", "position"},
 		Values: []any{
@@ -234,12 +234,14 @@ func (s *Service) AddContainerAsset(ctx context.Context, req w2.SaveFormRequest[
 func (s *Service) UpdateContainerAssets(ctx context.Context, req w2.SaveGridRequest[ContainerAsset]) error {
 	const op = "asset.Service.UpdateContainerAssets"
 	_, err := w2db.SaveGridContext(ctx, s.store.DB(), req, w2db.SaveGridOptions[ContainerAsset]{
-		BuildUpdate: func(change ContainerAsset) *sqlbuilder.UpdateBuilder {
-			ub := sqlbuilder.Update("asset_container_assetmap")
-			w2sql.Set(ub, change.WINAsset.ID, "win_asset_id")
-			w2sql.Set(ub, change.OSXAsset.ID, "osx_asset_id")
-			ub.Where(ub.EQ("id", change.ID))
-			return ub
+		BuildOptions: func(change ContainerAsset) w2db.UpdateOptions {
+			return w2db.UpdateOptions{
+				Update:  "asset_container_assetmap",
+				Cols:    []string{"win_asset_id", "osx_asset_id"},
+				Values:  []any{change.WINAsset.ID, change.OSXAsset.ID},
+				IDField: "id",
+				IDValue: change.ID,
+			}
 		},
 	})
 	if s.store.IsErrConstraintUnique(err) {
@@ -251,7 +253,7 @@ func (s *Service) UpdateContainerAssets(ctx context.Context, req w2.SaveGridRequ
 func (s *Service) AddContainerPackage(ctx context.Context, req w2.SaveFormRequest[ContainerPackage], containerID int) error {
 	const op = "asset.Service.AddContainerPackage"
 	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
-		_, err := w2db.InsertFormContext(ctx, tx, req, w2db.InsertFormOptions{
+		_, err := w2db.InsertContext(ctx, tx, w2db.InsertOptions{
 			Into: "asset_container_package",
 			Cols: []string{"container_id", "pkg_container_id", "position"},
 			Values: []any{
@@ -278,11 +280,14 @@ func (s *Service) UpdateContainerPackages(ctx context.Context, req w2.SaveGridRe
 	const op = "asset.Service.UpdateContainerPackages"
 	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
 		_, err := w2db.SaveGridContext(ctx, tx, req, w2db.SaveGridOptions[ContainerPackage]{
-			BuildUpdate: func(change ContainerPackage) *sqlbuilder.UpdateBuilder {
-				ub := sqlbuilder.Update("asset_container_package")
-				w2sql.Set(ub, change.PkgContainer.ID, "pkg_container_id")
-				ub.Where(ub.EQ("id", change.ID))
-				return ub
+			BuildOptions: func(change ContainerPackage) w2db.UpdateOptions {
+				return w2db.UpdateOptions{
+					Update:  "asset_container_package",
+					Cols:    []string{"pkg_container_id"},
+					Values:  []any{change.PkgContainer.ID},
+					IDField: "id",
+					IDValue: change.ID,
+				}
 			},
 		})
 		if s.store.IsErrConstraintUnique(err) {

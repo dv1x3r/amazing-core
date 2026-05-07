@@ -9,8 +9,6 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/w2go/w2"
 	"github.com/dv1x3r/w2go/w2db"
-
-	"github.com/huandu/go-sqlbuilder"
 )
 
 type Service struct {
@@ -57,11 +55,14 @@ func (s *Service) GetDummyParametersGrid(ctx context.Context, req w2.GetGridRequ
 func (s *Service) UpdateDummyParameters(ctx context.Context, req w2.SaveGridRequest[Param]) error {
 	const op = "dummy.Service.UpdateDummyParameters"
 	_, err := w2db.SaveGridContext(ctx, s.store.DB(), req, w2db.SaveGridOptions[Param]{
-		BuildUpdate: func(change Param) *sqlbuilder.UpdateBuilder {
-			ub := sqlbuilder.Update("dummy_config")
-			ub.Set(ub.Assign("value", change.Value))
-			ub.Where(ub.EQ("rowid", change.RowID))
-			return ub
+		BuildOptions: func(change Param) w2db.UpdateOptions {
+			return w2db.UpdateOptions{
+				Update:  "dummy_config",
+				Cols:    []string{"value"},
+				Values:  []any{change.Value},
+				IDField: "rowid",
+				IDValue: change.RowID,
+			}
 		},
 	})
 	return wrap.IfErr(op, err)

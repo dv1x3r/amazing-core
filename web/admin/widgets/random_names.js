@@ -74,6 +74,10 @@ export function createWidget() {
 }
 
 function openRandomNamePopup(event) {
+  if (event.detail.recid == null) {
+    return
+  }
+
   const form = new w2form({
     name: `randomNameForm`,
     url: '/api/v1/randname/form',

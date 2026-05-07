@@ -12,7 +12,6 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 	"github.com/dv1x3r/w2go/w2"
 	"github.com/dv1x3r/w2go/w2db"
-	"github.com/dv1x3r/w2go/w2sql"
 
 	"github.com/huandu/go-sqlbuilder"
 )
@@ -123,14 +122,14 @@ func (s *Service) GetAssetGrid(ctx context.Context, req w2.GetGridRequest) (w2.G
 func (s *Service) UpdateAssets(ctx context.Context, req w2.SaveGridRequest[Asset]) error {
 	const op = "asset.Service.UpdateAssets"
 	_, err := w2db.SaveGridContext(ctx, s.store.DB(), req, w2db.SaveGridOptions[Asset]{
-		BuildUpdate: func(change Asset) *sqlbuilder.UpdateBuilder {
-			ub := sqlbuilder.Update("asset")
-			w2sql.Set(ub, change.AssetType.ID, "asset_type_id")
-			w2sql.Set(ub, change.AssetGroup.ID, "asset_group_id")
-			w2sql.Set(ub, change.ResName, "res_name")
-			w2sql.Set(ub, change.Description, "description")
-			ub.Where(ub.EQ("id", change.ID))
-			return ub
+		BuildOptions: func(change Asset) w2db.UpdateOptions {
+			return w2db.UpdateOptions{
+				Update:  "asset",
+				Cols:    []string{"asset_type_id", "asset_group_id", "res_name", "description"},
+				Values:  []any{change.AssetType.ID, change.AssetGroup.ID, change.ResName, change.Description},
+				IDField: "id",
+				IDValue: change.ID,
+			}
 		},
 	})
 	return wrap.IfErr(op, err)

@@ -98,7 +98,7 @@ func (s *Service) GetRandomNameForm(ctx context.Context, req w2.GetFormRequest) 
 
 func (s *Service) CreateRandomName(ctx context.Context, req w2.SaveFormRequest[RandomName]) (int, error) {
 	const op = "randname.Service.CreateRandomName"
-	id, err := w2db.InsertFormContext(ctx, s.store.DB(), req, w2db.InsertFormOptions{
+	id, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{
 		Into:   "random_name",
 		Cols:   []string{"part_type", "name"},
 		Values: []any{req.Record.PartType, req.Record.Name},
@@ -111,11 +111,12 @@ func (s *Service) CreateRandomName(ctx context.Context, req w2.SaveFormRequest[R
 
 func (s *Service) UpdateRandomName(ctx context.Context, req w2.SaveFormRequest[RandomName]) error {
 	const op = "randname.Service.UpdateRandomName"
-	affected, err := w2db.UpdateFormContext(ctx, s.store.DB(), req, w2db.UpdateFormOptions{
+	affected, err := w2db.UpdateContext(ctx, s.store.DB(), w2db.UpdateOptions{
 		Update:  "random_name",
-		IDField: "id",
 		Cols:    []string{"part_type", "name"},
 		Values:  []any{req.Record.PartType, req.Record.Name},
+		IDField: "id",
+		IDValue: req.RecID,
 	})
 	if s.store.IsErrConstraintUnique(err) {
 		return wrap.IfErr(op, ErrNameExists)

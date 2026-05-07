@@ -117,11 +117,12 @@ func (s *Service) GetPlayerDetailsForm(ctx context.Context, req w2.GetFormReques
 func (s *Service) UpdatePlayerDetails(ctx context.Context, req w2.SaveFormRequest[PlayerDetails]) error {
 	const op = "player.Service.UpdatePlayerDetails"
 	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
-		affected, err := w2db.UpdateFormContext(ctx, tx, req, w2db.UpdateFormOptions{
+		affected, err := w2db.UpdateContext(ctx, tx, w2db.UpdateOptions{
 			Update:  "player",
-			IDField: "id",
 			Cols:    []string{"gsfoid", "is_tutorial_completed", "is_qa"},
 			Values:  []any{req.Record.OID, req.Record.IsTutorialCompleted, req.Record.IsQA},
+			IDField: "id",
+			IDValue: req.RecID,
 		})
 		if s.store.IsErrConstraintUnique(err) {
 			return ErrPlayerExists

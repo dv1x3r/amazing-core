@@ -13,7 +13,6 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/services/asset"
 	"github.com/dv1x3r/w2go/w2"
 	"github.com/dv1x3r/w2go/w2db"
-	"github.com/dv1x3r/w2go/w2sql"
 
 	"github.com/huandu/go-sqlbuilder"
 )
@@ -79,7 +78,7 @@ func (s *Service) GetSiteFrameGrid(ctx context.Context, req w2.GetGridRequest) (
 
 func (s *Service) CreateSiteFrame(ctx context.Context, req w2.SaveFormRequest[SiteFrame]) (int, error) {
 	const op = "siteframe.Service.CreateSiteFrame"
-	id, err := w2db.InsertFormContext(ctx, s.store.DB(), req, w2db.InsertFormOptions{
+	id, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{
 		Into:   "site_frame",
 		Cols:   []string{"type_value", "container_id"},
 		Values: []any{req.Record.TypeValue, req.Record.Container.ID},
@@ -93,12 +92,14 @@ func (s *Service) CreateSiteFrame(ctx context.Context, req w2.SaveFormRequest[Si
 func (s *Service) UpdateSiteFrames(ctx context.Context, req w2.SaveGridRequest[SiteFrame]) error {
 	const op = "siteframe.Service.UpdateSiteFrames"
 	_, err := w2db.SaveGridContext(ctx, s.store.DB(), req, w2db.SaveGridOptions[SiteFrame]{
-		BuildUpdate: func(change SiteFrame) *sqlbuilder.UpdateBuilder {
-			ub := sqlbuilder.Update("site_frame")
-			w2sql.Set(ub, change.TypeValue, "type_value")
-			w2sql.Set(ub, change.Container.ID, "container_id")
-			ub.Where(ub.EQ("id", change.ID))
-			return ub
+		BuildOptions: func(change SiteFrame) w2db.UpdateOptions {
+			return w2db.UpdateOptions{
+				Update:  "site_frame",
+				Cols:    []string{"type_value", "container_id"},
+				Values:  []any{change.TypeValue, change.Container.ID},
+				IDField: "id",
+				IDValue: change.ID,
+			}
 		},
 	})
 	if s.store.IsErrConstraintUnique(err) {

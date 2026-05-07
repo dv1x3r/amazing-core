@@ -9,7 +9,6 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 	"github.com/dv1x3r/w2go/w2"
 	"github.com/dv1x3r/w2go/w2db"
-	"github.com/dv1x3r/w2go/w2sql"
 
 	"github.com/huandu/go-sqlbuilder"
 )
@@ -90,7 +89,7 @@ func (s *Service) GetCategoryGrid(ctx context.Context, req w2.GetGridRequest) (w
 
 func (s *Service) CreateCategory(ctx context.Context, req w2.SaveFormRequest[Category]) (int, error) {
 	const op = "item.Service.CreateCategory"
-	id, err := w2db.InsertFormContext(ctx, s.store.DB(), req, w2db.InsertFormOptions{
+	id, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{
 		Into: "item_category",
 		Cols: []string{"name", "parent_id", "is_public", "is_outdoor", "is_walkover", "show_in_dock", "gsfoid"},
 		Values: []any{
@@ -113,17 +112,22 @@ func (s *Service) UpdateCategories(ctx context.Context, req w2.SaveGridRequest[C
 	const op = "item.Service.UpdateCategory"
 	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
 		_, err := w2db.SaveGridContext(ctx, tx, req, w2db.SaveGridOptions[Category]{
-			BuildUpdate: func(change Category) *sqlbuilder.UpdateBuilder {
-				ub := sqlbuilder.Update("item_category")
-				w2sql.Set(ub, change.Name, "name")
-				w2sql.Set(ub, change.OID, "gsfoid")
-				w2sql.Set(ub, change.Parent.ID, "parent_id")
-				w2sql.Set(ub, change.IsPublic, "is_public")
-				w2sql.Set(ub, change.IsOutdoor, "is_outdoor")
-				w2sql.Set(ub, change.IsWalkover, "is_walkover")
-				w2sql.Set(ub, change.ShowInDock, "show_in_dock")
-				ub.Where(ub.EQ("id", change.ID))
-				return ub
+			BuildOptions: func(change Category) w2db.UpdateOptions {
+				return w2db.UpdateOptions{
+					Update: "item_category",
+					Cols:   []string{"name", "gsfoid", "parent_id", "is_public", "is_outdoor", "is_walkover", "show_in_dock"},
+					Values: []any{
+						change.Name,
+						change.OID,
+						change.Parent.ID,
+						change.IsPublic,
+						change.IsOutdoor,
+						change.IsWalkover,
+						change.ShowInDock,
+					},
+					IDField: "id",
+					IDValue: change.ID,
+				}
 			},
 		})
 		if s.store.IsErrConstraintUnique(err) {
