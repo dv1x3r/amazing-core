@@ -74,10 +74,6 @@ export function createWidget() {
 }
 
 function openRandomNamePopup(event) {
-  if (event.detail.recid == null) {
-    return
-  }
-
   const form = new w2form({
     name: `randomNameForm`,
     url: '/api/v1/randname/form',
@@ -127,7 +123,7 @@ function openRandomNamePopup(event) {
   })
 
   w2popup.open({
-    title: event.type == 'add' ? 'New Random Name' : 'Edit Random Name',
+    title: event.detail.recid ? 'Edit Random Name' : 'New Random Name',
     body: '<div id="random-name-form" style="width: 100%; height: 100%;"></div>',
     width: 600, height: 300, showMax: false, resizable: false,
   })

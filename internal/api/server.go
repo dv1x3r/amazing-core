@@ -79,10 +79,15 @@ func NewServer(logger *slog.Logger, store db.Store, handler *Handler) *Server {
 	v1.HandleFunc("POST /avatar/grid", errorHandler(handler.PostAvatarGrid))
 	v1.HandleFunc("POST /avatar/remove", errorHandler(handler.PostAvatarRemove))
 
+	v1.HandleFunc("GET /avatar/slot", errorHandler(handler.GetAvatarSlot))
+
 	v1.HandleFunc("GET /siteframe/grid", errorHandler(handler.GetSiteFrameGrid))
 	v1.HandleFunc("POST /siteframe/form", errorHandler(handler.PostSiteFrameForm))
 	v1.HandleFunc("POST /siteframe/grid", errorHandler(handler.PostSiteFrameGrid))
 	v1.HandleFunc("POST /siteframe/remove", errorHandler(handler.PostSiteFrameRemove))
+
+	v1.HandleFunc("GET /item/grid", errorHandler(handler.GetItemGrid))
+	v1.HandleFunc("POST /item/form", errorHandler(handler.PostItemForm))
 
 	v1.HandleFunc("GET /item/category", errorHandler(handler.GetItemCategory))
 	v1.HandleFunc("GET /item/category/grid", errorHandler(handler.GetItemCategoryGrid))

@@ -37,17 +37,6 @@ type Avatar struct {
 	Container  w2.Dropdown      `json:"container"`
 }
 
-func (s *Service) GetAvatarsDropdown(ctx context.Context, req w2.GetDropdownRequest) (w2.GetDropdownResponse[w2.Dropdown], error) {
-	const op = "avatar.Service.GetAvatarsDropdown"
-	res, err := w2db.GetDropdownContext(ctx, s.store.DB(), req, w2db.GetDropdownOptions{
-		From:         "avatar",
-		IDField:      "id",
-		TextField:    "name",
-		OrderByField: "name",
-	})
-	return res, wrap.IfErr(op, err)
-}
-
 func (s *Service) GetAvatarGrid(ctx context.Context, req w2.GetGridRequest) (w2.GetGridResponse[Avatar], error) {
 	const op = "avatar.Service.GetAvatarGrid"
 	res, err := w2db.GetGridContext(ctx, s.store.DB(), req, w2db.GetGridOptions[Avatar]{

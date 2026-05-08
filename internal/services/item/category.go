@@ -25,17 +25,6 @@ type Category struct {
 	ShowInDock w2.Field[bool]   `json:"show_in_dock"`
 }
 
-func (s *Service) GetCategoriesDropdown(ctx context.Context, req w2.GetDropdownRequest) (w2.GetDropdownResponse[w2.Dropdown], error) {
-	const op = "item.Service.GetCategoriesDropdown"
-	res, err := w2db.GetDropdownContext(ctx, s.store.DB(), req, w2db.GetDropdownOptions{
-		From:         "item_category",
-		IDField:      "id",
-		TextField:    "name",
-		OrderByField: "name",
-	})
-	return res, wrap.IfErr(op, err)
-}
-
 func (s *Service) GetCategoryGrid(ctx context.Context, req w2.GetGridRequest) (w2.GetGridResponse[Category], error) {
 	const op = "item.Service.GetCategoryGrid"
 	res, err := w2db.GetGridContext(ctx, s.store.DB(), req, w2db.GetGridOptions[Category]{

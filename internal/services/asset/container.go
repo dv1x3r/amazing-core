@@ -166,17 +166,6 @@ func (s *Service) GetContainerPackageGrid(ctx context.Context, req w2.GetGridReq
 	return res, wrap.IfErr(op, err)
 }
 
-func (s *Service) GetContainersDropdown(ctx context.Context, req w2.GetDropdownRequest) (w2.GetDropdownResponse[w2.Dropdown], error) {
-	const op = "asset.Service.GetContainersDropdown"
-	res, err := w2db.GetDropdownContext(ctx, s.store.DB(), req, w2db.GetDropdownOptions{
-		From:         "asset_container",
-		IDField:      "id",
-		TextField:    "concat(gsfoid, ' - ', name, ' (' || ptag || ')')",
-		OrderByField: "gsfoid",
-	})
-	return res, wrap.IfErr(op, err)
-}
-
 func (s *Service) CreateContainer(ctx context.Context, req w2.SaveFormRequest[Container]) (int, error) {
 	const op = "asset.Service.CreateContainer"
 	id, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{

@@ -88,10 +88,6 @@ export function createItemLayout() {
 }
 
 function openItemPopup(event) {
-  if (event.detail.recid == null) {
-    return
-  }
-
   const form = new w2form({
     name: `itemForm`,
     url: '/api/v1/item/form',
@@ -103,17 +99,7 @@ function openItemPopup(event) {
         html: {
           label: 'ID',
           attr: 'size="10" readonly',
-          span: 4,
-          column: 0,
-        },
-      },
-      {
-        field: 'part_type',
-        type: 'text',
-        required: true,
-        html: {
-          label: 'Part Type',
-          span: 4,
+          span: 6,
           column: 0,
         },
       },
@@ -122,8 +108,42 @@ function openItemPopup(event) {
         type: 'text',
         required: true,
         html: {
-          label: 'Name',
-          span: 4,
+          label: 'Item Name',
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'container',
+        type: 'list',
+        required: true,
+        options: helpers.remoteListOptions('/api/v1/container'),
+        html: {
+          label: 'Asset Container',
+          attr: 'style="width:100%;" placeholder="Type to search..."',
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'categories',
+        type: 'enum',
+        options: helpers.remoteListOptions('/api/v1/item/category'),
+        html: {
+          label: 'Categories',
+          attr: 'style="width:100%;" placeholder="Type to search..."',
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'slots',
+        type: 'enum',
+        options: helpers.remoteListOptions('/api/v1/avatar/slot'),
+        html: {
+          label: 'Acceptable Slots',
+          attr: 'style="width:100%;" placeholder="Type to search..."',
+          span: 6,
           column: 0,
         },
       },
@@ -141,9 +161,9 @@ function openItemPopup(event) {
   })
 
   w2popup.open({
-    title: event.type == 'add' ? 'New Item' : 'Edit Item',
+    title: event.detail.recid ? 'Edit Item' : 'New Item',
     body: '<div id="item-form" style="width: 100%; height: 100%;"></div>',
-    width: 600, height: 300, showMax: false, resizable: false,
+    width: 600, height: 320, showMax: false, resizable: false,
   })
     .then(() => form.render('#item-form'))
     .close(() => form.destroy())

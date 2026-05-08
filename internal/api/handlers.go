@@ -478,6 +478,18 @@ func (h *Handler) PostAvatarRemove(w http.ResponseWriter, r *http.Request) error
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)
 }
 
+func (h *Handler) GetAvatarSlot(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseGetDropdownRequest(r.URL.Query().Get("request"))
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	res, err := h.svc.Avatar.GetAvatarSlotsDropdown(r.Context(), req)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return res.Write(w)
+}
+
 // ── Site Frame ───────────────────────────────────────────────────────────────
 
 func (h *Handler) GetSiteFrameGrid(w http.ResponseWriter, r *http.Request) error {
@@ -532,6 +544,32 @@ func (h *Handler) PostSiteFrameRemove(w http.ResponseWriter, r *http.Request) er
 }
 
 // ── Items ────────────────────────────────────────────────────────────────────
+
+func (h *Handler) GetItemGrid(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseGetGridRequest(r.URL.Query().Get("request"))
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	res, err := h.svc.Item.GetItemGrid(r.Context(), req)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return res.Write(w)
+}
+
+func (h *Handler) PostItemForm(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseSaveFormRequest[item.Item](r.Body)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	_, err = h.svc.Item.CreateItem(r.Context(), req)
+	if errors.Is(err, asset.ErrContainerExists) {
+		return wrap.WithHTTPStatus(err, http.StatusConflict)
+	} else if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusInternalServerError)
+	}
+	return w2.NewSaveFormResponse(req.RecID).Write(w)
+}
 
 func (h *Handler) GetItemCategory(w http.ResponseWriter, r *http.Request) error {
 	req, err := w2.ParseGetDropdownRequest(r.URL.Query().Get("request"))

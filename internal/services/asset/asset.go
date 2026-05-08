@@ -135,60 +135,6 @@ func (s *Service) UpdateAssets(ctx context.Context, req w2.SaveGridRequest[Asset
 	return wrap.IfErr(op, err)
 }
 
-func (s *Service) GetAssetsDropdown(ctx context.Context, req w2.GetDropdownRequest) (w2.GetDropdownResponse[w2.Dropdown], error) {
-	const op = "asset.Service.GetAssetsDropdown"
-	res, err := w2db.GetDropdownContext(ctx, s.store.DB(), req, w2db.GetDropdownOptions{
-		From:    "asset as a",
-		IDField: "a.id",
-		TextField: `
-			concat_ws(' - ',
-				at.name,
-				a.gsfoid,
-				coalesce(a.res_name, '[NULL]'),
-				(am.metadata ->> '$.assets[0].target_platform') || ' ' || (am.metadata ->> '$.info.version_engine')
-			)`,
-		OrderByField: "at.name, a.gsfoid",
-		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
-			sb.Join("asset_type as at", "at.id = a.asset_type_id")
-			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_metadata as am", "am.asset_id = a.id")
-		},
-	})
-	return res, wrap.IfErr(op, err)
-}
-
-func (s *Service) GetFileTypesDropdown(ctx context.Context, req w2.GetDropdownRequest) (w2.GetDropdownResponse[w2.Dropdown], error) {
-	const op = "asset.Service.GetFileTypesDropdown"
-	res, err := w2db.GetDropdownContext(ctx, s.store.DB(), req, w2db.GetDropdownOptions{
-		From:         "file_type",
-		IDField:      "id",
-		TextField:    "name",
-		OrderByField: "name",
-	})
-	return res, wrap.IfErr(op, err)
-}
-
-func (s *Service) GetAssetTypesDropdown(ctx context.Context, req w2.GetDropdownRequest) (w2.GetDropdownResponse[w2.Dropdown], error) {
-	const op = "asset.Service.GetAssetTypesDropdown"
-	res, err := w2db.GetDropdownContext(ctx, s.store.DB(), req, w2db.GetDropdownOptions{
-		From:         "asset_type",
-		IDField:      "id",
-		TextField:    "name",
-		OrderByField: "name",
-	})
-	return res, wrap.IfErr(op, err)
-}
-
-func (s *Service) GetAssetGroupsDropdown(ctx context.Context, req w2.GetDropdownRequest) (w2.GetDropdownResponse[w2.Dropdown], error) {
-	const op = "asset.Service.GetAssetGroupsDropdown"
-	res, err := w2db.GetDropdownContext(ctx, s.store.DB(), req, w2db.GetDropdownOptions{
-		From:         "asset_group",
-		IDField:      "id",
-		TextField:    "name",
-		OrderByField: "name",
-	})
-	return res, wrap.IfErr(op, err)
-}
-
 func (s *Service) GetGSFAssetByCDNID(ctx context.Context, cdnid string) (types.Asset, error) {
 	const op = "asset.Service.GetGSFAssetByCDNID"
 	a := types.Asset{}
