@@ -12,10 +12,8 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/api/middleware"
 	"github.com/dv1x3r/amazing-core/internal/config"
 	"github.com/dv1x3r/amazing-core/internal/lib/db"
-	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/amazing-core/web"
 
-	"github.com/dv1x3r/w2go/w2"
 	"github.com/dv1x3r/w2go/w2lib"
 	"github.com/dv1x3r/w2go/w2widget"
 )
@@ -25,10 +23,10 @@ type Server struct {
 	server *http.Server
 }
 
-func NewServer(logger *slog.Logger, store db.Store, handler *Handler) *Server {
+func NewServer(logger *slog.Logger, handler *Handler, store db.Store) *Server {
 	router := http.NewServeMux()
 
-	router.HandleFunc("GET /{$}", errorHandler(handler.Admin))
+	router.HandleFunc("GET /{$}", errorHandler(handler.GetDashboard))
 	router.HandleFunc("POST /login", errorHandler(handler.PostLogin))
 	router.HandleFunc("POST /logout", errorHandler(handler.PostLogout))
 	router.HandleFunc("GET /cdn/{cdnid}", errorHandler(handler.GetBlob))
@@ -36,13 +34,13 @@ func NewServer(logger *slog.Logger, store db.Store, handler *Handler) *Server {
 	router.Handle("GET /lib/", http.StripPrefix("/lib/", w2lib.FileServerFS()))
 	router.Handle("GET /admin/", http.FileServerFS(web.FS))
 	router.Handle("GET /queries/", http.FileServerFS(mustSubFS(data.FS, "sql")))
-	router.Handle("GET /favicon.ico", fsFileHandler(web.FS, "favicon_io/favicon.ico"))
-	router.Handle("GET /site.webmanifest", fsFileHandler(web.FS, "favicon_io/site.webmanifest"))
-	router.Handle("GET /favicon-16x16.png", fsFileHandler(web.FS, "favicon_io/favicon-16x16.png"))
-	router.Handle("GET /favicon-32x32.png", fsFileHandler(web.FS, "favicon_io/favicon-32x32.png"))
-	router.Handle("GET /apple-touch-icon.png", fsFileHandler(web.FS, "favicon_io/apple-touch-icon.png"))
-	router.Handle("GET /android-chrome-192x192.png", fsFileHandler(web.FS, "favicon_io/android-chrome-192x192.png"))
-	router.Handle("GET /android-chrome-512x512.png", fsFileHandler(web.FS, "favicon_io/android-chrome-512x512.png"))
+	router.Handle("GET /favicon.ico", serveFSFile(web.FS, "favicon_io/favicon.ico"))
+	router.Handle("GET /site.webmanifest", serveFSFile(web.FS, "favicon_io/site.webmanifest"))
+	router.Handle("GET /favicon-16x16.png", serveFSFile(web.FS, "favicon_io/favicon-16x16.png"))
+	router.Handle("GET /favicon-32x32.png", serveFSFile(web.FS, "favicon_io/favicon-32x32.png"))
+	router.Handle("GET /apple-touch-icon.png", serveFSFile(web.FS, "favicon_io/apple-touch-icon.png"))
+	router.Handle("GET /android-chrome-192x192.png", serveFSFile(web.FS, "favicon_io/android-chrome-192x192.png"))
+	router.Handle("GET /android-chrome-512x512.png", serveFSFile(web.FS, "favicon_io/android-chrome-512x512.png"))
 
 	v1 := http.NewServeMux()
 
@@ -170,7 +168,7 @@ func (s *Server) Shutdown(ctx context.Context) {
 	}
 }
 
-func fsFileHandler(fsys fs.FS, name string) http.HandlerFunc {
+func serveFSFile(fsys fs.FS, name string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFileFS(w, r, fsys, name)
 	}
@@ -182,36 +180,4 @@ func mustSubFS(fsys fs.FS, dir string) fs.FS {
 		panic(err)
 	}
 	return sub
-}
-
-func errorHandler(handler func(http.ResponseWriter, *http.Request) error) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		err := handler(w, r)
-		if err == nil {
-			return
-		}
-
-		// client cancelled, do not write anything
-		if r.Context().Err() != nil {
-			if lw, ok := w.(interface{ SetError(error) }); ok {
-				lw.SetError(r.Context().Err())
-			}
-			return
-		}
-
-		if lw, ok := w.(interface{ SetError(error) }); ok {
-			lw.SetError(err)
-		}
-
-		status := wrap.HTTPStatus(err)
-		message := err.Error()
-
-		// do not expose details of 500 errors if not in debug
-		if status >= 500 && config.Get().Logger.Level != "debug" {
-			message = http.StatusText(status)
-		}
-
-		res := w2.NewErrorResponse(message)
-		res.Write(w, status)
-	}
 }

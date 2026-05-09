@@ -153,7 +153,7 @@ func main() {
 
 	// ── Services & Servers ──────────────────────────────────────────────────────
 	svc := services.New(logger.Get(), coreStore, blobStore, cfg)
-	apiServer := api.NewServer(logger.Get(), coreStore, api.NewHandler(svc))
+	apiServer := api.NewServer(logger.Get(), api.NewHandler(svc), coreStore)
 	gameServer := game.NewServer(logger.Get(), game.NewHandler(svc))
 
 	interruptCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt)

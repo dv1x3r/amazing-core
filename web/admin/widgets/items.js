@@ -163,7 +163,7 @@ function openItemPopup(event) {
   w2popup.open({
     title: event.detail.recid ? 'Edit Item' : 'New Item',
     body: '<div id="item-form" style="width: 100%; height: 100%;"></div>',
-    width: 600, height: 320, showMax: false, resizable: false,
+    width: 600, height: 340, showMax: false, resizable: false,
   })
     .then(() => form.render('#item-form'))
     .close(() => form.destroy())
