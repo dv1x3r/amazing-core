@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	ErrAvatarExists = errors.New("avatar with the same name already exists")
+	ErrAvatarExists = errors.New("avatar with the same name or container already exists")
 )
 
 type Service struct {

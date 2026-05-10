@@ -42,7 +42,7 @@ export function createWidget() {
       {
         field: 'container',
         text: 'Asset Container',
-        size: '250px',
+        size: '200px',
         render: 'dropdown',
         sortable: true,
         searchable: 'text',

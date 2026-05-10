@@ -84,8 +84,11 @@ func NewServer(logger *slog.Logger, handler *Handler, store db.Store) *Server {
 	v1.HandleFunc("POST /siteframe/grid", errorHandler(handler.PostSiteFrameGrid))
 	v1.HandleFunc("POST /siteframe/remove", errorHandler(handler.PostSiteFrameRemove))
 
+	v1.HandleFunc("GET /item", errorHandler(handler.GetItem))
 	v1.HandleFunc("GET /item/grid", errorHandler(handler.GetItemGrid))
+	v1.HandleFunc("GET /item/form", errorHandler(handler.GetItemForm))
 	v1.HandleFunc("POST /item/form", errorHandler(handler.PostItemForm))
+	v1.HandleFunc("POST /item/remove", errorHandler(handler.PostItemRemove))
 
 	v1.HandleFunc("GET /item/category", errorHandler(handler.GetItemCategory))
 	v1.HandleFunc("GET /item/category/grid", errorHandler(handler.GetItemCategoryGrid))

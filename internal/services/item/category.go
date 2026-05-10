@@ -178,7 +178,7 @@ func (s *Service) GetGSFItemCategories(ctx context.Context, publicOnly bool) ([]
 	rows, err := s.store.DB().QueryContext(ctx, `
 			select
 				ic.gsfoid,
-				icp.gsfoid,
+				icp.gsfoid as parent_gsfoid,
 				ic.name,
 				ic.is_outdoor,
 				ic.is_walkover,
@@ -193,7 +193,6 @@ func (s *Service) GetGSFItemCategories(ctx context.Context, publicOnly bool) ([]
 	defer rows.Close()
 
 	var categories []types.ItemCategory
-
 	for rows.Next() {
 		var category types.ItemCategory
 		if err := rows.Scan(

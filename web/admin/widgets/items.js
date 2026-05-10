@@ -40,7 +40,7 @@ export function createItemLayout() {
       {
         field: 'container',
         text: 'Asset Container',
-        size: '250px',
+        size: '200px',
         render: 'dropdown',
         sortable: true,
         searchable: 'text',
@@ -49,15 +49,13 @@ export function createItemLayout() {
         field: 'categories',
         text: 'Categories',
         size: '200px',
-        render: 'text',
-        searchable: 'text',
+        render: 'dropdown-multi',
       },
       {
         field: 'slots',
         text: 'Slots',
         size: '200px',
-        render: 'text',
-        searchable: 'text',
+        render: 'dropdown-multi',
       },
     ],
     defaultOperator: {
@@ -226,7 +224,7 @@ export function createCategoryLayout() {
       {
         field: 'parent',
         text: 'Parent Category',
-        size: '250px',
+        size: '200px',
         render: 'dropdown',
         editable: helpers.remoteListOptions('/api/v1/item/category'),
       },

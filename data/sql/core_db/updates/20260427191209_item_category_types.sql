@@ -65,8 +65,8 @@ create table item_category_map (
 create table item_acceptable_slot (
     [id] integer primary key,
     [item_id] integer not null references item(id) on delete cascade,
-    [slot_id] integer not null references avatar_slot(id) on delete restrict,
-    unique([item_id], [slot_id])
+    [avatar_slot_id] integer not null references avatar_slot(id) on delete restrict,
+    unique([item_id], [avatar_slot_id])
 ) strict;
 
 create table player_item (
@@ -74,10 +74,25 @@ create table player_item (
     [gsfoid] integer not null unique,
     [player_id] integer not null references player(id) on delete cascade,
     [item_id] integer not null references item(id) on delete cascade,
-    [slot_id] integer references avatar_slot(id) on delete restrict,
-    [player_avatar_id] integer references player_avatar(id) on delete set null,
-    [avatar_outfit_id] integer references player_avatar_outfit(id) on delete set null,
-    [quantity] integer not null default 1,
-    unique([player_id], [item_id])
+    [quantity] integer not null default 1
+) strict;
+
+create index player_item_idx on player_item([player_id], [item_id]);
+
+create table player_avatar_item (
+    [id] integer primary key,
+    [player_avatar_id] integer not null references player_avatar(id) on delete cascade,
+    [player_item_id] integer unique not null references player_item(id) on delete cascade,
+    [avatar_slot_id] integer references avatar_slot(id) on delete restrict,
+    unique([player_avatar_id], [avatar_slot_id])
+) strict;
+
+create table player_avatar_outfit_item (
+    [id] integer primary key,
+    [player_avatar_outfit_id] integer not null references player_avatar_outfit(id) on delete cascade,
+    [player_item_id] integer not null references player_item(id) on delete cascade,
+    [avatar_slot_id] integer not null references avatar_slot(id) on delete restrict,
+    unique([player_avatar_outfit_id], [player_item_id]),
+    unique([player_avatar_outfit_id], [avatar_slot_id])
 ) strict;
 

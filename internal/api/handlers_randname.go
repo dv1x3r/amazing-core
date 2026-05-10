@@ -44,17 +44,16 @@ func (h *Handler) PostRandnameForm(w http.ResponseWriter, r *http.Request) error
 		req.RecID, err = h.svc.RandName.CreateRandomName(r.Context(), req)
 		if errors.Is(err, randname.ErrNameExists) {
 			return wrap.WithHTTPStatus(err, http.StatusConflict)
+		} else if err != nil {
+			return err
 		}
 	} else {
 		err = h.svc.RandName.UpdateRandomName(r.Context(), req)
 		if errors.Is(err, randname.ErrNameExists) {
 			return wrap.WithHTTPStatus(err, http.StatusConflict)
-		} else if errors.Is(err, randname.ErrNameNotFound) {
-			return wrap.WithHTTPStatus(err, http.StatusNotFound)
+		} else if err != nil {
+			return err
 		}
-	}
-	if err != nil {
-		return err
 	}
 	return w2.NewSaveFormResponse(req.RecID).Write(w)
 }

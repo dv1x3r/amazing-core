@@ -124,7 +124,6 @@ func (s *Service) DeletePlayerAvatars(ctx context.Context, req w2.RemoveGridRequ
 
 func (s *Service) GetGSFAvatars(ctx context.Context, platform gsf.Platform, playerID int) ([]types.PlayerAvatar, error) {
 	const op = "player.Service.GetGSFAvatars"
-	var avatars []types.PlayerAvatar
 
 	rows, err := s.store.DB().QueryContext(ctx, `
 			select
@@ -143,6 +142,7 @@ func (s *Service) GetGSFAvatars(ctx context.Context, platform gsf.Platform, play
 	}
 	defer rows.Close()
 
+	var avatars []types.PlayerAvatar
 	for rows.Next() {
 		var avatar types.PlayerAvatar
 		var containerID int
