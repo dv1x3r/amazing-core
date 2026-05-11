@@ -363,7 +363,7 @@ func (h *Handler) GetZones(w gsf.ResponseWriter, r *gsf.Request) error {
 	// LoadNPCsCommand calls SpawnPoints.Instance.ParseZone(NPCManager.HardCodedZoneId),
 	// so the NPC zone must be present in this list.
 	// LoadNPCsCommand.cs -> SpawnPoints.Instance.ParseZone(NPCManager.HardCodedZoneId)
-	npcZone.OID = types.OID{Class: 4, Type: 16, Server: 0, Number: 2937912}
+	npcZone.OID = types.OIDFromValues(4, 16, 0, 2937912)
 	npcZone.AssetMap = map[string][]types.Asset{}
 	res.Zones = []types.Zone{npcZone}
 	return w.Write(res)
