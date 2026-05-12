@@ -53,10 +53,22 @@ func NewServer(logger *slog.Logger, handler *Handler, store db.Store) *Server {
 	v1.HandleFunc("GET /asset/assettype", errorHandler(handler.GetAssetType))
 	v1.HandleFunc("GET /asset/assetgroup", errorHandler(handler.GetAssetGroup))
 
+	v1.HandleFunc("GET /avatar", errorHandler(handler.GetAvatar))
+	v1.HandleFunc("GET /avatar/grid", errorHandler(handler.GetAvatarGrid))
+	v1.HandleFunc("POST /avatar/form", errorHandler(handler.PostAvatarForm))
+	v1.HandleFunc("POST /avatar/remove", errorHandler(handler.PostAvatarRemove))
+
+	v1.HandleFunc("GET /avatar/slot", errorHandler(handler.GetAvatarSlot))
+
+	v1.HandleFunc("GET /blob/grid", errorHandler(handler.GetBlobGrid))
+	v1.HandleFunc("POST /blob/remove", errorHandler(handler.PostBlobRemove))
+	v1.HandleFunc("POST /blob/upload", errorHandler(handler.PostBlobUpload))
+	v1.HandleFunc("POST /blob/import", errorHandler(handler.PostBlobImport))
+	v1.HandleFunc("POST /blob/export", errorHandler(handler.PostBlobExport))
+
 	v1.HandleFunc("GET /container", errorHandler(handler.GetContainer))
 	v1.HandleFunc("GET /container/grid", errorHandler(handler.GetContainerGrid))
 	v1.HandleFunc("POST /container/form", errorHandler(handler.PostContainerForm))
-	v1.HandleFunc("POST /container/grid", errorHandler(handler.PostContainerGrid))
 	v1.HandleFunc("POST /container/remove", errorHandler(handler.PostContainerRemove))
 
 	v1.HandleFunc("GET /container/{id}/asset/grid", errorHandler(handler.GetContainerAssetGrid))
@@ -71,59 +83,53 @@ func NewServer(logger *slog.Logger, handler *Handler, store db.Store) *Server {
 	v1.HandleFunc("POST /container/package/remove", errorHandler(handler.PostContainerPackageRemove))
 	v1.HandleFunc("POST /container/package/reorder", errorHandler(handler.PostContainerPackageReorder))
 
-	v1.HandleFunc("GET /avatar", errorHandler(handler.GetAvatar))
-	v1.HandleFunc("GET /avatar/grid", errorHandler(handler.GetAvatarGrid))
-	v1.HandleFunc("POST /avatar/form", errorHandler(handler.PostAvatarForm))
-	v1.HandleFunc("POST /avatar/grid", errorHandler(handler.PostAvatarGrid))
-	v1.HandleFunc("POST /avatar/remove", errorHandler(handler.PostAvatarRemove))
-
-	v1.HandleFunc("GET /avatar/slot", errorHandler(handler.GetAvatarSlot))
-
-	v1.HandleFunc("GET /siteframe/grid", errorHandler(handler.GetSiteFrameGrid))
-	v1.HandleFunc("POST /siteframe/form", errorHandler(handler.PostSiteFrameForm))
-	v1.HandleFunc("POST /siteframe/grid", errorHandler(handler.PostSiteFrameGrid))
-	v1.HandleFunc("POST /siteframe/remove", errorHandler(handler.PostSiteFrameRemove))
+	v1.HandleFunc("GET /dummy/grid", errorHandler(handler.GetDummyGrid))
+	v1.HandleFunc("POST /dummy/grid", errorHandler(handler.PostDummyGrid))
 
 	v1.HandleFunc("GET /item", errorHandler(handler.GetItem))
 	v1.HandleFunc("GET /item/grid", errorHandler(handler.GetItemGrid))
-	v1.HandleFunc("GET /item/form", errorHandler(handler.GetItemForm))
 	v1.HandleFunc("POST /item/form", errorHandler(handler.PostItemForm))
 	v1.HandleFunc("POST /item/remove", errorHandler(handler.PostItemRemove))
 
 	v1.HandleFunc("GET /item/category", errorHandler(handler.GetItemCategory))
 	v1.HandleFunc("GET /item/category/grid", errorHandler(handler.GetItemCategoryGrid))
 	v1.HandleFunc("POST /item/category/form", errorHandler(handler.PostItemCategoryForm))
-	v1.HandleFunc("POST /item/category/grid", errorHandler(handler.PostItemCategoryGrid))
 	v1.HandleFunc("POST /item/category/remove", errorHandler(handler.PostItemCategoryRemove))
 
 	v1.HandleFunc("GET /player/grid", errorHandler(handler.GetPlayerGrid))
 	v1.HandleFunc("GET /player/form", errorHandler(handler.GetPlayerForm))
 	v1.HandleFunc("POST /player/form", errorHandler(handler.PostPlayerForm))
 
+	v1.HandleFunc("GET /player/{id}/item", errorHandler(handler.GetPlayerItem))
+	v1.HandleFunc("GET /player/{id}/item/grid", errorHandler(handler.GetPlayerItemGrid))
+	v1.HandleFunc("POST /player/{id}/item/form", errorHandler(handler.PostPlayerItemForm))
+	v1.HandleFunc("POST /player/item/remove", errorHandler(handler.PostPlayerItemRemove))
+
 	v1.HandleFunc("GET /player/{id}/avatar", errorHandler(handler.GetPlayerAvatar))
 	v1.HandleFunc("GET /player/{id}/avatar/grid", errorHandler(handler.GetPlayerAvatarGrid))
 	v1.HandleFunc("POST /player/{id}/avatar/form", errorHandler(handler.PostPlayerAvatarForm))
-	v1.HandleFunc("POST /player/avatar/grid", errorHandler(handler.PostPlayerAvatarGrid))
 	v1.HandleFunc("POST /player/avatar/remove", errorHandler(handler.PostPlayerAvatarRemove))
 
+	v1.HandleFunc("GET /player/{id}/avatar/item/grid", errorHandler(handler.GetPlayerAvatarItemGrid))
+	v1.HandleFunc("POST /player/avatar/item/form", errorHandler(handler.PostPlayerAvatarItemForm))
+	v1.HandleFunc("POST /player/avatar/item/remove", errorHandler(handler.PostPlayerAvatarItemRemove))
+
+	v1.HandleFunc("GET /player/{id}/outfit", errorHandler(handler.GetPlayerOutfit))
 	v1.HandleFunc("GET /player/{id}/outfit/grid", errorHandler(handler.GetPlayerOutfitGrid))
 	v1.HandleFunc("POST /player/outfit/form", errorHandler(handler.PostPlayerOutfitForm))
-	v1.HandleFunc("POST /player/outfit/grid", errorHandler(handler.PostPlayerOutfitGrid))
 	v1.HandleFunc("POST /player/outfit/remove", errorHandler(handler.PostPlayerOutfitRemove))
 
+	v1.HandleFunc("GET /player/{id}/outfit/item/grid", errorHandler(handler.GetPlayerOutfitItemGrid))
+	v1.HandleFunc("POST /player/outfit/item/form", errorHandler(handler.PostPlayerOutfitItemForm))
+	v1.HandleFunc("POST /player/outfit/item/remove", errorHandler(handler.PostPlayerOutfitItemRemove))
+
 	v1.HandleFunc("GET /randname/grid", errorHandler(handler.GetRandnameGrid))
-	v1.HandleFunc("GET /randname/form", errorHandler(handler.GetRandnameForm))
 	v1.HandleFunc("POST /randname/form", errorHandler(handler.PostRandnameForm))
 	v1.HandleFunc("POST /randname/remove", errorHandler(handler.PostRandnameRemove))
 
-	v1.HandleFunc("GET /dummy/grid", errorHandler(handler.GetDummyGrid))
-	v1.HandleFunc("POST /dummy/grid", errorHandler(handler.PostDummyGrid))
-
-	v1.HandleFunc("GET /blob/grid", errorHandler(handler.GetBlobGrid))
-	v1.HandleFunc("POST /blob/remove", errorHandler(handler.PostBlobRemove))
-	v1.HandleFunc("POST /blob/upload", errorHandler(handler.PostBlobUpload))
-	v1.HandleFunc("POST /blob/import", errorHandler(handler.PostBlobImport))
-	v1.HandleFunc("POST /blob/export", errorHandler(handler.PostBlobExport))
+	v1.HandleFunc("GET /siteframe/grid", errorHandler(handler.GetSiteFrameGrid))
+	v1.HandleFunc("POST /siteframe/form", errorHandler(handler.PostSiteFrameForm))
+	v1.HandleFunc("POST /siteframe/remove", errorHandler(handler.PostSiteFrameRemove))
 
 	if config.Get().Storage.Explorer {
 		v1.HandleFunc("GET /sql", errorHandler(w2widget.SQLiteSchemaHandler(store.DB())))

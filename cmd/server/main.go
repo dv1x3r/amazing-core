@@ -10,17 +10,16 @@ import (
 	"time"
 
 	"github.com/dv1x3r/amazing-core/data"
-	"github.com/dv1x3r/w2go/w2db"
-	"github.com/huandu/go-sqlbuilder"
-
 	"github.com/dv1x3r/amazing-core/internal/api"
 	"github.com/dv1x3r/amazing-core/internal/config"
 	"github.com/dv1x3r/amazing-core/internal/game"
-	"github.com/dv1x3r/amazing-core/internal/services"
-
 	"github.com/dv1x3r/amazing-core/internal/lib/db"
 	"github.com/dv1x3r/amazing-core/internal/lib/downloader"
 	"github.com/dv1x3r/amazing-core/internal/lib/logger"
+	"github.com/dv1x3r/amazing-core/internal/services"
+
+	"github.com/dv1x3r/w2go/w2db"
+	"github.com/huandu/go-sqlbuilder"
 )
 
 var (

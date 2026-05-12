@@ -1,12 +1,11 @@
 import { w2form, w2grid, w2layout, w2popup } from '/lib/w2ui.es6.min.js'
 import * as helpers from '/lib/w2ui.helpers.js'
 
-export function createWidget() {
+export function createAvatarLayout() {
   const grid = new w2grid({
     name: 'avatarGrid',
     url: {
       get: '/api/v1/avatar/grid',
-      save: '/api/v1/avatar/grid',
       remove: '/api/v1/avatar/remove',
     },
     recid: 'id',
@@ -15,9 +14,9 @@ export function createWidget() {
       footer: true,
       toolbar: true,
       toolbarAdd: true,
-      toolbarEdit: false,
+      toolbarEdit: true,
       toolbarDelete: true,
-      toolbarSave: true,
+      toolbarSave: false,
       toolbarSearch: true,
       toolbarReload: true,
       searchSave: false,
@@ -37,7 +36,6 @@ export function createWidget() {
         render: 'text',
         sortable: true,
         searchable: 'text',
-        editable: { type: 'text' },
       },
       {
         field: 'container',
@@ -46,7 +44,6 @@ export function createWidget() {
         render: 'dropdown',
         sortable: true,
         searchable: 'text',
-        editable: helpers.remoteListOptions('/api/v1/container'),
       },
       {
         field: 'max_outfits',
@@ -55,7 +52,6 @@ export function createWidget() {
         render: 'int',
         sortable: true,
         searchable: 'int',
-        editable: { type: 'int' },
       },
     ],
     defaultOperator: {
@@ -65,7 +61,8 @@ export function createWidget() {
       { field: 'id', direction: 'asc' },
     ],
     onAdd: function(event) { openAvatarPopup(event) },
-    onSave: function(event) { helpers.reloadOnSuccess(event) },
+    onEdit: function(event) { openAvatarPopup(event) },
+    onDblClick: function(event) { openAvatarPopup(event) },
   })
 
   return new w2layout({
@@ -85,26 +82,30 @@ export function createWidget() {
 }
 
 function openAvatarPopup(event) {
+  const record = event.owner.get(event.detail.recid)
+  const isEditMode = record != null
   const form = new w2form({
     name: 'avatarForm',
     url: '/api/v1/avatar/form',
+    record: record,
     fields: [
+      {
+        field: 'id',
+        type: 'text',
+        html: {
+          label: 'ID',
+          attr: 'size="15" readonly',
+          span: 6,
+          column: 0,
+        },
+      },
       {
         field: 'name',
         type: 'text',
         required: true,
         html: {
           label: 'Avatar Name',
-          span: 6,
-          column: 0,
-        },
-      },
-      {
-        field: 'max_outfits',
-        type: 'int',
-        required: true,
-        html: {
-          label: 'Max Outfits',
+          attr: 'style="width:100%;"',
           span: 6,
           column: 0,
         },
@@ -121,6 +122,17 @@ function openAvatarPopup(event) {
           column: 0,
         },
       },
+      {
+        field: 'max_outfits',
+        type: 'int',
+        required: true,
+        html: {
+          label: 'Max Outfits',
+          attr: 'size="15"',
+          span: 6,
+          column: 0,
+        },
+      },
     ],
     actions: {
       async Save() {
@@ -133,9 +145,8 @@ function openAvatarPopup(event) {
       Cancel() { w2popup.close() },
     },
   })
-
   w2popup.open({
-    title: 'New Avatar',
+    title: isEditMode ? 'Edit Avatar' : 'New Avatar',
     body: '<div id="avatar-form" style="width: 100%; height: 100%;"></div>',
     width: 600, height: 300, showMax: false, resizable: false,
   })

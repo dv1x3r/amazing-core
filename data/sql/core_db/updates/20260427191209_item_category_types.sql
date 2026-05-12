@@ -77,13 +77,12 @@ create table player_item (
     [quantity] integer not null default 1
 ) strict;
 
-create index player_item_idx on player_item([player_id], [item_id]);
-
 create table player_avatar_item (
     [id] integer primary key,
     [player_avatar_id] integer not null references player_avatar(id) on delete cascade,
-    [player_item_id] integer unique not null references player_item(id) on delete cascade,
+    [player_item_id] integer not null references player_item(id) on delete cascade,
     [avatar_slot_id] integer references avatar_slot(id) on delete restrict,
+    unique([player_avatar_id], [player_item_id]),
     unique([player_avatar_id], [avatar_slot_id])
 ) strict;
 

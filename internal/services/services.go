@@ -17,7 +17,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/services/siteframe"
 )
 
-type Set struct {
+type Services struct {
 	Auth      *auth.Service
 	Asset     *asset.Service
 	Avatar    *avatar.Service
@@ -29,17 +29,18 @@ type Set struct {
 	SiteFrame *siteframe.Service
 }
 
-func New(logger *slog.Logger, coreStore db.Store, blobStore db.Store, cfg config.Config) Set {
+func New(logger *slog.Logger, coreStore db.Store, blobStore db.Store, cfg config.Config) Services {
 	assets := asset.NewService(logger, coreStore, cfg.Settings.AssetDeliveryURL)
-	avatars := avatar.NewService(logger, coreStore)
-	return Set{
+	avatars := avatar.NewService(logger, coreStore, assets)
+	items := item.NewService(logger, coreStore, assets)
+	return Services{
 		Asset:     assets,
 		Auth:      auth.NewService(cfg.Secure.Session.Secure, cfg.Secure.Session.Key, cfg.Secure.Auth.Username, cfg.Secure.Auth.Password),
 		Avatar:    avatars,
 		Blob:      blob.NewService(logger, blobStore, cfg.Settings.AssetDeliveryURL),
 		Dummy:     dummy.NewService(logger, coreStore),
-		Item:      item.NewService(logger, coreStore),
-		Player:    player.NewService(logger, coreStore, assets, avatars),
+		Item:      items,
+		Player:    player.NewService(logger, coreStore, avatars, items),
 		RandName:  randname.NewService(logger, coreStore),
 		SiteFrame: siteframe.NewService(logger, coreStore, assets),
 	}

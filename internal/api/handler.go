@@ -12,10 +12,10 @@ import (
 type HandlerFunc func(http.ResponseWriter, *http.Request) error
 
 type Handler struct {
-	svc services.Set
+	svc services.Services
 }
 
-func NewHandler(svc services.Set) *Handler {
+func NewHandler(svc services.Services) *Handler {
 	return &Handler{
 		svc: svc,
 	}

@@ -1,6 +1,6 @@
 import { w2grid, w2layout } from '/lib/w2ui.es6.min.js'
 
-export function createWidget() {
+export function createDummyLayout() {
   const grid = new w2grid({
     name: 'dummyGrid',
     url: {

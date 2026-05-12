@@ -9,76 +9,17 @@ import (
 )
 
 type Handler struct {
-	svc services.Set
+	svc services.Services
 }
 
-func NewHandler(svc services.Set) *Handler {
+func NewHandler(svc services.Services) *Handler {
 	return &Handler{
 		svc: svc,
 	}
 }
 
-const playerID = 1
-const maxOutfit = 1
-
-var (
-	dummyPlayerID      = types.OIDFromInt64(1)
-	dummyAvatarID      = types.OIDFromInt64(1)
-	dummyOutfitID      = types.OIDFromInt64(1)
-	dummyHatItemID     = types.OIDFromInt64(72057594037927940)
-	dummyHatTemplateID = types.OIDFromInt64(72057594037927941)
-	dummyClothingCatID = types.OIDFromInt64(1)
-	dummyHatSlotID     = types.OIDFromInt64(289356276061314068)
-	dummyHatAssetCDNID = "OTYyOTU0MTA3MjkxMA"
-	dummyHatIconCDNID  = "OTYyOTM4NjkzMjIzOA"
-)
-
-func normalizePrefabAsset(asset types.Asset) types.Asset {
-	asset.AssetTypeName = "Prefab_Unity3D"
-	asset.GroupName = ""
-	return asset
-}
-
-func normalizeImageAsset(asset types.Asset) types.Asset {
-	asset.AssetTypeName = "Images"
-	if asset.GroupName == "" {
-		asset.GroupName = "Inventory Icon"
-	}
-	return asset
-}
-
-func dummyHatPlayerItem(hatAsset, hatIcon types.Asset) types.PlayerItem {
-	return types.PlayerItem{
-		OID:                  dummyHatItemID,
-		SlotID:               dummyHatSlotID,
-		PlayerAvatarOutfitID: dummyOutfitID,
-		PlayerAvatarID:       dummyAvatarID,
-		PlayerID:             dummyPlayerID,
-		Item: types.Item{
-			AssetContainer: types.AssetContainer{
-				OID: dummyHatTemplateID,
-				AssetMap: map[string][]types.Asset{
-					"Prefab_Unity3D": {hatAsset},
-					"Images":         {hatIcon},
-				},
-			},
-			Name: "dummy-hat",
-			ItemCategories: []types.ItemCategory{
-				{
-					RuleContainer: types.RuleContainer{
-						AssetContainer: types.AssetContainer{
-							OID: dummyClothingCatID,
-							// AssetMap: map[string][]types.Asset{},
-						},
-					},
-					Name: "Clothing",
-				},
-			},
-			AcceptableSlotIds: []types.OID{dummyHatSlotID},
-		},
-		Quantity: 1,
-	}
-}
+const PLAYER_ID = 1
+const MAX_OUTFIT = 1
 
 // ── General ──────────────────────────────────────────────────────────────────
 
@@ -124,14 +65,14 @@ func (h *Handler) Login(w gsf.ResponseWriter, r *gsf.Request) error {
 	// Could be restored via SessionOID during the Relogin
 	r.SetPlatform(gsf.ParsePlatformFromMachineOS(req.ClientEnvInfo.MachineOS))
 
-	player, err := h.svc.Player.GetGSFPlayer(r.Context(), r.Platform(), playerID)
+	player, err := h.svc.Player.GetGSFPlayer(r.Context(), r.Platform(), PLAYER_ID)
 	if err != nil {
 		return err
 	}
 
 	res := &messages.LoginResponse{}
 	res.AssetDeliveryURL = h.svc.Asset.DeliveryURL()
-	res.MaxOutfit = maxOutfit
+	res.MaxOutfit = MAX_OUTFIT
 	res.Player = player
 
 	return w.Write(res)
@@ -252,7 +193,7 @@ func (h *Handler) GetAvatars(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	avatars, err := h.svc.Player.GetGSFAvatars(r.Context(), r.Platform(), playerID)
+	avatars, err := h.svc.Player.GetGSFPlayerAvatars(r.Context(), r.Platform(), PLAYER_ID)
 	if err != nil {
 		return err
 	}
@@ -267,8 +208,12 @@ func (h *Handler) GetAvatarItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
+	items, err := h.svc.Player.GetGSFAvatarItems(r.Context(), r.Platform(), req.PlayerAvatarOID, req.PlayerOID)
+	if err != nil {
+		return err
+	}
 	res := &messages.GetAvatarItemsResponse{}
-	res.AvatarItems = []types.PlayerItem{}
+	res.AvatarItems = items
 	return w.Write(res)
 }
 
@@ -278,7 +223,7 @@ func (h *Handler) UpdatePlayerActiveAvatar(w gsf.ResponseWriter, r *gsf.Request)
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	avatar, err := h.svc.Player.SetGSFPlayerActiveAvatar(r.Context(), r.Platform(), req.PlayerAvatarID)
+	avatar, err := h.svc.Player.SetGSFPlayerActiveAvatar(r.Context(), r.Platform(), req.PlayerAvatarOID)
 	if err != nil {
 		return err
 	}
@@ -294,15 +239,12 @@ func (h *Handler) GetOutfits(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	res := &messages.GetOutfitsResponse{}
-	res.PlayerAvatarOutfits = []types.PlayerAvatarOutfit{
-		{
-			OID:            dummyOutfitID,
-			PlayerID:       dummyPlayerID,
-			PlayerAvatarID: dummyAvatarID,
-			OutfitNo:       1,
-		},
+	outfits, err := h.svc.Player.GetGSFOutfits(r.Context(), req.PlayerAvatarOID, req.PlayerOID)
+	if err != nil {
+		return err
 	}
+	res := &messages.GetOutfitsResponse{}
+	res.PlayerAvatarOutfits = outfits
 	return w.Write(res)
 }
 
@@ -312,18 +254,12 @@ func (h *Handler) GetOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	hatAsset, err := h.svc.Asset.GetGSFAssetByCDNID(r.Context(), dummyHatAssetCDNID)
+	items, err := h.svc.Player.GetGSFOutfitItems(r.Context(), r.Platform(), req.PlayerAvatarOutfitOID, req.PlayerOID)
 	if err != nil {
 		return err
 	}
-	hatAsset = normalizePrefabAsset(hatAsset)
-	hatIcon, err := h.svc.Asset.GetGSFAssetByCDNID(r.Context(), dummyHatIconCDNID)
-	if err != nil {
-		return err
-	}
-	hatIcon = normalizeImageAsset(hatIcon)
 	res := &messages.GetOutfitItemsResponse{}
-	res.OutfitItems = []types.PlayerItem{dummyHatPlayerItem(hatAsset, hatIcon)}
+	res.OutfitItems = items
 	return w.Write(res)
 }
 

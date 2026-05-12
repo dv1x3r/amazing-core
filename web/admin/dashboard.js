@@ -57,7 +57,7 @@ const dashboardSidebar = new w2sidebar({
           text: 'Containers',
           icon: 'fa fa-folder-open',
           onClick: async function() {
-            const module = await import('./widgets/assets.js')
+            const module = await import('./widgets/containers.js')
             setDashboardWidget(module.createContainerLayout)
           },
         },
@@ -67,7 +67,7 @@ const dashboardSidebar = new w2sidebar({
           icon: 'fa fa-layer-group',
           onClick: async function() {
             const module = await import('./widgets/site_frame.js')
-            setDashboardWidget(module.createWidget)
+            setDashboardWidget(module.createSiteFrameLayout)
           },
         },
       ],
@@ -110,7 +110,7 @@ const dashboardSidebar = new w2sidebar({
           icon: 'fa fa-user-astronaut',
           onClick: async function() {
             const module = await import('./widgets/avatars.js')
-            setDashboardWidget(module.createWidget)
+            setDashboardWidget(module.createAvatarLayout)
           },
         },
         {
@@ -119,7 +119,7 @@ const dashboardSidebar = new w2sidebar({
           icon: 'fa fa-users',
           onClick: async function() {
             const module = await import('./widgets/players.js')
-            setDashboardWidget(module.createWidget)
+            setDashboardWidget(module.createPlayerLayout)
           },
         },
         {
@@ -128,7 +128,7 @@ const dashboardSidebar = new w2sidebar({
           icon: 'fa fa-dice',
           onClick: async function() {
             const module = await import('./widgets/random_names.js')
-            setDashboardWidget(module.createWidget)
+            setDashboardWidget(module.createRandomNameLayout)
           },
         },
       ],
@@ -145,7 +145,7 @@ const dashboardSidebar = new w2sidebar({
           icon: 'fa fa-person-digging',
           onClick: async function() {
             const module = await import('./widgets/dummy_params.js')
-            setDashboardWidget(module.createWidget)
+            setDashboardWidget(module.createDummyLayout)
           },
         },
       ]
@@ -198,7 +198,7 @@ const dashboardSidebar = new w2sidebar({
           icon: 'fa fa-file',
           onClick: async function() {
             const module = await import('./widgets/blob_db.js')
-            setDashboardWidget(module.createWidget)
+            setDashboardWidget(module.createBlobGrid)
           },
         },
       ],

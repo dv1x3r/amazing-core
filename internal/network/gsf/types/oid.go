@@ -39,6 +39,12 @@ func OIDFromInt64(v int64) OID {
 	}
 }
 
+// OIDFromString converts string into int64, and decodes a packed int64 into an OID.
+func OIDFromString(sv string) OID {
+	v, _ := strconv.ParseInt(sv, 10, 64)
+	return OIDFromInt64(v)
+}
+
 // OIDFromCDNID decodes a CDN ID string into an OID.
 func OIDFromCDNID(cdnid string) (OID, error) {
 	str, err := base64.RawStdEncoding.DecodeString(cdnid)

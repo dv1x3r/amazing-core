@@ -1,12 +1,11 @@
 import { w2form, w2grid, w2layout, w2popup } from '/lib/w2ui.es6.min.js'
 import * as helpers from '/lib/w2ui.helpers.js'
 
-export function createWidget() {
+export function createSiteFrameLayout() {
   const grid = new w2grid({
     name: 'siteFrameGrid',
     url: {
       get: '/api/v1/siteframe/grid',
-      save: '/api/v1/siteframe/grid',
       remove: '/api/v1/siteframe/remove',
     },
     recid: 'id',
@@ -15,9 +14,9 @@ export function createWidget() {
       footer: true,
       toolbar: true,
       toolbarAdd: true,
-      toolbarEdit: false,
+      toolbarEdit: true,
       toolbarDelete: true,
-      toolbarSave: true,
+      toolbarSave: false,
       toolbarSearch: true,
       toolbarReload: true,
       searchSave: false,
@@ -37,7 +36,6 @@ export function createWidget() {
         render: 'text',
         sortable: true,
         searchable: 'int',
-        editable: { type: 'int' },
       },
       {
         field: 'container',
@@ -46,7 +44,6 @@ export function createWidget() {
         render: 'dropdown',
         sortable: true,
         searchable: 'text',
-        editable: helpers.remoteListOptions('/api/v1/container'),
       },
     ],
     defaultOperator: {
@@ -56,7 +53,8 @@ export function createWidget() {
       { field: 'id', direction: 'asc' },
     ],
     onAdd: function(event) { openSiteFramePopup(event) },
-    onSave: function(event) { helpers.reloadOnSuccess(event) },
+    onEdit: function(event) { openSiteFramePopup(event) },
+    onDblClick: function(event) { openSiteFramePopup(event) },
   })
 
   return new w2layout({
@@ -76,17 +74,30 @@ export function createWidget() {
 }
 
 function openSiteFramePopup(event) {
+  const record = event.owner.get(event.detail.recid)
+  const isEditMode = record != null
   const form = new w2form({
     name: 'siteFrameForm',
     url: '/api/v1/siteframe/form',
+    record: record,
     fields: [
+      {
+        field: 'id',
+        type: 'text',
+        html: {
+          label: 'ID',
+          attr: 'size="15" readonly',
+          span: 6,
+          column: 0,
+        },
+      },
       {
         field: 'type_value',
         type: 'int',
         required: true,
         html: {
           label: 'Type Value',
-          attr: 'size="10"',
+          attr: 'size="15"',
           span: 6,
           column: 0,
         },
@@ -115,11 +126,10 @@ function openSiteFramePopup(event) {
       Cancel() { w2popup.close() },
     },
   })
-
   w2popup.open({
-    title: 'New Site Frame',
+    title: isEditMode ? 'Edit Site Frame' : 'New Site Frame',
     body: '<div id="site-frame-form" style="width: 100%; height: 100%;"></div>',
-    width: 600, height: 220, showMax: false, resizable: false,
+    width: 600, height: 270, showMax: false, resizable: false,
   })
     .then(() => form.render('#site-frame-form'))
     .close(() => form.destroy())

@@ -16,14 +16,14 @@ import (
 
 type PlayerList struct {
 	ID         int    `json:"id"`
-	OID        int64  `json:"oid"`
+	OID        string `json:"oid"`
 	OIDStr     string `json:"oid_str"`
 	ActiveName string `json:"active_name"`
 }
 
 type PlayerDetails struct {
 	ID                  int         `json:"id"`
-	OID                 int64       `json:"oid"`
+	OID                 string      `json:"oid"`
 	CreatedAt           w2.UnixTime `json:"created_at"`
 	IsTutorialCompleted bool        `json:"is_tutorial_completed"`
 	IsQA                bool        `json:"is_qa"`
@@ -44,7 +44,7 @@ func (s *Service) GetPlayerListGrid(ctx context.Context, req w2.GetGridRequest) 
 			"oid":         "p.gsfoid",
 			"active_name": "pa.name",
 		},
-		BuildBase: func(sb *sqlbuilder.SelectBuilder) {
+		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
 			sb.JoinWithOption(sqlbuilder.LeftJoin, `(
 				select id, player_id, name,
 					row_number() over (partition by player_id order by id) as rn
@@ -53,8 +53,6 @@ func (s *Service) GetPlayerListGrid(ctx context.Context, req w2.GetGridRequest) 
 				) as pa`,
 				"pa.player_id = p.id and pa.rn = 1",
 			)
-		},
-		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
 			sb.OrderByAsc("p.id")
 		},
 		Scan: func(rows *sql.Rows, record *PlayerList) error {
@@ -65,7 +63,7 @@ func (s *Service) GetPlayerListGrid(ctx context.Context, req w2.GetGridRequest) 
 			); err != nil {
 				return err
 			}
-			record.OIDStr = types.OIDFromInt64(record.OID).String()
+			record.OIDStr = types.OIDFromString(record.OID).String()
 			return nil
 		},
 	})
@@ -116,13 +114,15 @@ func (s *Service) GetPlayerDetailsForm(ctx context.Context, req w2.GetFormReques
 
 func (s *Service) UpdatePlayerDetails(ctx context.Context, req w2.SaveFormRequest[PlayerDetails]) error {
 	const op = "player.Service.UpdatePlayerDetails"
+	playerAvatarID := req.Record.ActiveAvatar.ID.V
+	playerID := req.RecID
 	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
 		affected, err := w2db.UpdateContext(ctx, tx, w2db.UpdateOptions{
 			Update:  "player",
 			Cols:    []string{"gsfoid", "is_tutorial_completed", "is_qa"},
 			Values:  []any{req.Record.OID, req.Record.IsTutorialCompleted, req.Record.IsQA},
 			IDField: "id",
-			IDValue: req.RecID,
+			IDValue: playerID,
 		})
 		if s.store.IsErrConstraintUnique(err) {
 			return ErrPlayerExists
@@ -131,7 +131,12 @@ func (s *Service) UpdatePlayerDetails(ctx context.Context, req w2.SaveFormReques
 		} else if err != nil {
 			return err
 		}
-		return setActivePlayerAvatarByID(ctx, tx, req.Record.ActiveAvatar.ID.V, req.RecID)
+		_, err = tx.ExecContext(ctx, `
+			update player_avatar
+			set is_active = case when id = ? then 1 else 0 end
+			where player_id = ?;
+		`, playerAvatarID, playerID)
+		return err
 	})
 	return wrap.IfErr(op, err)
 }
@@ -160,7 +165,7 @@ func (s *Service) GetGSFPlayer(ctx context.Context, platform gsf.Platform, playe
 		return player, wrap.IfErr(op, err)
 	}
 
-	activeAvatar, err := s.GetGSFActiveAvatar(ctx, platform, playerID)
+	activeAvatar, err := s.GetGSFActivePlayerAvatar(ctx, platform, playerID)
 	if err != nil {
 		return player, wrap.IfErr(op, err)
 	}

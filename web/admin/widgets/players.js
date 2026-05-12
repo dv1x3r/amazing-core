@@ -3,7 +3,7 @@ import * as helpers from '/lib/w2ui.helpers.js'
 
 let selectedPlayerID = null
 
-export function createWidget() {
+export function createPlayerLayout() {
   selectedPlayerID = null
   const playerListGrid = new w2grid({
     name: 'playerListGrid',
@@ -80,6 +80,8 @@ export function createWidget() {
             { id: 'details', text: 'Details' },
             { id: 'avatars', text: 'Avatars' },
             { id: 'outfits', text: 'Outfits' },
+            { id: 'items', text: 'Items' },
+            { id: 'avatar-items', text: 'Avatar Items' },
             { id: 'outfit-items', text: 'Outfit Items' },
             { id: 'information', text: 'Information' },
           ],
@@ -109,6 +111,15 @@ export function createWidget() {
         break
       case 'outfits':
         subLayout.html('main', createPlayerOutfitsGrid())
+        break
+      case 'items':
+        subLayout.html('main', createPlayerItemsGrid())
+        break
+      case 'avatar-items':
+        subLayout.html('main', createPlayerAvatarItemsGrid())
+        break
+      case 'outfit-items':
+        subLayout.html('main', createPlayerOutfitItemsGrid())
         break
       case 'information':
         subLayout.load('main', '/admin/pages/players.html')
@@ -141,7 +152,7 @@ function createPlayerDetailsForm() {
         type: 'text',
         html: {
           label: 'ID',
-          attr: 'size="10" readonly',
+          attr: 'size="15" readonly',
           span: 6,
           column: 0,
         },
@@ -222,7 +233,6 @@ function createPlayerAvatarsGrid() {
     name: 'playerAvatarGrid',
     url: {
       get: '/api/v1/player/:id/avatar/grid',
-      save: '/api/v1/player/avatar/grid',
       remove: '/api/v1/player/avatar/remove',
     },
     routeData: { id: selectedPlayerID ?? 0 },
@@ -232,9 +242,9 @@ function createPlayerAvatarsGrid() {
       footer: true,
       toolbar: true,
       toolbarAdd: true,
-      toolbarEdit: false,
+      toolbarEdit: true,
       toolbarDelete: true,
-      toolbarSave: true,
+      toolbarSave: false,
       toolbarSearch: false,
       toolbarReload: true,
       searchSave: false,
@@ -250,7 +260,6 @@ function createPlayerAvatarsGrid() {
         text: 'Player Avatar OID',
         size: '135px',
         render: 'text',
-        editable: { type: 'int' },
       },
       {
         field: 'oid_str',
@@ -264,21 +273,18 @@ function createPlayerAvatarsGrid() {
         text: 'Player Avatar Name',
         render: 'text',
         size: '200px',
-        editable: { type: 'text' },
       },
       {
         field: 'avatar',
         text: 'Avatar',
         size: '200px',
         render: 'dropdown',
-        editable: helpers.remoteListOptions(`/api/v1/avatar`),
       },
       {
         field: 'outfit_no',
         text: 'Outfit No',
         size: '120px',
         render: 'int',
-        editable: { type: 'int' },
       },
       {
         field: 'is_active',
@@ -293,22 +299,48 @@ function createPlayerAvatarsGrid() {
       }
     },
     onAdd: function(event) { openPlayerAvatarPopup(event) },
-    onSave: function(event) { helpers.reloadOnSuccess(event) },
+    onEdit: function(event) { openPlayerAvatarPopup(event) },
+    onDblClick: function(event) { openPlayerAvatarPopup(event) },
   })
 }
 
 function openPlayerAvatarPopup(event) {
+  const record = event.owner.get(event.detail.recid)
+  const isEditMode = record != null
   const form = new w2form({
     name: 'playerAvatarForm',
     url: '/api/v1/player/:id/avatar/form',
     routeData: { id: selectedPlayerID ?? 0 },
+    record: record,
     fields: [
+      {
+        field: 'id',
+        type: 'text',
+        html: {
+          label: 'ID',
+          attr: 'size="15" readonly',
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'oid',
+        type: 'text',
+        required: isEditMode,
+        html: {
+          label: 'Player Avatar OID',
+          attr: isEditMode ? 'size="15"' : 'size="15" readonly',
+          span: 6,
+          column: 0,
+        },
+      },
       {
         field: 'name',
         type: 'text',
         required: true,
         html: {
-          label: 'Avatar Name',
+          label: 'Player Avatar Name',
+          attr: 'style="width:100%;"',
           span: 6,
           column: 0,
         },
@@ -325,6 +357,17 @@ function openPlayerAvatarPopup(event) {
           column: 0,
         },
       },
+      {
+        field: 'outfit_no',
+        type: 'int',
+        required: true,
+        html: {
+          label: 'Outfit No',
+          attr: 'size="15"',
+          span: 6,
+          column: 0,
+        },
+      },
     ],
     actions: {
       async Save() {
@@ -337,11 +380,10 @@ function openPlayerAvatarPopup(event) {
       Cancel() { w2popup.close() },
     },
   })
-
   w2popup.open({
-    title: 'New Player Avatar',
+    title: isEditMode ? 'Edit Player Avatar' : 'New Player Avatar',
     body: '<div id="player-avatar-form" style="width: 100%; height: 100%;"></div>',
-    width: 600, height: 220, showMax: false, resizable: false,
+    width: 600, height: 340, showMax: false, resizable: false,
   })
     .then(() => form.render('#player-avatar-form'))
     .close(() => form.destroy())
@@ -352,7 +394,6 @@ function createPlayerOutfitsGrid() {
     name: 'playerOutfitGrid',
     url: {
       get: '/api/v1/player/:id/outfit/grid',
-      save: '/api/v1/player/outfit/grid',
       remove: '/api/v1/player/outfit/remove',
     },
     routeData: { id: selectedPlayerID ?? 0 },
@@ -362,9 +403,9 @@ function createPlayerOutfitsGrid() {
       footer: true,
       toolbar: true,
       toolbarAdd: true,
-      toolbarEdit: false,
+      toolbarEdit: true,
       toolbarDelete: true,
-      toolbarSave: true,
+      toolbarSave: false,
       toolbarSearch: false,
       toolbarReload: true,
       searchSave: false,
@@ -380,7 +421,6 @@ function createPlayerOutfitsGrid() {
         text: 'Player Outfit OID',
         size: '135px',
         render: 'text',
-        editable: { type: 'int' },
       },
       {
         field: 'oid_str',
@@ -394,14 +434,12 @@ function createPlayerOutfitsGrid() {
         text: 'Player Avatar',
         size: '200px',
         render: 'dropdown',
-        editable: helpers.remoteListOptions(`/api/v1/player/${selectedPlayerID}/avatar`),
       },
       {
         field: 'outfit_no',
         text: 'Outfit No',
         size: '120px',
         render: 'int',
-        editable: { type: 'int' },
       },
     ],
     onRender: function(event) {
@@ -410,16 +448,41 @@ function createPlayerOutfitsGrid() {
       }
     },
     onAdd: function(event) { openPlayerOutfitPopup(event) },
-    onSave: function(event) { helpers.reloadOnSuccess(event) },
+    onEdit: function(event) { openPlayerOutfitPopup(event) },
+    onDblClick: function(event) { openPlayerOutfitPopup(event) },
   })
 }
 
 function openPlayerOutfitPopup(event) {
+  const record = event.owner.get(event.detail.recid)
+  const isEditMode = record != null
   const form = new w2form({
     name: 'playerOutfitForm',
     url: '/api/v1/player/outfit/form',
     focus: -1,
+    record: record,
     fields: [
+      {
+        field: 'id',
+        type: 'text',
+        html: {
+          label: 'ID',
+          attr: 'size="15" readonly',
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'oid',
+        type: 'text',
+        required: isEditMode,
+        html: {
+          label: 'Player Outfit OID',
+          attr: isEditMode ? 'size="15"' : 'size="15" readonly',
+          span: 6,
+          column: 0,
+        },
+      },
       {
         field: 'player_avatar',
         type: 'list',
@@ -438,6 +501,7 @@ function openPlayerOutfitPopup(event) {
         required: true,
         html: {
           label: 'Outfit No',
+          attr: 'size="15"',
           span: 6,
           column: 0,
         },
@@ -454,12 +518,415 @@ function openPlayerOutfitPopup(event) {
       Cancel() { w2popup.close() },
     },
   })
-
   w2popup.open({
-    title: 'New Player Outfit',
+    title: isEditMode ? 'Edit Player Outfit' : 'New Player Outfit',
     body: '<div id="player-outfit-form" style="width: 100%; height: 100%;"></div>',
-    width: 600, height: 220, showMax: false, resizable: false,
+    width: 600, height: 300, showMax: false, resizable: false,
   })
     .then(() => form.render('#player-outfit-form'))
+    .close(() => form.destroy())
+}
+
+function createPlayerItemsGrid() {
+  return new w2grid({
+    name: 'playerItemGrid',
+    url: {
+      get: '/api/v1/player/:id/item/grid',
+      remove: '/api/v1/player/item/remove',
+    },
+    routeData: { id: selectedPlayerID ?? 0 },
+    recid: 'id',
+    recordHeight: 28,
+    show: {
+      footer: true,
+      toolbar: true,
+      toolbarAdd: true,
+      toolbarEdit: true,
+      toolbarDelete: true,
+      toolbarSave: false,
+      toolbarSearch: false,
+      toolbarReload: true,
+      searchSave: false,
+    },
+    columns: [
+      {
+        field: 'id',
+        text: 'ID',
+        size: '60px',
+      },
+      {
+        field: 'oid',
+        text: 'Player Item OID',
+        size: '135px',
+        render: 'text',
+      },
+      {
+        field: 'oid_str',
+        text: 'OID Details',
+        size: '135px',
+        render: 'text',
+        hidden: true,
+      },
+      {
+        field: 'item',
+        text: 'Item',
+        size: '200px',
+        render: 'dropdown',
+      },
+      {
+        field: 'quantity',
+        text: 'Quantity',
+        size: '120px',
+        render: 'int',
+      },
+    ],
+    onRender: function(event) {
+      if (selectedPlayerID == null) {
+        event.owner.toolbar.disable('w2ui-add')
+      }
+    },
+    onAdd: function(event) { openPlayerItemPopup(event) },
+    onEdit: function(event) { openPlayerItemPopup(event) },
+    onDblClick: function(event) { openPlayerItemPopup(event) },
+  })
+}
+
+function openPlayerItemPopup(event) {
+  const record = event.owner.get(event.detail.recid)
+  const isEditMode = record != null
+  const form = new w2form({
+    name: 'playerItemForm',
+    url: '/api/v1/player/:id/item/form',
+    routeData: { id: selectedPlayerID ?? 0 },
+    focus: -1,
+    record: record,
+    fields: [
+      {
+        field: 'id',
+        type: 'text',
+        html: {
+          label: 'ID',
+          attr: 'size="15" readonly',
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'oid',
+        type: 'text',
+        required: isEditMode,
+        html: {
+          label: 'Player Item OID',
+          attr: isEditMode ? 'size="15"' : 'size="15" readonly',
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'item',
+        type: 'list',
+        required: true,
+        options: helpers.remoteListOptions('/api/v1/item'),
+        html: {
+          label: 'Item',
+          attr: 'style="width:100%;" placeholder="Type to search..."',
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'quantity',
+        type: 'int',
+        required: true,
+        html: {
+          label: 'Quantity',
+          attr: 'size="15"',
+          span: 6,
+          column: 0,
+        },
+      },
+    ],
+    actions: {
+      async Save() {
+        const res = await this.save()
+        if (res.status == 'success') {
+          event.owner.reload()
+          w2popup.close()
+        }
+      },
+      Cancel() { w2popup.close() },
+    },
+  })
+  w2popup.open({
+    title: isEditMode ? 'Edit Player Item' : 'New Player Item',
+    body: '<div id="player-item-form" style="width: 100%; height: 100%;"></div>',
+    width: 600, height: 300, showMax: false, resizable: false,
+  })
+    .then(() => form.render('#player-item-form'))
+    .close(() => form.destroy())
+}
+
+function createPlayerAvatarItemsGrid() {
+  return new w2grid({
+    name: 'playerAvatarItemGrid',
+    url: {
+      get: '/api/v1/player/:id/avatar/item/grid',
+      remove: '/api/v1/player/avatar/item/remove',
+    },
+    routeData: { id: selectedPlayerID ?? 0 },
+    recid: 'id',
+    recordHeight: 28,
+    show: {
+      footer: true,
+      toolbar: true,
+      toolbarAdd: true,
+      toolbarEdit: true,
+      toolbarDelete: true,
+      toolbarSave: false,
+      toolbarSearch: false,
+      toolbarReload: true,
+      searchSave: false,
+    },
+    columns: [
+      {
+        field: 'id',
+        text: 'ID',
+        size: '60px',
+      },
+      {
+        field: 'player_avatar',
+        text: 'Player Avatar',
+        size: '200px',
+        render: 'dropdown',
+      },
+      {
+        field: 'player_item',
+        text: 'Player Item',
+        size: '200px',
+        render: 'dropdown',
+      },
+      {
+        field: 'avatar_slot',
+        text: 'Avatar Slot',
+        size: '200px',
+        render: 'dropdown',
+      },
+    ],
+    onRender: function(event) {
+      if (selectedPlayerID == null) {
+        event.owner.toolbar.disable('w2ui-add')
+      }
+    },
+    onAdd: function(event) { openPlayerAvatarItemPopup(event) },
+    onEdit: function(event) { openPlayerAvatarItemPopup(event) },
+    onDblClick: function(event) { openPlayerAvatarItemPopup(event) },
+  })
+}
+
+function openPlayerAvatarItemPopup(event) {
+  const record = event.owner.get(event.detail.recid)
+  const isEditMode = record != null
+  const form = new w2form({
+    name: 'playerAvatarItemForm',
+    url: '/api/v1/player/avatar/item/form',
+    focus: -1,
+    record: record,
+    fields: [
+      {
+        field: 'id',
+        type: 'text',
+        html: {
+          label: 'ID',
+          attr: 'size="15" readonly',
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'player_avatar',
+        type: 'list',
+        required: true,
+        options: helpers.remoteListOptions(`/api/v1/player/${selectedPlayerID}/avatar`),
+        html: {
+          label: 'Player Avatar',
+          attr: 'style="width:100%;" placeholder="Type to search..."',
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'player_item',
+        type: 'list',
+        required: true,
+        options: helpers.remoteListOptions(`/api/v1/player/${selectedPlayerID}/item`),
+        html: {
+          label: 'Player Item',
+          attr: 'style="width:100%;" placeholder="Type to search..."',
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'avatar_slot',
+        type: 'list',
+        options: helpers.remoteListOptions('/api/v1/avatar/slot'),
+        html: {
+          label: 'Avatar Slot',
+          attr: 'style="width:100%;" placeholder="Type to search..."',
+          span: 6,
+          column: 0,
+        },
+      },
+    ],
+    actions: {
+      async Save() {
+        const res = await this.save()
+        if (res.status == 'success') {
+          event.owner.reload()
+          w2popup.close()
+        }
+      },
+      Cancel() { w2popup.close() },
+    },
+  })
+  w2popup.open({
+    title: isEditMode ? 'Edit Avatar Item' : 'New Avatar Item',
+    body: '<div id="avatar-item-form" style="width: 100%; height: 100%;"></div>',
+    width: 600, height: 300, showMax: false, resizable: false,
+  })
+    .then(() => form.render('#avatar-item-form'))
+    .close(() => form.destroy())
+}
+
+function createPlayerOutfitItemsGrid() {
+  return new w2grid({
+    name: 'playerOutfitItemGrid',
+    url: {
+      get: '/api/v1/player/:id/outfit/item/grid',
+      remove: '/api/v1/player/outfit/item/remove',
+    },
+    routeData: { id: selectedPlayerID ?? 0 },
+    recid: 'id',
+    recordHeight: 28,
+    show: {
+      footer: true,
+      toolbar: true,
+      toolbarAdd: true,
+      toolbarEdit: true,
+      toolbarDelete: true,
+      toolbarSave: false,
+      toolbarSearch: false,
+      toolbarReload: true,
+      searchSave: false,
+    },
+    columns: [
+      {
+        field: 'id',
+        text: 'ID',
+        size: '60px',
+      },
+      {
+        field: 'player_avatar_outfit',
+        text: 'Player Outfit',
+        size: '200px',
+        render: 'dropdown',
+      },
+      {
+        field: 'player_item',
+        text: 'Player Item',
+        size: '200px',
+        render: 'dropdown',
+      },
+      {
+        field: 'avatar_slot',
+        text: 'Avatar Slot',
+        size: '200px',
+        render: 'dropdown',
+      },
+    ],
+    onRender: function(event) {
+      if (selectedPlayerID == null) {
+        event.owner.toolbar.disable('w2ui-add')
+      }
+    },
+    onAdd: function(event) { openPlayerOutfitItemPopup(event) },
+    onEdit: function(event) { openPlayerOutfitItemPopup(event) },
+    onDblClick: function(event) { openPlayerOutfitItemPopup(event) },
+  })
+}
+
+function openPlayerOutfitItemPopup(event) {
+  const record = event.owner.get(event.detail.recid)
+  const isEditMode = record != null
+  const form = new w2form({
+    name: 'playerOutfitItemForm',
+    url: '/api/v1/player/outfit/item/form',
+    focus: -1,
+    record: record,
+    fields: [
+      {
+        field: 'id',
+        type: 'text',
+        html: {
+          label: 'ID',
+          attr: 'size="15" readonly',
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'player_avatar_outfit',
+        type: 'list',
+        required: true,
+        options: helpers.remoteListOptions(`/api/v1/player/${selectedPlayerID}/outfit`),
+        html: {
+          label: 'Player Outfit',
+          attr: 'style="width:100%;" placeholder="Type to search..."',
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'player_item',
+        type: 'list',
+        required: true,
+        options: helpers.remoteListOptions(`/api/v1/player/${selectedPlayerID}/item`),
+        html: {
+          label: 'Player Item',
+          attr: 'style="width:100%;" placeholder="Type to search..."',
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'avatar_slot',
+        type: 'list',
+        required: true,
+        options: helpers.remoteListOptions('/api/v1/avatar/slot'),
+        html: {
+          label: 'Avatar Slot',
+          attr: 'style="width:100%;" placeholder="Type to search..."',
+          span: 6,
+          column: 0,
+        },
+      },
+    ],
+    actions: {
+      async Save() {
+        const res = await this.save()
+        if (res.status == 'success') {
+          event.owner.reload()
+          w2popup.close()
+        }
+      },
+      Cancel() { w2popup.close() },
+    },
+  })
+  w2popup.open({
+    title: isEditMode ? 'Edit Outfit Item' : 'New Outfit Item',
+    body: '<div id="outfit-item-form" style="width: 100%; height: 100%;"></div>',
+    width: 600, height: 300, showMax: false, resizable: false,
+  })
+    .then(() => form.render('#outfit-item-form'))
     .close(() => form.destroy())
 }

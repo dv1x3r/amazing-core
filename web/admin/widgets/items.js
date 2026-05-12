@@ -53,7 +53,7 @@ export function createItemLayout() {
       },
       {
         field: 'slots',
-        text: 'Slots',
+        text: 'Acceptable Slots',
         size: '200px',
         render: 'dropdown-multi',
       },
@@ -86,17 +86,19 @@ export function createItemLayout() {
 }
 
 function openItemPopup(event) {
+  const record = event.owner.get(event.detail.recid)
+  const isEditMode = record != null
   const form = new w2form({
     name: `itemForm`,
     url: '/api/v1/item/form',
-    recid: event.detail.recid,
+    record: record,
     fields: [
       {
         field: 'id',
         type: 'text',
         html: {
           label: 'ID',
-          attr: 'size="10" readonly',
+          attr: 'size="15" readonly',
           span: 6,
           column: 0,
         },
@@ -107,6 +109,7 @@ function openItemPopup(event) {
         required: true,
         html: {
           label: 'Item Name',
+          attr: 'style="width:100%;"',
           span: 6,
           column: 0,
         },
@@ -157,9 +160,8 @@ function openItemPopup(event) {
       Cancel() { w2popup.close() },
     },
   })
-
   w2popup.open({
-    title: event.detail.recid ? 'Edit Item' : 'New Item',
+    title: isEditMode ? 'Edit Item' : 'New Item',
     body: '<div id="item-form" style="width: 100%; height: 100%;"></div>',
     width: 600, height: 340, showMax: false, resizable: false,
   })
@@ -172,7 +174,6 @@ export function createCategoryLayout() {
     name: 'itemCategoryGrid',
     url: {
       get: '/api/v1/item/category/grid',
-      save: '/api/v1/item/category/grid',
       remove: '/api/v1/item/category/remove',
     },
     recid: 'id',
@@ -181,9 +182,9 @@ export function createCategoryLayout() {
       footer: true,
       toolbar: true,
       toolbarAdd: true,
-      toolbarEdit: false,
+      toolbarEdit: true,
       toolbarDelete: true,
-      toolbarSave: true,
+      toolbarSave: false,
       toolbarSearch: true,
       toolbarReload: true,
       searchSave: false,
@@ -203,7 +204,6 @@ export function createCategoryLayout() {
         size: '135px',
         sortable: true,
         searchable: 'text',
-        editable: { type: 'int' },
       },
       {
         field: 'oid_str',
@@ -219,38 +219,36 @@ export function createCategoryLayout() {
         render: 'text',
         sortable: true,
         searchable: 'text',
-        editable: { type: 'text' },
       },
       {
         field: 'parent',
         text: 'Parent Category',
         size: '200px',
         render: 'dropdown',
-        editable: helpers.remoteListOptions('/api/v1/item/category'),
       },
       {
         field: 'is_public',
         text: 'Public',
         size: '70px',
-        editable: { type: 'checkbox' },
+        render: 'toggle',
       },
       {
         field: 'is_outdoor',
         text: 'Outdoor',
         size: '70px',
-        editable: { type: 'checkbox' },
+        render: 'toggle',
       },
       {
         field: 'is_walkover',
         text: 'Walkover',
         size: '70px',
-        editable: { type: 'checkbox' },
+        render: 'toggle',
       },
       {
         field: 'show_in_dock',
         text: 'Dock',
         size: '70px',
-        editable: { type: 'checkbox' },
+        render: 'toggle',
       },
     ],
     defaultOperator: {
@@ -260,7 +258,8 @@ export function createCategoryLayout() {
       { field: 'id', direction: 'asc' },
     ],
     onAdd: function(event) { openCategoryPopup(event) },
-    onSave: function(event) { helpers.reloadOnSuccess(event) },
+    onEdit: function(event) { openCategoryPopup(event) },
+    onDblClick: function(event) { openCategoryPopup(event) },
   })
 
   return new w2layout({
@@ -280,16 +279,41 @@ export function createCategoryLayout() {
 }
 
 function openCategoryPopup(event) {
+  const record = event.owner.get(event.detail.recid)
+  const isEditMode = record != null
   const form = new w2form({
     name: 'itemCategoryForm',
     url: '/api/v1/item/category/form',
+    record: record,
     fields: [
+      {
+        field: 'id',
+        type: 'text',
+        html: {
+          label: 'ID',
+          attr: 'size="15" readonly',
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'oid',
+        type: 'text',
+        required: isEditMode,
+        html: {
+          label: 'Container OID',
+          attr: isEditMode ? 'size="15"' : 'size="15" readonly',
+          span: 6,
+          column: 0,
+        },
+      },
       {
         field: 'name',
         type: 'text',
         required: true,
         html: {
           label: 'Category Name',
+          attr: 'style="width:100%;"',
           span: 6,
           column: 0,
         },
@@ -353,13 +377,12 @@ function openCategoryPopup(event) {
       Cancel() { w2popup.close() },
     },
   })
-
   w2popup.open({
-    title: 'New Category',
-    body: '<div id="category-form" style="width: 100%; height: 100%;"></div>',
-    width: 600, height: 400, showMax: false, resizable: false,
+    title: isEditMode ? 'Edit Item Category' : 'New Item Category',
+    body: '<div id="item-category-form" style="width: 100%; height: 100%;"></div>',
+    width: 600, height: 420, showMax: false, resizable: false,
   })
-    .then(() => form.render('#category-form'))
+    .then(() => form.render('#item-category-form'))
     .close(() => form.destroy())
 }
 

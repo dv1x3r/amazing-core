@@ -3,6 +3,7 @@ package item
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/dv1x3r/amazing-core/internal/lib/graph"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
@@ -15,7 +16,7 @@ import (
 
 type Category struct {
 	ID         int              `json:"id"`
-	OID        w2.Field[int64]  `json:"oid"`
+	OID        w2.Field[string] `json:"oid"`
 	OIDStr     string           `json:"oid_str"`
 	Name       w2.Field[string] `json:"name"`
 	Parent     w2.Dropdown      `json:"parent"`
@@ -52,7 +53,7 @@ func (s *Service) GetCategoryGrid(ctx context.Context, req w2.GetGridRequest) (w
 			"name":      "ic.name",
 			"container": "ac.gsfoid",
 		},
-		BuildBase: func(sb *sqlbuilder.SelectBuilder) {
+		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "item_category as icp", "icp.id = ic.parent_id")
 		},
 		Scan: func(rows *sql.Rows, record *Category) error {
@@ -69,7 +70,7 @@ func (s *Service) GetCategoryGrid(ctx context.Context, req w2.GetGridRequest) (w
 			); err != nil {
 				return err
 			}
-			record.OIDStr = types.OIDFromInt64(record.OID.V).String()
+			record.OIDStr = types.OIDFromString(record.OID.V).String()
 			return nil
 		},
 	})
@@ -80,15 +81,15 @@ func (s *Service) CreateCategory(ctx context.Context, req w2.SaveFormRequest[Cat
 	const op = "item.Service.CreateCategory"
 	id, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{
 		Into: "item_category",
-		Cols: []string{"name", "parent_id", "is_public", "is_outdoor", "is_walkover", "show_in_dock", "gsfoid"},
+		Cols: []string{"gsfoid", "name", "parent_id", "is_public", "is_outdoor", "is_walkover", "show_in_dock"},
 		Values: []any{
+			sqlbuilder.Raw("(select coalesce(max(gsfoid) + 1, 1) from item_category)"),
 			req.Record.Name,
 			req.Record.Parent.ID,
 			req.Record.IsPublic,
 			req.Record.IsOutdoor,
 			req.Record.IsWalkover,
 			req.Record.ShowInDock,
-			sqlbuilder.Raw("(select coalesce(max(gsfoid) + 1, 1) from item_category)"),
 		},
 	})
 	if s.store.IsErrConstraintUnique(err) {
@@ -97,27 +98,23 @@ func (s *Service) CreateCategory(ctx context.Context, req w2.SaveFormRequest[Cat
 	return id, wrap.IfErr(op, err)
 }
 
-func (s *Service) UpdateCategories(ctx context.Context, req w2.SaveGridRequest[Category]) error {
+func (s *Service) UpdateCategory(ctx context.Context, req w2.SaveFormRequest[Category]) error {
 	const op = "item.Service.UpdateCategory"
 	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
-		_, err := w2db.SaveGridContext(ctx, tx, req, w2db.SaveGridOptions[Category]{
-			BuildOptions: func(change Category) w2db.UpdateOptions {
-				return w2db.UpdateOptions{
-					Update: "item_category",
-					Cols:   []string{"name", "gsfoid", "parent_id", "is_public", "is_outdoor", "is_walkover", "show_in_dock"},
-					Values: []any{
-						change.Name,
-						change.OID,
-						change.Parent.ID,
-						change.IsPublic,
-						change.IsOutdoor,
-						change.IsWalkover,
-						change.ShowInDock,
-					},
-					IDField: "id",
-					IDValue: change.ID,
-				}
+		_, err := w2db.UpdateContext(ctx, tx, w2db.UpdateOptions{
+			Update: "item_category",
+			Cols:   []string{"gsfoid", "name", "parent_id", "is_public", "is_outdoor", "is_walkover", "show_in_dock"},
+			Values: []any{
+				req.Record.OID,
+				req.Record.Name,
+				req.Record.Parent.ID,
+				req.Record.IsPublic,
+				req.Record.IsOutdoor,
+				req.Record.IsWalkover,
+				req.Record.ShowInDock,
 			},
+			IDField: "id",
+			IDValue: req.Record.ID,
 		})
 		if s.store.IsErrConstraintUnique(err) {
 			return ErrCategoryExists
@@ -125,12 +122,10 @@ func (s *Service) UpdateCategories(ctx context.Context, req w2.SaveGridRequest[C
 			return err
 		}
 
-		for _, category := range req.Changes {
-			if cycle, err := s.hasCategoryCycle(ctx, tx, category.ID); err != nil {
-				return err
-			} else if cycle {
-				return ErrCategoryCyclicDependency
-			}
+		if cycle, err := s.hasCategoryCycle(ctx, tx, req.Record.ID); err != nil {
+			return err
+		} else if cycle {
+			return ErrCategoryCyclicDependency
 		}
 
 		return nil
@@ -172,6 +167,44 @@ func (s *Service) hasCategoryCycle(ctx context.Context, tx *sql.Tx, updatedCateg
 	return nodes.HasCycleFrom(updatedCategoryID), nil
 }
 
+func (s *Service) setItemCategories(ctx context.Context, tx *sql.Tx, itemID int, categories []w2.Dropdown) error {
+	var categoryIDs []int
+	for _, category := range categories {
+		categoryIDs = append(categoryIDs, category.ID.V)
+	}
+
+	// 1. delete not presented
+	dlb := sqlbuilder.DeleteFrom("item_category_map")
+	dlb.Where(dlb.EQ("item_id", itemID))
+	if len(categories) > 0 {
+		dlb.Where(dlb.NotIn("category_id", sqlbuilder.List(categoryIDs)))
+	}
+
+	query, args := dlb.BuildWithFlavor(sqlbuilder.SQLite)
+	if _, err := tx.ExecContext(ctx, query, args...); err != nil {
+		return fmt.Errorf("delete categories: %w", err)
+	}
+
+	if len(categories) == 0 {
+		return nil
+	}
+
+	// 2. add if not exists
+	ib := sqlbuilder.NewInsertBuilder()
+	ib.SetFlavor(sqlbuilder.SQLite)
+	ib.InsertIgnoreInto("item_category_map")
+	ib.Cols("item_id", "category_id")
+	for _, categoryID := range categoryIDs {
+		ib.Values(itemID, categoryID)
+	}
+	query, args = ib.BuildWithFlavor(sqlbuilder.SQLite)
+	if _, err := tx.ExecContext(ctx, query, args...); err != nil {
+		return fmt.Errorf("insert categories: %w", err)
+	}
+
+	return nil
+}
+
 func (s *Service) GetGSFItemCategories(ctx context.Context, publicOnly bool) ([]types.ItemCategory, error) {
 	const op = "item.Service.GetGSFItemCategories"
 
@@ -192,12 +225,52 @@ func (s *Service) GetGSFItemCategories(ctx context.Context, publicOnly bool) ([]
 	}
 	defer rows.Close()
 
-	var categories []types.ItemCategory
+	categories := []types.ItemCategory{}
 	for rows.Next() {
 		var category types.ItemCategory
 		if err := rows.Scan(
 			&category.OID,
-			&category.ParentID,
+			&category.ParentOID,
+			&category.Name,
+			&category.IsOutdoor,
+			&category.IsWalkover,
+			&category.ShowInDock,
+		); err != nil {
+			return categories, wrap.IfErr(op, err)
+		}
+		categories = append(categories, category)
+	}
+
+	return categories, wrap.IfErr(op, rows.Err())
+}
+
+func (s *Service) GetGSFItemCategoriesByItemID(ctx context.Context, itemID int) ([]types.ItemCategory, error) {
+	const op = "item.Service.GetGSFItemCategoriesByItemID"
+
+	rows, err := s.store.DB().QueryContext(ctx, `
+			select
+				ic.gsfoid,
+				icp.gsfoid as parent_gsfoid,
+				ic.name,
+				ic.is_outdoor,
+				ic.is_walkover,
+				ic.show_in_dock
+			from item_category_map as icm
+			join item_category as ic on ic.id = icm.category_id
+			left join item_category as icp on icp.id = ic.parent_id
+			where icm.item_id = ?;
+		`, itemID)
+	if err != nil {
+		return nil, wrap.IfErr(op, err)
+	}
+	defer rows.Close()
+
+	categories := []types.ItemCategory{}
+	for rows.Next() {
+		var category types.ItemCategory
+		if err := rows.Scan(
+			&category.OID,
+			&category.ParentOID,
 			&category.Name,
 			&category.IsOutdoor,
 			&category.IsWalkover,

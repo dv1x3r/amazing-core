@@ -15,7 +15,7 @@ import (
 
 type PlayerAvatar struct {
 	ID       int              `json:"id"`
-	OID      w2.Field[int64]  `json:"oid"`
+	OID      w2.Field[string] `json:"oid"`
 	OIDStr   string           `json:"oid_str"`
 	Name     w2.Field[string] `json:"name"`
 	Avatar   w2.Dropdown      `json:"avatar"`
@@ -23,7 +23,7 @@ type PlayerAvatar struct {
 	IsActive bool             `json:"is_active"`
 }
 
-func (s *Service) GetPlayerAvatarGrid(ctx context.Context, req w2.GetGridRequest, id int) (w2.GetGridResponse[PlayerAvatar], error) {
+func (s *Service) GetPlayerAvatarGrid(ctx context.Context, req w2.GetGridRequest, playerID int) (w2.GetGridResponse[PlayerAvatar], error) {
 	const op = "player.Service.GetPlayerAvatarGrid"
 	res, err := w2db.GetGridContext(ctx, s.store.DB(), req, w2db.GetGridOptions[PlayerAvatar]{
 		From: "player_avatar as pa",
@@ -36,11 +36,9 @@ func (s *Service) GetPlayerAvatarGrid(ctx context.Context, req w2.GetGridRequest
 			"pa.avatar_id",
 			"av.name as avatar_name",
 		},
-		BuildBase: func(sb *sqlbuilder.SelectBuilder) {
-			sb.Where(sb.EQ("pa.player_id", id))
-		},
 		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("avatar as av", "av.id = pa.avatar_id")
+			sb.Where(sb.EQ("pa.player_id", playerID))
 			sb.OrderByAsc("pa.id")
 		},
 		Scan: func(rows *sql.Rows, record *PlayerAvatar) error {
@@ -55,60 +53,43 @@ func (s *Service) GetPlayerAvatarGrid(ctx context.Context, req w2.GetGridRequest
 			); err != nil {
 				return err
 			}
-			record.OIDStr = types.OIDFromInt64(record.OID.V).String()
+			record.OIDStr = types.OIDFromString(record.OID.V).String()
 			return nil
 		},
 	})
 	return res, wrap.IfErr(op, err)
 }
 
-func (s *Service) GetPlayerAvatarsDropdown(ctx context.Context, req w2.GetDropdownRequest, id int) (w2.GetDropdownResponse[w2.Dropdown], error) {
-	const op = "player.Service.GetPlayerAvatarsDropdown"
-	res, err := w2db.GetDropdownContext(ctx, s.store.DB(), req, w2db.GetDropdownOptions{
-		From:         "player_avatar",
-		IDField:      "id",
-		TextField:    "name",
-		OrderByField: "name",
-		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
-			sb.Where(sb.EQ("player_id", id))
-		},
-	})
-	return res, wrap.IfErr(op, err)
-}
-
-func (s *Service) CreatePlayerAvatar(ctx context.Context, req w2.SaveFormRequest[PlayerAvatar], playerID int) error {
+func (s *Service) CreatePlayerAvatar(ctx context.Context, req w2.SaveFormRequest[PlayerAvatar], playerID int) (int, error) {
 	const op = "player.Service.CreatePlayerAvatar"
-	_, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{
+	id, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{
 		Into: "player_avatar",
-		Cols: []string{"player_id", "name", "avatar_id", "gsfoid"},
+		Cols: []string{"player_id", "gsfoid", "avatar_id", "name", "outfit_no"},
 		Values: []any{
 			playerID,
-			req.Record.Name,
+			sqlbuilder.Buildf("(select coalesce(max(gsfoid) + 1, 1) from player_avatar)"),
 			req.Record.Avatar.ID,
-			sqlbuilder.Buildf("(select coalesce(max(gsfoid) + 1, 1) from player_avatar where player_id = %v)", playerID),
+			req.Record.Name,
+			req.Record.OutfitNo,
 		},
+	})
+	if s.store.IsErrConstraintUnique(err) {
+		return 0, wrap.IfErr(op, ErrPlayerAvatarExists)
+	}
+	return id, wrap.IfErr(op, err)
+}
+
+func (s *Service) UpdatePlayerAvatar(ctx context.Context, req w2.SaveFormRequest[PlayerAvatar]) error {
+	const op = "player.Service.UpdatePlayerAvatar"
+	_, err := w2db.UpdateContext(ctx, s.store.DB(), w2db.UpdateOptions{
+		Update:  "player_avatar",
+		Cols:    []string{"gsfoid", "avatar_id", "name", "outfit_no"},
+		Values:  []any{req.Record.OID, req.Record.Avatar.ID, req.Record.Name, req.Record.OutfitNo},
+		IDField: "id",
+		IDValue: req.Record.ID,
 	})
 	if s.store.IsErrConstraintUnique(err) {
 		return wrap.IfErr(op, ErrPlayerAvatarExists)
-	}
-	return wrap.IfErr(op, err)
-}
-
-func (s *Service) UpdatePlayerAvatars(ctx context.Context, req w2.SaveGridRequest[PlayerAvatar]) error {
-	const op = "player.Service.UpdatePlayerAvatars"
-	_, err := w2db.SaveGridContext(ctx, s.store.DB(), req, w2db.SaveGridOptions[PlayerAvatar]{
-		BuildOptions: func(change PlayerAvatar) w2db.UpdateOptions {
-			return w2db.UpdateOptions{
-				Update:  "player_avatar",
-				Cols:    []string{"gsfoid", "name", "outfit_no", "avatar_id"},
-				Values:  []any{change.OID, change.Name, change.OutfitNo, change.Avatar.ID},
-				IDField: "id",
-				IDValue: change.ID,
-			}
-		},
-	})
-	if s.store.IsErrConstraintUnique(err) {
-		return ErrPlayerAvatarExists
 	}
 	return wrap.IfErr(op, err)
 }
@@ -122,19 +103,20 @@ func (s *Service) DeletePlayerAvatars(ctx context.Context, req w2.RemoveGridRequ
 	return wrap.IfErr(op, err)
 }
 
-func (s *Service) GetGSFAvatars(ctx context.Context, platform gsf.Platform, playerID int) ([]types.PlayerAvatar, error) {
-	const op = "player.Service.GetGSFAvatars"
+func (s *Service) GetGSFPlayerAvatars(ctx context.Context, platform gsf.Platform, playerID int) ([]types.PlayerAvatar, error) {
+	const op = "player.Service.GetGSFPlayerAvatars"
 
 	rows, err := s.store.DB().QueryContext(ctx, `
 			select
 				pa.gsfoid,
-				pl.gsfoid as player_oid,
-				pa.name as player_name,
-				av.name as avatar_name,
-				av.container_id
+				pl.gsfoid as player_gsfoid,
+				pa.name as player_avatar_name,
+				pa.outfit_no,
+				pao.gsfoid as player_avatar_outfit_gsfoid,
+				pa.avatar_id
 			from player_avatar as pa
 			join player as pl on pl.id = pa.player_id
-			join avatar as av on av.id = pa.avatar_id
+			left join player_avatar_outfit as pao on pao.player_avatar_id = pa.id and pao.outfit_no = pa.outfit_no
 			where pa.player_id = ?;
 		`, playerID)
 	if err != nil {
@@ -142,69 +124,72 @@ func (s *Service) GetGSFAvatars(ctx context.Context, platform gsf.Platform, play
 	}
 	defer rows.Close()
 
-	var avatars []types.PlayerAvatar
+	playerAvatars := []types.PlayerAvatar{}
 	for rows.Next() {
-		var avatar types.PlayerAvatar
-		var containerID int
+		var playerAvatar types.PlayerAvatar
+		var avatarID int
 		if err := rows.Scan(
-			&avatar.OID,
-			&avatar.PlayerID,
-			&avatar.Name,
-			&avatar.Avatar.Name,
-			&containerID,
+			&playerAvatar.OID,
+			&playerAvatar.PlayerOID,
+			&playerAvatar.Name,
+			&playerAvatar.OutfitNo,
+			&playerAvatar.PlayerAvatarOutfitOID,
+			&avatarID,
 		); err != nil {
-			return avatars, wrap.IfErr(op, err)
+			return playerAvatars, wrap.IfErr(op, err)
 		}
-		container, err := s.assets.GetGSFAssetContainer(ctx, platform, containerID)
+		avatar, err := s.avatars.GetGSFAvatar(ctx, platform, avatarID)
 		if err != nil {
-			return avatars, wrap.IfErr(op, err)
+			return playerAvatars, wrap.IfErr(op, err)
 		}
-		avatar.Avatar.AssetContainer = container
-		avatars = append(avatars, avatar)
+		playerAvatar.Avatar = avatar
+		playerAvatars = append(playerAvatars, playerAvatar)
 	}
 
-	return avatars, wrap.IfErr(op, rows.Err())
+	return playerAvatars, wrap.IfErr(op, rows.Err())
 }
 
-func (s *Service) GetGSFActiveAvatar(ctx context.Context, platform gsf.Platform, playerID int) (types.PlayerAvatar, error) {
-	const op = "player.Service.GetGSFActiveAvatar"
+func (s *Service) GetGSFActivePlayerAvatar(ctx context.Context, platform gsf.Platform, playerID int) (types.PlayerAvatar, error) {
+	const op = "player.Service.GetGSFActivePlayerAvatar"
 
 	row := s.store.DB().QueryRowContext(ctx, `
 			select
 				pa.gsfoid,
-				pl.gsfoid as player_oid,
-				pa.name as player_name,
-				av.name as avatar_name,
-				av.container_id
+				pl.gsfoid as player_gsfoid,
+				pa.name as player_avatar_name,
+				pa.outfit_no,
+				pao.gsfoid as player_avatar_outfit_gsfoid,
+				pa.avatar_id
 			from player_avatar as pa
 			join player as pl on pl.id = pa.player_id
-			join avatar as av on av.id = pa.avatar_id
+			left join player_avatar_outfit as pao on pao.player_avatar_id = pa.id and pao.outfit_no = pa.outfit_no
 			where pa.player_id = ? and pa.is_active = 1;
 		`, playerID)
 
-	var avatar types.PlayerAvatar
-	var containerID int
+	var playerAvatar types.PlayerAvatar
+	var avatarID int
 
 	if err := row.Scan(
-		&avatar.OID,
-		&avatar.PlayerID,
-		&avatar.Name,
-		&avatar.Avatar.Name,
-		&containerID,
+		&playerAvatar.OID,
+		&playerAvatar.PlayerOID,
+		&playerAvatar.Name,
+		&playerAvatar.OutfitNo,
+		&playerAvatar.PlayerAvatarOutfitOID,
+		&avatarID,
 	); err != nil {
-		return avatar, wrap.IfErr(op, err)
+		return playerAvatar, wrap.IfErr(op, err)
 	}
 
-	container, err := s.assets.GetGSFAssetContainer(ctx, platform, containerID)
+	avatar, err := s.avatars.GetGSFAvatar(ctx, platform, avatarID)
 	if err != nil {
-		return avatar, wrap.IfErr(op, err)
+		return playerAvatar, wrap.IfErr(op, err)
 	}
-	avatar.Avatar.AssetContainer = container
+	playerAvatar.Avatar = avatar
 
-	return avatar, nil
+	return playerAvatar, nil
 }
 
-func (s *Service) SetGSFPlayerActiveAvatar(ctx context.Context, platform gsf.Platform, oid types.OID) (types.PlayerAvatar, error) {
+func (s *Service) SetGSFPlayerActiveAvatar(ctx context.Context, platform gsf.Platform, playerAvatarOID types.OID) (types.PlayerAvatar, error) {
 	const op = "player.Service.SetGSFPlayerActiveAvatar"
 
 	tx, err := s.store.DB().BeginTx(ctx, nil)
@@ -214,12 +199,16 @@ func (s *Service) SetGSFPlayerActiveAvatar(ctx context.Context, platform gsf.Pla
 	defer tx.Rollback()
 
 	var playerAvatarID, playerID int
-	row := tx.QueryRowContext(ctx, "select id, player_id from player_avatar where gsfoid = ?;", oid)
+	row := tx.QueryRowContext(ctx, "select id, player_id from player_avatar where gsfoid = ?;", playerAvatarOID)
 	if err := row.Scan(&playerAvatarID, &playerID); err != nil {
 		return types.PlayerAvatar{}, wrap.IfErr(op, err)
 	}
 
-	if err := setActivePlayerAvatarByID(ctx, tx, playerAvatarID, playerID); err != nil {
+	if _, err := tx.ExecContext(ctx, `
+		update player_avatar
+		set is_active = case when id = ? then 1 else 0 end
+		where player_id = ?;
+	`, playerAvatarID, playerID); err != nil {
 		return types.PlayerAvatar{}, wrap.IfErr(op, err)
 	}
 
@@ -227,6 +216,6 @@ func (s *Service) SetGSFPlayerActiveAvatar(ctx context.Context, platform gsf.Pla
 		return types.PlayerAvatar{}, wrap.IfErr(op, err)
 	}
 
-	avatar, err := s.GetGSFActiveAvatar(ctx, platform, playerID)
+	avatar, err := s.GetGSFActivePlayerAvatar(ctx, platform, playerID)
 	return avatar, wrap.IfErr(op, err)
 }

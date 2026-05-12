@@ -17,7 +17,7 @@ import (
 
 type Container struct {
 	ID        int              `json:"id"`
-	OID       w2.Field[int64]  `json:"oid"`
+	OID       w2.Field[string] `json:"oid"`
 	OIDStr    string           `json:"oid_str"`
 	Name      w2.Field[string] `json:"name"`
 	PTag      w2.Field[string] `json:"ptag"`
@@ -92,14 +92,14 @@ func (s *Service) GetContainerGrid(ctx context.Context, req w2.GetGridRequest) (
 			); err != nil {
 				return err
 			}
-			record.OIDStr = types.OIDFromInt64(record.OID.V).String()
+			record.OIDStr = types.OIDFromString(record.OID.V).String()
 			return nil
 		},
 	})
 	return res, wrap.IfErr(op, err)
 }
 
-func (s *Service) GetContainerAssetGrid(ctx context.Context, req w2.GetGridRequest, id int) (w2.GetGridResponse[ContainerAsset], error) {
+func (s *Service) GetContainerAssetGrid(ctx context.Context, req w2.GetGridRequest, containerID int) (w2.GetGridResponse[ContainerAsset], error) {
 	const op = "asset.Service.GetContainerAssetGrid"
 	res, err := w2db.GetGridContext(ctx, s.store.DB(), req, w2db.GetGridOptions[ContainerAsset]{
 		From: "asset_container_assetmap as ca",
@@ -111,9 +111,6 @@ func (s *Service) GetContainerAssetGrid(ctx context.Context, req w2.GetGridReque
 			"concat_ws(' - ', at.name, a.gsfoid, coalesce(a.res_name, '[NULL]'), (am.metadata ->> '$.assets[0].target_platform') || ' ' || (am.metadata ->> '$.info.version_engine')) as windows",
 			"iif(ax.id is null, null, concat_ws(' - ', axt.name, ax.gsfoid, coalesce(ax.res_name, '[NULL]'), (axm.metadata ->> '$.assets[0].target_platform') || ' ' || (axm.metadata ->> '$.info.version_engine'))) as osx",
 		},
-		BuildBase: func(sb *sqlbuilder.SelectBuilder) {
-			sb.Where(sb.EQ("ca.container_id", id))
-		},
 		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("asset as a", "a.id = ca.win_asset_id")
 			sb.Join("asset_type as at", "at.id = a.asset_type_id")
@@ -121,6 +118,7 @@ func (s *Service) GetContainerAssetGrid(ctx context.Context, req w2.GetGridReque
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset as ax", "ax.id = ca.osx_asset_id")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_type as axt", "axt.id = ax.asset_type_id")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_metadata as axm", "axm.asset_id = ax.id")
+			sb.Where(sb.EQ("ca.container_id", containerID))
 			sb.OrderByAsc("ca.position")
 		},
 		Scan: func(rows *sql.Rows, record *ContainerAsset) error {
@@ -137,7 +135,7 @@ func (s *Service) GetContainerAssetGrid(ctx context.Context, req w2.GetGridReque
 	return res, wrap.IfErr(op, err)
 }
 
-func (s *Service) GetContainerPackageGrid(ctx context.Context, req w2.GetGridRequest, id int) (w2.GetGridResponse[ContainerPackage], error) {
+func (s *Service) GetContainerPackageGrid(ctx context.Context, req w2.GetGridRequest, containerID int) (w2.GetGridResponse[ContainerPackage], error) {
 	const op = "asset.Service.GetContainerPackageGrid"
 	res, err := w2db.GetGridContext(ctx, s.store.DB(), req, w2db.GetGridOptions[ContainerPackage]{
 		From: "asset_container_package as cp",
@@ -147,11 +145,9 @@ func (s *Service) GetContainerPackageGrid(ctx context.Context, req w2.GetGridReq
 			"cp.pkg_container_id",
 			"concat(pc.gsfoid, ' - ', pc.name, ' (' || pc.ptag || ')') as package",
 		},
-		BuildBase: func(sb *sqlbuilder.SelectBuilder) {
-			sb.Where(sb.EQ("cp.container_id", id))
-		},
 		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("asset_container as pc", "pc.id = cp.pkg_container_id")
+			sb.Where(sb.EQ("cp.container_id", containerID))
 			sb.OrderByAsc("cp.position")
 		},
 		Scan: func(rows *sql.Rows, record *ContainerPackage) error {
@@ -183,28 +179,24 @@ func (s *Service) CreateContainer(ctx context.Context, req w2.SaveFormRequest[Co
 	return id, wrap.IfErr(op, err)
 }
 
-func (s *Service) UpdateContainers(ctx context.Context, req w2.SaveGridRequest[Container]) error {
-	const op = "asset.Service.UpdateContainers"
-	_, err := w2db.SaveGridContext(ctx, s.store.DB(), req, w2db.SaveGridOptions[Container]{
-		BuildOptions: func(change Container) w2db.UpdateOptions {
-			return w2db.UpdateOptions{
-				Update:  "asset_container",
-				Cols:    []string{"gsfoid", "name", "ptag"},
-				Values:  []any{change.OID, change.Name, change.PTag},
-				IDField: "id",
-				IDValue: change.ID,
-			}
-		},
+func (s *Service) UpdateContainer(ctx context.Context, req w2.SaveFormRequest[Container]) error {
+	const op = "asset.Service.UpdateContainer"
+	_, err := w2db.UpdateContext(ctx, s.store.DB(), w2db.UpdateOptions{
+		Update:  "asset_container",
+		Cols:    []string{"gsfoid", "name", "ptag"},
+		Values:  []any{req.Record.OID, req.Record.Name, req.Record.PTag},
+		IDField: "id",
+		IDValue: req.Record.ID,
 	})
 	if s.store.IsErrConstraintUnique(err) {
-		return ErrContainerExists
+		return wrap.IfErr(op, ErrContainerExists)
 	}
 	return wrap.IfErr(op, err)
 }
 
-func (s *Service) AddContainerAsset(ctx context.Context, req w2.SaveFormRequest[ContainerAsset], containerID int) error {
+func (s *Service) AddContainerAsset(ctx context.Context, req w2.SaveFormRequest[ContainerAsset], containerID int) (int, error) {
 	const op = "asset.Service.AddContainerAsset"
-	_, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{
+	id, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{
 		Into: "asset_container_assetmap",
 		Cols: []string{"container_id", "win_asset_id", "osx_asset_id", "position"},
 		Values: []any{
@@ -215,9 +207,9 @@ func (s *Service) AddContainerAsset(ctx context.Context, req w2.SaveFormRequest[
 		},
 	})
 	if s.store.IsErrConstraintUnique(err) {
-		return wrap.IfErr(op, ErrContainerAssetExists)
+		return 0, wrap.IfErr(op, ErrContainerAssetExists)
 	}
-	return wrap.IfErr(op, err)
+	return id, wrap.IfErr(op, err)
 }
 
 func (s *Service) UpdateContainerAssets(ctx context.Context, req w2.SaveGridRequest[ContainerAsset]) error {
@@ -239,10 +231,12 @@ func (s *Service) UpdateContainerAssets(ctx context.Context, req w2.SaveGridRequ
 	return wrap.IfErr(op, err)
 }
 
-func (s *Service) AddContainerPackage(ctx context.Context, req w2.SaveFormRequest[ContainerPackage], containerID int) error {
+func (s *Service) AddContainerPackage(ctx context.Context, req w2.SaveFormRequest[ContainerPackage], containerID int) (int, error) {
 	const op = "asset.Service.AddContainerPackage"
+	var id int
 	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
-		_, err := w2db.InsertContext(ctx, tx, w2db.InsertOptions{
+		var err error
+		id, err = w2db.InsertContext(ctx, tx, w2db.InsertOptions{
 			Into: "asset_container_package",
 			Cols: []string{"container_id", "pkg_container_id", "position"},
 			Values: []any{
@@ -262,7 +256,7 @@ func (s *Service) AddContainerPackage(ctx context.Context, req w2.SaveFormReques
 		}
 		return nil
 	})
-	return wrap.IfErr(op, err)
+	return id, wrap.IfErr(op, err)
 }
 
 func (s *Service) UpdateContainerPackages(ctx context.Context, req w2.SaveGridRequest[ContainerPackage]) error {
@@ -387,26 +381,26 @@ func (s *Service) hasPackageCycle(ctx context.Context, tx *sql.Tx, updatedContai
 	return nodes.HasCycleFrom(updatedContainerID), nil
 }
 
-func (s *Service) GetGSFAssetContainer(ctx context.Context, platform gsf.Platform, id int) (types.AssetContainer, error) {
+func (s *Service) GetGSFAssetContainer(ctx context.Context, platform gsf.Platform, containerID int) (types.AssetContainer, error) {
 	const op = "asset.Service.GetGSFAssetContainer"
-	ac, err := s.getGSFAssetContainer(ctx, id, platform, map[int]struct{}{})
+	ac, err := s.getGSFAssetContainer(ctx, containerID, platform, map[int]struct{}{})
 	return ac, wrap.IfErr(op, err)
 }
 
-func (s *Service) getGSFAssetContainer(ctx context.Context, id int, platform gsf.Platform, path map[int]struct{}) (types.AssetContainer, error) {
+func (s *Service) getGSFAssetContainer(ctx context.Context, containerID int, platform gsf.Platform, path map[int]struct{}) (types.AssetContainer, error) {
 	ac := types.AssetContainer{
 		AssetMap:      types.AssetMap{},
 		AssetPackages: []types.AssetPackage{},
 	}
 
-	if _, ok := path[id]; ok {
-		return ac, fmt.Errorf("circular dependency detected for container %d", id)
+	if _, ok := path[containerID]; ok {
+		return ac, fmt.Errorf("circular dependency detected for container %d", containerID)
 	}
 
-	path[id] = struct{}{}
-	defer delete(path, id)
+	path[containerID] = struct{}{}
+	defer delete(path, containerID)
 
-	row := s.store.DB().QueryRowContext(ctx, "select gsfoid from asset_container where id = ?;", id)
+	row := s.store.DB().QueryRowContext(ctx, "select gsfoid from asset_container where id = ?;", containerID)
 	if err := row.Scan(&ac.OID); err != nil {
 		return ac, err
 	}
@@ -421,8 +415,8 @@ func (s *Service) getGSFAssetContainer(ctx context.Context, id int, platform gsf
 			a.gsfoid,
 			at.name as type_name,
 			a.cdnid,
-			coalesce(a.res_name, 'Undefined') as res_name,
-			coalesce(ag.name, 'Undefined') as group_name,
+			coalesce(a.res_name, '') as res_name,
+			coalesce(ag.name, '') as group_name,
 			a.size
 		from asset_container_assetmap as ca
 		join asset as a on a.id = iif(? = 1 and ca.osx_asset_id is not null, ca.osx_asset_id, ca.win_asset_id)
@@ -430,7 +424,7 @@ func (s *Service) getGSFAssetContainer(ctx context.Context, id int, platform gsf
 		left join asset_group as ag on ag.id = a.asset_group_id
 		where ca.container_id = ?
 		order by ca.position;
-	`, useOSXAsset, id)
+	`, useOSXAsset, containerID)
 	if err != nil {
 		return ac, err
 	}
@@ -464,7 +458,7 @@ func (s *Service) getGSFAssetContainer(ctx context.Context, id int, platform gsf
 		join asset_container as c on c.id = cp.pkg_container_id
 		where cp.container_id = ?
 		order by cp.position;
-	`, id)
+	`, containerID)
 	if err != nil {
 		return ac, err
 	}

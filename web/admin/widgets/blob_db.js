@@ -1,7 +1,7 @@
 import { w2confirm, w2grid } from '/lib/w2ui.es6.min.js'
 import * as helpers from '/lib/w2ui.helpers.js'
 
-export function createWidget() {
+export function createBlobGrid() {
   return new w2grid({
     name: 'blobGrid',
     url: {

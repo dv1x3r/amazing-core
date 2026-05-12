@@ -20,7 +20,7 @@ type PlayerOutfit struct {
 	OutfitNo     w2.Field[int]   `json:"outfit_no"`
 }
 
-func (s *Service) GetPlayerOutfitGrid(ctx context.Context, req w2.GetGridRequest, id int) (w2.GetGridResponse[PlayerOutfit], error) {
+func (s *Service) GetPlayerOutfitGrid(ctx context.Context, req w2.GetGridRequest, playerID int) (w2.GetGridResponse[PlayerOutfit], error) {
 	const op = "player.Service.GetPlayerOutfitGrid"
 	res, err := w2db.GetGridContext(ctx, s.store.DB(), req, w2db.GetGridOptions[PlayerOutfit]{
 		From: "player_avatar_outfit as po",
@@ -28,20 +28,12 @@ func (s *Service) GetPlayerOutfitGrid(ctx context.Context, req w2.GetGridRequest
 			"po.id",
 			"po.gsfoid",
 			"po.player_avatar_id",
-			"pa.name as player_avatar_name",
+			"(pa.gsfoid || ' - ' || pa.name) as player_avatar_name",
 			"po.outfit_no",
 		},
-		WhereMapping: map[string]string{
-			"id":            "po.id",
-			"oid":           "po.gsfoid",
-			"player_avatar": "pa.name",
-			"outfit_no":     "po.outfit_no",
-		},
-		BuildBase: func(sb *sqlbuilder.SelectBuilder) {
-			sb.Join("player_avatar as pa", "pa.id = po.player_avatar_id")
-			sb.Where(sb.EQ("pa.player_id", id))
-		},
 		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
+			sb.Join("player_avatar as pa", "pa.id = po.player_avatar_id")
+			sb.Where(sb.EQ("pa.player_id", playerID))
 			sb.OrderByAsc("po.id")
 		},
 		Scan: func(rows *sql.Rows, record *PlayerOutfit) error {
@@ -61,38 +53,34 @@ func (s *Service) GetPlayerOutfitGrid(ctx context.Context, req w2.GetGridRequest
 	return res, wrap.IfErr(op, err)
 }
 
-func (s *Service) CreatePlayerOutfit(ctx context.Context, req w2.SaveFormRequest[PlayerOutfit]) error {
+func (s *Service) CreatePlayerOutfit(ctx context.Context, req w2.SaveFormRequest[PlayerOutfit]) (int, error) {
 	const op = "player.Service.CreatePlayerOutfit"
-	_, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{
+	id, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{
 		Into: "player_avatar_outfit",
-		Cols: []string{"player_avatar_id", "outfit_no", "gsfoid"},
+		Cols: []string{"gsfoid", "player_avatar_id", "outfit_no"},
 		Values: []any{
+			sqlbuilder.Buildf("(select coalesce(max(gsfoid) + 1, 1) from player_avatar_outfit)"),
 			req.Record.PlayerAvatar.ID,
 			req.Record.OutfitNo,
-			sqlbuilder.Buildf("(select coalesce(max(gsfoid) + 1, 1) from player_avatar_outfit)"),
 		},
+	})
+	if s.store.IsErrConstraintUnique(err) {
+		return 0, wrap.IfErr(op, ErrPlayerOutfitExists)
+	}
+	return id, wrap.IfErr(op, err)
+}
+
+func (s *Service) UpdatePlayerOutfit(ctx context.Context, req w2.SaveFormRequest[PlayerOutfit]) error {
+	const op = "player.Service.UpdatePlayerOutfit"
+	_, err := w2db.UpdateContext(ctx, s.store.DB(), w2db.UpdateOptions{
+		Update:  "player_avatar_outfit",
+		Cols:    []string{"gsfoid", "player_avatar_id", "outfit_no"},
+		Values:  []any{req.Record.OID, req.Record.PlayerAvatar.ID, req.Record.OutfitNo},
+		IDField: "id",
+		IDValue: req.Record.ID,
 	})
 	if s.store.IsErrConstraintUnique(err) {
 		return wrap.IfErr(op, ErrPlayerOutfitExists)
-	}
-	return wrap.IfErr(op, err)
-}
-
-func (s *Service) UpdatePlayerOutfits(ctx context.Context, req w2.SaveGridRequest[PlayerOutfit]) error {
-	const op = "player.Service.UpdatePlayerOutfits"
-	_, err := w2db.SaveGridContext(ctx, s.store.DB(), req, w2db.SaveGridOptions[PlayerOutfit]{
-		BuildOptions: func(change PlayerOutfit) w2db.UpdateOptions {
-			return w2db.UpdateOptions{
-				Update:  "player_avatar_outfit",
-				Cols:    []string{"gsfoid", "player_avatar_id", "outfit_no"},
-				Values:  []any{change.OID, change.PlayerAvatar.ID, change.OutfitNo},
-				IDField: "id",
-				IDValue: change.ID,
-			}
-		},
-	})
-	if s.store.IsErrConstraintUnique(err) {
-		return ErrPlayerOutfitExists
 	}
 	return wrap.IfErr(op, err)
 }
@@ -104,4 +92,41 @@ func (s *Service) DeletePlayerOutfits(ctx context.Context, req w2.RemoveGridRequ
 		IDField: "id",
 	})
 	return wrap.IfErr(op, err)
+}
+
+func (s *Service) GetGSFOutfits(ctx context.Context, playerAvatarOID, playerOID types.OID) ([]types.PlayerAvatarOutfit, error) {
+	const op = "player.Service.GetGSFOutfits"
+
+	rows, err := s.store.DB().QueryContext(ctx, `
+			select
+				po.gsfoid,
+				pl.gsfoid as player_gsfoid,
+				pa.gsfoid as player_avatar_gsfoid,
+				po.outfit_no
+			from player_avatar_outfit as po
+			join player_avatar as pa on pa.id = po.player_avatar_id
+			join player as pl on pl.id = pa.player_id
+			where pa.gsfoid = ? and pl.gsfoid = ?
+			order by po.outfit_no;
+		`, playerAvatarOID, playerOID)
+	if err != nil {
+		return nil, wrap.IfErr(op, err)
+	}
+	defer rows.Close()
+
+	outfits := []types.PlayerAvatarOutfit{}
+	for rows.Next() {
+		var outfit types.PlayerAvatarOutfit
+		if err := rows.Scan(
+			&outfit.OID,
+			&outfit.PlayerOID,
+			&outfit.PlayerAvatarOID,
+			&outfit.OutfitNo,
+		); err != nil {
+			return outfits, wrap.IfErr(op, err)
+		}
+		outfits = append(outfits, outfit)
+	}
+
+	return outfits, wrap.IfErr(op, rows.Err())
 }

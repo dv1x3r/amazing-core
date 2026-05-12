@@ -18,7 +18,7 @@ import (
 
 type Asset struct {
 	ID          int              `json:"id"`
-	OID         int64            `json:"oid"`
+	OID         string           `json:"oid"`
 	OIDStr      string           `json:"oid_str"`
 	CDNID       string           `json:"cdnid"`
 	URL         string           `json:"url"`
@@ -84,7 +84,7 @@ func (s *Service) GetAssetGrid(ctx context.Context, req w2.GetGridRequest) (w2.G
 			"size_str":    "a.size",
 			"version":     "(am.metadata ->> '$.assets[0].target_platform') || ' ' || (am.metadata ->> '$.info.version_engine')",
 		},
-		BuildBase: func(sb *sqlbuilder.SelectBuilder) {
+		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("file_type as ft", "ft.id = a.file_type_id")
 			sb.Join("asset_type as at", "at.id = a.asset_type_id")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_group as ag", "ag.id = a.asset_group_id")
@@ -110,7 +110,7 @@ func (s *Service) GetAssetGrid(ctx context.Context, req w2.GetGridRequest) (w2.G
 			); err != nil {
 				return err
 			}
-			record.OIDStr = types.OIDFromInt64(record.OID).String()
+			record.OIDStr = types.OIDFromString(record.OID).String()
 			record.SizeStr = humanize.Bytes(uint64(record.Size))
 			record.URL, _ = url.JoinPath(s.deliveryURL, record.CDNID)
 			return nil

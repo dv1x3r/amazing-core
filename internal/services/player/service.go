@@ -5,8 +5,8 @@ import (
 	"log/slog"
 
 	"github.com/dv1x3r/amazing-core/internal/lib/db"
-	"github.com/dv1x3r/amazing-core/internal/services/asset"
 	"github.com/dv1x3r/amazing-core/internal/services/avatar"
+	"github.com/dv1x3r/amazing-core/internal/services/item"
 )
 
 var (
@@ -14,20 +14,22 @@ var (
 	ErrPlayerExists       = errors.New("player with the same oid already exists")
 	ErrPlayerAvatarExists = errors.New("player avatar with the same name or zing already exists")
 	ErrPlayerOutfitExists = errors.New("player outfit with the same avatar and outfit number already exists")
+	ErrPlayerItemExists   = errors.New("player item with the same oid already exists")
+	ErrPlayerItemAttached = errors.New("player item is already attached")
 )
 
 type Service struct {
 	logger  *slog.Logger
 	store   db.Store
-	assets  *asset.Service
 	avatars *avatar.Service
+	items   *item.Service
 }
 
-func NewService(logger *slog.Logger, store db.Store, assets *asset.Service, avatars *avatar.Service) *Service {
+func NewService(logger *slog.Logger, store db.Store, avatars *avatar.Service, items *item.Service) *Service {
 	return &Service{
 		logger:  logger,
 		store:   store,
-		assets:  assets,
 		avatars: avatars,
+		items:   items,
 	}
 }
