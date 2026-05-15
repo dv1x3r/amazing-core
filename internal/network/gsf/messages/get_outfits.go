@@ -7,13 +7,13 @@ import (
 
 // GetOutfitsRequest requests saved outfit presets for a player avatar.
 type GetOutfitsRequest struct {
-	PlayerAvatarID types.OID
-	PlayerID       types.OID
+	PlayerAvatarOID types.OID
+	PlayerOID       types.OID
 }
 
 func (req *GetOutfitsRequest) Deserialize(reader gsf.ProtocolReader) {
-	reader.ReadObject(&req.PlayerAvatarID)
-	reader.ReadObject(&req.PlayerID)
+	reader.ReadObject(&req.PlayerAvatarOID)
+	reader.ReadObject(&req.PlayerOID)
 }
 
 // GetOutfitsResponse contains saved outfit presets for a player avatar.

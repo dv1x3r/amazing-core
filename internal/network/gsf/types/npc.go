@@ -5,9 +5,9 @@ import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 // NPC is a non-player character definition sent to the client.
 type NPC struct {
 	RuleContainer
-	ZoneID             OID
+	ZoneOID            OID
 	SpawnPoint         string
-	StartQuestIDs      []OID
+	StartQuestOIDs     []OID
 	RelationshipPoints int32
 	Friend             bool
 	Ordinal            int32
@@ -17,9 +17,9 @@ type NPC struct {
 
 func (npc *NPC) Serialize(writer gsf.ProtocolWriter) {
 	npc.RuleContainer.Serialize(writer)
-	writer.WriteObject(&npc.ZoneID)
+	writer.WriteObject(&npc.ZoneOID)
 	writer.WriteString(npc.SpawnPoint)
-	gsf.WriteSlice(writer, npc.StartQuestIDs, func(value OID) {
+	gsf.WriteSlice(writer, npc.StartQuestOIDs, func(value OID) {
 		writer.WriteObject(&value)
 	})
 	writer.WriteInt32(npc.RelationshipPoints)
@@ -31,9 +31,9 @@ func (npc *NPC) Serialize(writer gsf.ProtocolWriter) {
 
 func (npc *NPC) Deserialize(reader gsf.ProtocolReader) {
 	npc.RuleContainer.Deserialize(reader)
-	reader.ReadObject(&npc.ZoneID)
+	reader.ReadObject(&npc.ZoneOID)
 	npc.SpawnPoint = reader.ReadString()
-	npc.StartQuestIDs = gsf.ReadSlice(reader, func() OID {
+	npc.StartQuestOIDs = gsf.ReadSlice(reader, func() OID {
 		var value OID
 		reader.ReadObject(&value)
 		return value

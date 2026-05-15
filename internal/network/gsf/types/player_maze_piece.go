@@ -4,14 +4,14 @@ import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
 // PlayerMazePiece is an item placement within a player maze.
 type PlayerMazePiece struct {
-	OID          OID
-	X            float64
-	Y            float64
-	Z            float64
-	Rotation     string
-	Ordinal      int16
-	ObjectID     OID
-	PlayerMazeID OID
+	OID           OID
+	X             float64
+	Y             float64
+	Z             float64
+	Rotation      string
+	Ordinal       int16
+	ObjectOID     OID
+	PlayerMazeOID OID
 }
 
 func (pmp *PlayerMazePiece) Serialize(writer gsf.ProtocolWriter) {
@@ -21,8 +21,8 @@ func (pmp *PlayerMazePiece) Serialize(writer gsf.ProtocolWriter) {
 	writer.WriteFloat64(pmp.Z)
 	writer.WriteString(pmp.Rotation)
 	writer.WriteInt16(pmp.Ordinal)
-	writer.WriteObject(&pmp.ObjectID)
-	writer.WriteObject(&pmp.PlayerMazeID)
+	writer.WriteObject(&pmp.ObjectOID)
+	writer.WriteObject(&pmp.PlayerMazeOID)
 }
 
 func (pmp *PlayerMazePiece) Deserialize(reader gsf.ProtocolReader) {
@@ -32,6 +32,6 @@ func (pmp *PlayerMazePiece) Deserialize(reader gsf.ProtocolReader) {
 	pmp.Z = reader.ReadFloat64()
 	pmp.Rotation = reader.ReadString()
 	pmp.Ordinal = reader.ReadInt16()
-	reader.ReadObject(&pmp.ObjectID)
-	reader.ReadObject(&pmp.PlayerMazeID)
+	reader.ReadObject(&pmp.ObjectOID)
+	reader.ReadObject(&pmp.PlayerMazeOID)
 }

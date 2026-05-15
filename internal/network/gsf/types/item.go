@@ -28,7 +28,7 @@ type Item struct {
 	DecayDuration      int32
 	Quantity           int32
 	ItemCategories     []ItemCategory
-	AcceptableSlotIds  []OID
+	AcceptableSlotOIDs []OID
 }
 
 func (i *Item) Serialize(writer gsf.ProtocolWriter) {
@@ -58,7 +58,7 @@ func (i *Item) Serialize(writer gsf.ProtocolWriter) {
 	gsf.WriteSlice(writer, i.ItemCategories, func(value ItemCategory) {
 		writer.WriteObject(&value)
 	})
-	gsf.WriteSlice(writer, i.AcceptableSlotIds, func(value OID) {
+	gsf.WriteSlice(writer, i.AcceptableSlotOIDs, func(value OID) {
 		writer.WriteObject(&value)
 	})
 }
@@ -92,7 +92,7 @@ func (i *Item) Deserialize(reader gsf.ProtocolReader) {
 		reader.ReadObject(&value)
 		return value
 	})
-	i.AcceptableSlotIds = gsf.ReadSlice(reader, func() OID {
+	i.AcceptableSlotOIDs = gsf.ReadSlice(reader, func() OID {
 		var value OID
 		reader.ReadObject(&value)
 		return value

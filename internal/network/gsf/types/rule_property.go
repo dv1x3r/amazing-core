@@ -4,8 +4,8 @@ import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
 // RuleProperty contains the rule metadata attached to rule containers.
 type RuleProperty struct {
-	ID               OID
-	ParentID         OID
+	OID              OID
+	ParentOID        OID
 	Components       []string
 	ParentComponents []string
 	CreateTime       gsf.UnixTime
@@ -15,8 +15,8 @@ type RuleProperty struct {
 }
 
 func (rp *RuleProperty) Serialize(writer gsf.ProtocolWriter) {
-	writer.WriteObject(&rp.ID)
-	writer.WriteObject(&rp.ParentID)
+	writer.WriteObject(&rp.OID)
+	writer.WriteObject(&rp.ParentOID)
 	gsf.WriteSlice(writer, rp.Components, writer.WriteString)
 	gsf.WriteSlice(writer, rp.ParentComponents, writer.WriteString)
 	writer.WriteUtcDate(rp.CreateTime)
@@ -30,8 +30,8 @@ func (rp *RuleProperty) Serialize(writer gsf.ProtocolWriter) {
 }
 
 func (rp *RuleProperty) Deserialize(reader gsf.ProtocolReader) {
-	reader.ReadObject(&rp.ID)
-	reader.ReadObject(&rp.ParentID)
+	reader.ReadObject(&rp.OID)
+	reader.ReadObject(&rp.ParentOID)
 	rp.Components = gsf.ReadSlice(reader, reader.ReadString)
 	rp.ParentComponents = gsf.ReadSlice(reader, reader.ReadString)
 	rp.CreateTime = reader.ReadUtcDate()

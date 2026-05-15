@@ -8,7 +8,7 @@ type Building struct {
 	Position   Position
 	Dimensions Dimensions
 	SpawnPoint string
-	ZoneID     OID
+	ZoneOID    OID
 }
 
 func (b *Building) Serialize(writer gsf.ProtocolWriter) {
@@ -16,7 +16,7 @@ func (b *Building) Serialize(writer gsf.ProtocolWriter) {
 	writer.WriteObject(&b.Position)
 	writer.WriteObject(&b.Dimensions)
 	writer.WriteString(b.SpawnPoint)
-	writer.WriteObject(&b.ZoneID)
+	writer.WriteObject(&b.ZoneOID)
 }
 
 func (b *Building) Deserialize(reader gsf.ProtocolReader) {
@@ -24,5 +24,5 @@ func (b *Building) Deserialize(reader gsf.ProtocolReader) {
 	reader.ReadObject(&b.Position)
 	reader.ReadObject(&b.Dimensions)
 	b.SpawnPoint = reader.ReadString()
-	reader.ReadObject(&b.ZoneID)
+	reader.ReadObject(&b.ZoneOID)
 }

@@ -4,22 +4,22 @@ import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
 // PlayerAvatarOutfit identifies a saved outfit preset for a player avatar.
 type PlayerAvatarOutfit struct {
-	OID            OID
-	PlayerID       OID
-	PlayerAvatarID OID
-	OutfitNo       int16
+	OID             OID
+	PlayerOID       OID
+	PlayerAvatarOID OID
+	OutfitNo        int16
 }
 
 func (ps *PlayerAvatarOutfit) Serialize(writer gsf.ProtocolWriter) {
 	writer.WriteObject(&ps.OID)
-	writer.WriteObject(&ps.PlayerID)
-	writer.WriteObject(&ps.PlayerAvatarID)
+	writer.WriteObject(&ps.PlayerOID)
+	writer.WriteObject(&ps.PlayerAvatarOID)
 	writer.WriteInt16(ps.OutfitNo)
 }
 
 func (ps *PlayerAvatarOutfit) Deserialize(reader gsf.ProtocolReader) {
 	reader.ReadObject(&ps.OID)
-	reader.ReadObject(&ps.PlayerID)
-	reader.ReadObject(&ps.PlayerAvatarID)
+	reader.ReadObject(&ps.PlayerOID)
+	reader.ReadObject(&ps.PlayerAvatarOID)
 	ps.OutfitNo = reader.ReadInt16()
 }

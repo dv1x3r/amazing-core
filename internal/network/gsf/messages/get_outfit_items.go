@@ -7,13 +7,13 @@ import (
 
 // GetOutfitItemsRequest requests item instances assigned to an avatar outfit.
 type GetOutfitItemsRequest struct {
-	PlayerAvatarOutfitID types.OID
-	PlayerID             types.OID
+	PlayerAvatarOutfitOID types.OID
+	PlayerOID             types.OID
 }
 
 func (req *GetOutfitItemsRequest) Deserialize(reader gsf.ProtocolReader) {
-	reader.ReadObject(&req.PlayerAvatarOutfitID)
-	reader.ReadObject(&req.PlayerID)
+	reader.ReadObject(&req.PlayerAvatarOutfitOID)
+	reader.ReadObject(&req.PlayerOID)
 }
 
 // GetOutfitItemsResponse contains item instances assigned to an avatar outfit.

@@ -14,13 +14,13 @@ type GetAvatarsRequest struct {
 	Max int32
 
 	// Filter list.
-	FilterIDs []types.OID
+	FilterOIDs []types.OID
 }
 
 func (req *GetAvatarsRequest) Deserialize(reader gsf.ProtocolReader) {
 	req.Start = reader.ReadInt32()
 	req.Max = reader.ReadInt32()
-	req.FilterIDs = gsf.ReadSlice(reader, func() types.OID {
+	req.FilterOIDs = gsf.ReadSlice(reader, func() types.OID {
 		var value types.OID
 		reader.ReadObject(&value)
 		return value

@@ -5,12 +5,12 @@ import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 // Village is a client-visible village state object.
 type Village struct {
 	OID                OID
-	NextVillageID      OID
-	PrevVillageID      OID
-	VillageShardID     OID
-	VillageTemplateID  OID
-	VillageFlagID      OID
-	MayorPlayerID      OID
+	NextVillageOID     OID
+	PrevVillageOID     OID
+	VillageShardOID    OID
+	VillageTemplateOID OID
+	VillageFlagOID     OID
+	MayorPlayerOID     OID
 	VillageTheme       AssetContainer
 	VillagePlots       []VillagePlot
 	VillageRolePlayers []VillageRolePlayer
@@ -24,12 +24,12 @@ type Village struct {
 
 func (v *Village) Serialize(writer gsf.ProtocolWriter) {
 	writer.WriteObject(&v.OID)
-	writer.WriteObject(&v.NextVillageID)
-	writer.WriteObject(&v.PrevVillageID)
-	writer.WriteObject(&v.VillageShardID)
-	writer.WriteObject(&v.VillageTemplateID)
-	writer.WriteObject(&v.VillageFlagID)
-	writer.WriteObject(&v.MayorPlayerID)
+	writer.WriteObject(&v.NextVillageOID)
+	writer.WriteObject(&v.PrevVillageOID)
+	writer.WriteObject(&v.VillageShardOID)
+	writer.WriteObject(&v.VillageTemplateOID)
+	writer.WriteObject(&v.VillageFlagOID)
+	writer.WriteObject(&v.MayorPlayerOID)
 	writer.WriteObject(&v.VillageTheme)
 	gsf.WriteSlice(writer, v.VillagePlots, func(value VillagePlot) {
 		writer.WriteObject(&value)
@@ -49,12 +49,12 @@ func (v *Village) Serialize(writer gsf.ProtocolWriter) {
 
 func (v *Village) Deserialize(reader gsf.ProtocolReader) {
 	reader.ReadObject(&v.OID)
-	reader.ReadObject(&v.NextVillageID)
-	reader.ReadObject(&v.PrevVillageID)
-	reader.ReadObject(&v.VillageShardID)
-	reader.ReadObject(&v.VillageTemplateID)
-	reader.ReadObject(&v.VillageFlagID)
-	reader.ReadObject(&v.MayorPlayerID)
+	reader.ReadObject(&v.NextVillageOID)
+	reader.ReadObject(&v.PrevVillageOID)
+	reader.ReadObject(&v.VillageShardOID)
+	reader.ReadObject(&v.VillageTemplateOID)
+	reader.ReadObject(&v.VillageFlagOID)
+	reader.ReadObject(&v.MayorPlayerOID)
 	reader.ReadObject(&v.VillageTheme)
 	v.VillagePlots = gsf.ReadSlice(reader, func() VillagePlot {
 		var value VillagePlot

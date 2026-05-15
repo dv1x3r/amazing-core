@@ -7,13 +7,13 @@ import (
 
 // GetAvatarItemsRequest requests item instances owned by a player avatar.
 type GetAvatarItemsRequest struct {
-	PlayerAvatarID types.OID
-	PlayerID       types.OID
+	PlayerAvatarOID types.OID
+	PlayerOID       types.OID
 }
 
 func (req *GetAvatarItemsRequest) Deserialize(reader gsf.ProtocolReader) {
-	reader.ReadObject(&req.PlayerAvatarID)
-	reader.ReadObject(&req.PlayerID)
+	reader.ReadObject(&req.PlayerAvatarOID)
+	reader.ReadObject(&req.PlayerOID)
 }
 
 // GetAvatarItemsResponse contains item instances owned by a player avatar.

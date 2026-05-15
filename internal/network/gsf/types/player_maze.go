@@ -16,11 +16,11 @@ type PlayerMaze struct {
 	IsHomeMaze       bool
 	IsPublished      bool
 	IsPublishExpired bool
-	PlayerID         OID
+	PlayerOID        OID
 	MazePieces       []PlayerMazePiece
 	HomeTheme        AssetContainer
-	ParentID         OID
-	SourceID         OID
+	ParentOID        OID
+	SourceOID        OID
 }
 
 func (pm *PlayerMaze) Serialize(writer gsf.ProtocolWriter) {
@@ -36,13 +36,13 @@ func (pm *PlayerMaze) Serialize(writer gsf.ProtocolWriter) {
 	writer.WriteBool(pm.IsHomeMaze)
 	writer.WriteBool(pm.IsPublished)
 	writer.WriteBool(pm.IsPublishExpired)
-	writer.WriteObject(&pm.PlayerID)
+	writer.WriteObject(&pm.PlayerOID)
 	gsf.WriteSlice(writer, pm.MazePieces, func(value PlayerMazePiece) {
 		writer.WriteObject(&value)
 	})
 	writer.WriteObject(&pm.HomeTheme)
-	writer.WriteObject(&pm.ParentID)
-	writer.WriteObject(&pm.SourceID)
+	writer.WriteObject(&pm.ParentOID)
+	writer.WriteObject(&pm.SourceOID)
 }
 
 func (pm *PlayerMaze) Deserialize(reader gsf.ProtocolReader) {
@@ -58,13 +58,13 @@ func (pm *PlayerMaze) Deserialize(reader gsf.ProtocolReader) {
 	pm.IsHomeMaze = reader.ReadBool()
 	pm.IsPublished = reader.ReadBool()
 	pm.IsPublishExpired = reader.ReadBool()
-	reader.ReadObject(&pm.PlayerID)
+	reader.ReadObject(&pm.PlayerOID)
 	pm.MazePieces = gsf.ReadSlice(reader, func() PlayerMazePiece {
 		var value PlayerMazePiece
 		reader.ReadObject(&value)
 		return value
 	})
 	reader.ReadObject(&pm.HomeTheme)
-	reader.ReadObject(&pm.ParentID)
-	reader.ReadObject(&pm.SourceID)
+	reader.ReadObject(&pm.ParentOID)
+	reader.ReadObject(&pm.SourceOID)
 }

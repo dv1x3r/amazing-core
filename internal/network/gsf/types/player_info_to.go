@@ -4,15 +4,15 @@ import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
 // PlayerInfoTO contains account and policy data returned during login.
 type PlayerInfoTO struct {
-	TierID                     OID
+	TierOID                    OID
 	PlayerName                 string
 	WorldName                  string
 	CrispDataTO                CrispDataTO
 	Verified                   bool
 	VerificationExpiry         gsf.UnixTime
 	ScsBlockExpiry             gsf.UnixTime
-	EulaID                     OID
-	CurrentEulaID              OID
+	EulaOID                    OID
+	CurrentEulaOID             OID
 	U13                        bool
 	ChatBlockedParent          bool
 	ChatAllowed                bool
@@ -25,15 +25,15 @@ type PlayerInfoTO struct {
 }
 
 func (pi *PlayerInfoTO) Serialize(writer gsf.ProtocolWriter) {
-	writer.WriteObject(&pi.TierID)
+	writer.WriteObject(&pi.TierOID)
 	writer.WriteString(pi.PlayerName)
 	writer.WriteString(pi.WorldName)
 	writer.WriteObject(&pi.CrispDataTO)
 	writer.WriteBool(pi.Verified)
 	writer.WriteUtcDate(pi.VerificationExpiry)
 	writer.WriteUtcDate(pi.ScsBlockExpiry)
-	writer.WriteObject(&pi.EulaID)
-	writer.WriteObject(&pi.CurrentEulaID)
+	writer.WriteObject(&pi.EulaOID)
+	writer.WriteObject(&pi.CurrentEulaOID)
 	writer.WriteBool(pi.U13)
 	writer.WriteBool(pi.ChatBlockedParent)
 	writer.WriteBool(pi.ChatAllowed)
@@ -48,15 +48,15 @@ func (pi *PlayerInfoTO) Serialize(writer gsf.ProtocolWriter) {
 }
 
 func (pi *PlayerInfoTO) Deserialize(reader gsf.ProtocolReader) {
-	reader.ReadObject(&pi.TierID)
+	reader.ReadObject(&pi.TierOID)
 	pi.PlayerName = reader.ReadString()
 	pi.WorldName = reader.ReadString()
 	reader.ReadObject(&pi.CrispDataTO)
 	pi.Verified = reader.ReadBool()
 	pi.VerificationExpiry = reader.ReadUtcDate()
 	pi.ScsBlockExpiry = reader.ReadUtcDate()
-	reader.ReadObject(&pi.EulaID)
-	reader.ReadObject(&pi.CurrentEulaID)
+	reader.ReadObject(&pi.EulaOID)
+	reader.ReadObject(&pi.CurrentEulaOID)
 	pi.U13 = reader.ReadBool()
 	pi.ChatBlockedParent = reader.ReadBool()
 	pi.ChatAllowed = reader.ReadBool()

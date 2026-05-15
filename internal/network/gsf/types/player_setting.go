@@ -5,21 +5,21 @@ import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 // PlayerSetting is a named player setting value.
 type PlayerSetting struct {
 	OID         OID
-	PlayerID    OID
+	PlayerOID   OID
 	SettingName string
 	Value       string
 }
 
 func (ps *PlayerSetting) Serialize(writer gsf.ProtocolWriter) {
 	writer.WriteObject(&ps.OID)
-	writer.WriteObject(&ps.PlayerID)
+	writer.WriteObject(&ps.PlayerOID)
 	writer.WriteString(ps.SettingName)
 	writer.WriteString(ps.Value)
 }
 
 func (ps *PlayerSetting) Deserialize(reader gsf.ProtocolReader) {
 	reader.ReadObject(&ps.OID)
-	reader.ReadObject(&ps.PlayerID)
+	reader.ReadObject(&ps.PlayerOID)
 	ps.SettingName = reader.ReadString()
 	ps.Value = reader.ReadString()
 }

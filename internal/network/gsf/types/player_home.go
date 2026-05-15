@@ -9,7 +9,7 @@ type PlayerHome struct {
 	Findable     bool
 	FindableDate gsf.UnixTime
 	HomeTheme    AssetContainer
-	PlayerID     OID
+	PlayerOID    OID
 	PlayerMazes  []PlayerMaze
 }
 
@@ -19,7 +19,7 @@ func (ph *PlayerHome) Serialize(writer gsf.ProtocolWriter) {
 	writer.WriteBool(ph.Findable)
 	writer.WriteUtcDate(ph.FindableDate)
 	writer.WriteObject(&ph.HomeTheme)
-	writer.WriteObject(&ph.PlayerID)
+	writer.WriteObject(&ph.PlayerOID)
 	gsf.WriteSlice(writer, ph.PlayerMazes, func(value PlayerMaze) {
 		writer.WriteObject(&value)
 	})
@@ -31,7 +31,7 @@ func (ph *PlayerHome) Deserialize(reader gsf.ProtocolReader) {
 	ph.Findable = reader.ReadBool()
 	ph.FindableDate = reader.ReadUtcDate()
 	reader.ReadObject(&ph.HomeTheme)
-	reader.ReadObject(&ph.PlayerID)
+	reader.ReadObject(&ph.PlayerOID)
 	ph.PlayerMazes = gsf.ReadSlice(reader, func() PlayerMaze {
 		var value PlayerMaze
 		reader.ReadObject(&value)

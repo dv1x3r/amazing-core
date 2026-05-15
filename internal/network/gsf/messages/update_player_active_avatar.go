@@ -7,11 +7,11 @@ import (
 
 // UpdatePlayerActiveAvatarRequest selects the player's active avatar.
 type UpdatePlayerActiveAvatarRequest struct {
-	PlayerAvatarID types.OID
+	PlayerAvatarOID types.OID
 }
 
 func (req *UpdatePlayerActiveAvatarRequest) Deserialize(reader gsf.ProtocolReader) {
-	reader.ReadObject(&req.PlayerAvatarID)
+	reader.ReadObject(&req.PlayerAvatarOID)
 }
 
 // UpdatePlayerActiveAvatarResponse contains the newly active player avatar.

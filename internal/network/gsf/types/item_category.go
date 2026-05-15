@@ -8,7 +8,7 @@ type ItemCategory struct {
 	CreateDate gsf.UnixTime
 	IsOutdoor  bool
 	IsWalkover bool
-	ParentID   OID
+	ParentOID  OID
 	Name       string
 	ShowInDock bool
 }
@@ -18,7 +18,7 @@ func (ic *ItemCategory) Serialize(writer gsf.ProtocolWriter) {
 	writer.WriteUtcDate(ic.CreateDate)
 	writer.WriteBool(ic.IsOutdoor)
 	writer.WriteBool(ic.IsWalkover)
-	writer.WriteObject(&ic.ParentID)
+	writer.WriteObject(&ic.ParentOID)
 	writer.WriteString(ic.Name)
 	writer.WriteBool(ic.ShowInDock)
 }
@@ -28,7 +28,7 @@ func (ic *ItemCategory) Deserialize(reader gsf.ProtocolReader) {
 	ic.CreateDate = reader.ReadUtcDate()
 	ic.IsOutdoor = reader.ReadBool()
 	ic.IsWalkover = reader.ReadBool()
-	reader.ReadObject(&ic.ParentID)
+	reader.ReadObject(&ic.ParentOID)
 	ic.Name = reader.ReadString()
 	ic.ShowInDock = reader.ReadBool()
 }
