@@ -131,6 +131,10 @@ func NewServer(logger *slog.Logger, handler *Handler, store db.Store) *Server {
 	v1.HandleFunc("POST /siteframe/form", errorHandler(handler.PostSiteFrameForm))
 	v1.HandleFunc("POST /siteframe/remove", errorHandler(handler.PostSiteFrameRemove))
 
+	v1.HandleFunc("GET /zone/grid", errorHandler(handler.GetZoneGrid))
+	v1.HandleFunc("POST /zone/form", errorHandler(handler.PostZoneForm))
+	v1.HandleFunc("POST /zone/remove", errorHandler(handler.PostZoneRemove))
+
 	if config.Get().Storage.Explorer {
 		v1.HandleFunc("GET /sql", errorHandler(w2widget.SQLiteSchemaHandler(store.DB())))
 		v1.HandleFunc("POST /sql", errorHandler(w2widget.SQLExecHandler(store.DB())))

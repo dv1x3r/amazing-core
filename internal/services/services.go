@@ -15,6 +15,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/services/player"
 	"github.com/dv1x3r/amazing-core/internal/services/randname"
 	"github.com/dv1x3r/amazing-core/internal/services/siteframe"
+	"github.com/dv1x3r/amazing-core/internal/services/zone"
 )
 
 type Services struct {
@@ -27,6 +28,7 @@ type Services struct {
 	Player    *player.Service
 	RandName  *randname.Service
 	SiteFrame *siteframe.Service
+	Zone      *zone.Service
 }
 
 func New(logger *slog.Logger, coreStore db.Store, blobStore db.Store, cfg config.Config) Services {
@@ -43,5 +45,6 @@ func New(logger *slog.Logger, coreStore db.Store, blobStore db.Store, cfg config
 		Player:    player.NewService(logger, coreStore, avatars, items),
 		RandName:  randname.NewService(logger, coreStore),
 		SiteFrame: siteframe.NewService(logger, coreStore, assets),
+		Zone:      zone.NewService(logger, coreStore, assets),
 	}
 }

@@ -294,14 +294,12 @@ func (h *Handler) GetZones(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
+	zones, err := h.svc.Zone.GetGSFZones(r.Context(), r.Platform())
+	if err != nil {
+		return err
+	}
 	res := &messages.GetZonesResponse{}
-	npcZone := types.Zone{}
-	// LoadNPCsCommand calls SpawnPoints.Instance.ParseZone(NPCManager.HardCodedZoneId),
-	// so the NPC zone must be present in this list.
-	// LoadNPCsCommand.cs -> SpawnPoints.Instance.ParseZone(NPCManager.HardCodedZoneId)
-	npcZone.OID = types.OIDFromValues(4, 16, 0, 2937912)
-	npcZone.AssetMap = map[string][]types.Asset{}
-	res.Zones = []types.Zone{npcZone}
+	res.Zones = zones
 	return w.Write(res)
 }
 
@@ -334,7 +332,7 @@ func (h *Handler) InitLocation(w gsf.ResponseWriter, r *gsf.Request) error {
 	// The Home.PlayerMaze.HomeTheme.AssetMap["Scene_Unity3D"] asset drives scene loading via
 	// LoadMazeCommand.cs -> LoadMainScene() -> AssetDownloadManager.cs -> LoadMainScene()
 	homeTheme := types.AssetContainer{}
-	homeTheme.AssetMap = map[string][]types.Asset{}
+	homeTheme.AssetMap = types.AssetMap{}
 	homeTheme.AssetMap["Scene_Unity3D"] = []types.Asset{scene}
 
 	playerMaze := types.PlayerMaze{

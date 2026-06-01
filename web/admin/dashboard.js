@@ -73,6 +73,41 @@ const dashboardSidebar = new w2sidebar({
       ],
     },
     {
+      id: 'players-group',
+      text: 'Players',
+      group: true,
+      expanded: true,
+      nodes: [
+        {
+          id: 'players',
+          text: 'Players',
+          icon: 'fa fa-users',
+          onClick: async function() {
+            const module = await import('./widgets/players.js')
+            setDashboardWidget(module.createPlayerLayout)
+          },
+        },
+        {
+          id: 'avatars',
+          text: 'Avatars',
+          icon: 'fa fa-user-astronaut',
+          onClick: async function() {
+            const module = await import('./widgets/avatars.js')
+            setDashboardWidget(module.createAvatarLayout)
+          },
+        },
+        {
+          id: 'random-names',
+          text: 'Random Names',
+          icon: 'fa fa-dice',
+          onClick: async function() {
+            const module = await import('./widgets/random_names.js')
+            setDashboardWidget(module.createRandomNameLayout)
+          },
+        },
+      ],
+    },
+    {
       id: 'items-group',
       text: 'Items',
       group: true,
@@ -99,36 +134,18 @@ const dashboardSidebar = new w2sidebar({
       ],
     },
     {
-      id: 'players-group',
-      text: 'Players',
+      id: 'zones-group',
+      text: 'Zones',
       group: true,
       expanded: true,
       nodes: [
         {
-          id: 'avatars',
-          text: 'Avatars',
-          icon: 'fa fa-user-astronaut',
+          id: 'zones',
+          text: 'Zones',
+          icon: 'fa fa-location-dot',
           onClick: async function() {
-            const module = await import('./widgets/avatars.js')
-            setDashboardWidget(module.createAvatarLayout)
-          },
-        },
-        {
-          id: 'players',
-          text: 'Players',
-          icon: 'fa fa-users',
-          onClick: async function() {
-            const module = await import('./widgets/players.js')
-            setDashboardWidget(module.createPlayerLayout)
-          },
-        },
-        {
-          id: 'random-names',
-          text: 'Random Names',
-          icon: 'fa fa-dice',
-          onClick: async function() {
-            const module = await import('./widgets/random_names.js')
-            setDashboardWidget(module.createRandomNameLayout)
+            const module = await import('./widgets/zones.js')
+            setDashboardWidget(module.createZoneLayout)
           },
         },
       ],

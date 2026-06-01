@@ -301,7 +301,7 @@ function openCategoryPopup(event) {
         type: 'text',
         required: isEditMode,
         html: {
-          label: 'Container OID',
+          label: 'Category OID',
           attr: isEditMode ? 'size="15"' : 'size="15" readonly',
           span: 6,
           column: 0,
