@@ -7,7 +7,7 @@ import (
 
 // SyncLoginRequest authenticates the player with the SYNC server.
 type SyncLoginRequest struct {
-	UID types.OID
+	UOID types.OID
 
 	// Sync server token from the InitLocation response.
 	Token string
@@ -16,7 +16,7 @@ type SyncLoginRequest struct {
 }
 
 func (req *SyncLoginRequest) Deserialize(reader gsf.ProtocolReader) {
-	reader.ReadObject(&req.UID)
+	reader.ReadObject(&req.UOID)
 	req.Token = reader.ReadString()
 	req.MaxVisSize = reader.ReadInt32()
 }

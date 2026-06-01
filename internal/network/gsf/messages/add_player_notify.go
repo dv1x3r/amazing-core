@@ -7,27 +7,27 @@ import (
 
 // AddPlayerNotify is a SYNC notification payload for a player entering visibility.
 type AddPlayerNotify struct {
-	PID              types.OID
-	PlayerVillagerID types.OID
-	Ver              int64
-	LID              types.OID
-	LCP              bool
-	TimeOffset       int64
-	Pos              types.Position
-	WPos             []types.Position
-	QTH              types.QTH
-	SecondQTH        types.QTH
-	Weight           int32
-	Seq              byte
-	Type             int32
-	ActionState      []types.PlayerActionNotify
+	POID              types.OID
+	PlayerVillagerOID types.OID
+	Ver               int64
+	LOID              types.OID
+	LCP               bool
+	TimeOffset        int64
+	Pos               types.Position
+	WPos              []types.Position
+	QTH               types.QTH
+	SecondQTH         types.QTH
+	Weight            int32
+	Seq               byte
+	Type              int32
+	ActionState       []types.PlayerActionNotify
 }
 
 func (apn *AddPlayerNotify) Serialize(writer gsf.ProtocolWriter) {
-	writer.WriteObject(&apn.PID)
-	writer.WriteObject(&apn.PlayerVillagerID)
+	writer.WriteObject(&apn.POID)
+	writer.WriteObject(&apn.PlayerVillagerOID)
 	writer.WriteInt64(apn.Ver)
-	writer.WriteObject(&apn.LID)
+	writer.WriteObject(&apn.LOID)
 	writer.WriteBool(apn.LCP)
 	writer.WriteInt64(apn.TimeOffset)
 	writer.WriteObject(&apn.Pos)
@@ -45,10 +45,10 @@ func (apn *AddPlayerNotify) Serialize(writer gsf.ProtocolWriter) {
 }
 
 func (apn *AddPlayerNotify) Deserialize(reader gsf.ProtocolReader) {
-	reader.ReadObject(&apn.PID)
-	reader.ReadObject(&apn.PlayerVillagerID)
+	reader.ReadObject(&apn.POID)
+	reader.ReadObject(&apn.PlayerVillagerOID)
 	apn.Ver = reader.ReadInt64()
-	reader.ReadObject(&apn.LID)
+	reader.ReadObject(&apn.LOID)
 	apn.LCP = reader.ReadBool()
 	apn.TimeOffset = reader.ReadInt64()
 	reader.ReadObject(&apn.Pos)

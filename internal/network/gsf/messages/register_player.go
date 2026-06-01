@@ -12,7 +12,7 @@ type RegisterPlayerRequest struct {
 	ParentEmailAddress  string
 	BirthDate           gsf.UnixTime
 	Gender              string
-	LocationID          types.OID
+	LocationOID         types.OID
 	Username            string
 	Worldname           string
 	ChatAllowed         bool
@@ -27,7 +27,7 @@ func (req *RegisterPlayerRequest) Deserialize(reader gsf.ProtocolReader) {
 	req.ParentEmailAddress = reader.ReadString()
 	req.BirthDate = reader.ReadUtcDate()
 	req.Gender = reader.ReadString()
-	reader.ReadObject(&req.LocationID)
+	reader.ReadObject(&req.LocationOID)
 	req.Username = reader.ReadString()
 	req.Worldname = reader.ReadString()
 	req.ChatAllowed = reader.ReadBool()
@@ -38,9 +38,9 @@ func (req *RegisterPlayerRequest) Deserialize(reader gsf.ProtocolReader) {
 
 // RegisterPlayerResponse contains the object ID assigned to the registered player.
 type RegisterPlayerResponse struct {
-	PlayerID types.OID
+	PlayerOID types.OID
 }
 
 func (res *RegisterPlayerResponse) Serialize(writer gsf.ProtocolWriter) {
-	writer.WriteObject(&res.PlayerID)
+	writer.WriteObject(&res.PlayerOID)
 }

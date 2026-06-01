@@ -7,11 +7,12 @@ import (
 
 // InitLocationRequest requests location data for the selected location.
 type InitLocationRequest struct {
-	LocID types.OID
+	// Player OID for home zone, and 292733975781503755 for Spring Bay zone.
+	LocOID types.OID
 }
 
 func (req *InitLocationRequest) Deserialize(reader gsf.ProtocolReader) {
-	reader.ReadObject(&req.LocID)
+	reader.ReadObject(&req.LocOID)
 }
 
 // InitLocationResponse contains location data and SYNC server connection details.

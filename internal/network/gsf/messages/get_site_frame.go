@@ -11,10 +11,10 @@ type GetSiteFrameRequest struct {
 	TypeValue int32
 
 	// The client always sends 293578400718237473.
-	LangLocalePairID types.OID
+	LangLocalePairOID types.OID
 
 	// The following fields are serialized but not used.
-	TierID           types.OID
+	TierOID          types.OID
 	BirthDate        gsf.UnixTime
 	RegistrationDate gsf.UnixTime
 	PreviewDate      gsf.UnixTime
@@ -23,8 +23,8 @@ type GetSiteFrameRequest struct {
 
 func (req *GetSiteFrameRequest) Deserialize(reader gsf.ProtocolReader) {
 	req.TypeValue = reader.ReadInt32()
-	reader.ReadObject(&req.LangLocalePairID)
-	reader.ReadObject(&req.TierID)
+	reader.ReadObject(&req.LangLocalePairOID)
+	reader.ReadObject(&req.TierOID)
 	req.BirthDate = reader.ReadUtcDate()
 	req.RegistrationDate = reader.ReadUtcDate()
 	req.PreviewDate = reader.ReadUtcDate()

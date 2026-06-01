@@ -36,7 +36,6 @@ export function createPlayerLayout() {
         text: 'Player OID',
         render: 'text',
         size: '135px',
-        hidden: true,
         searchable: 'text',
       },
       {
@@ -130,7 +129,7 @@ export function createPlayerLayout() {
   return new w2layout({
     name: 'playerLayout',
     panels: [
-      { type: 'left', size: '320px', resizable: true, html: playerListGrid },
+      { type: 'left', size: '340px', resizable: true, html: playerListGrid },
       { type: 'main', size: '100%', html: subLayout },
     ],
     onDestroy: function() {
@@ -169,7 +168,7 @@ function createPlayerDetailsForm() {
       },
       {
         field: 'oid',
-        type: 'int',
+        type: 'text',
         disabled: selectedPlayerID == null,
         html: {
           label: 'Player OID',

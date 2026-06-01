@@ -18,7 +18,7 @@ type LoginRequest struct {
 	SitePIN int32
 
 	// The client always sends 293578400718237473.
-	LanguageLocalePairID types.OID
+	LanguageLocalePairOID types.OID
 
 	// The client always sends "Token".
 	UserQueueingToken string
@@ -35,7 +35,7 @@ func (req *LoginRequest) Deserialize(reader gsf.ProtocolReader) {
 	req.LoginID = reader.ReadString()
 	req.Password = reader.ReadString()
 	req.SitePIN = reader.ReadInt32()
-	reader.ReadObject(&req.LanguageLocalePairID)
+	reader.ReadObject(&req.LanguageLocalePairOID)
 	req.UserQueueingToken = reader.ReadString()
 	reader.ReadObject(&req.ClientEnvInfo)
 	req.Token = reader.ReadString()
@@ -47,7 +47,7 @@ func (req *LoginRequest) Deserialize(reader gsf.ProtocolReader) {
 type LoginResponse struct {
 	SiteInfo       types.SiteInfo
 	Status         sessionstatus.SessionStatus
-	SessionID      types.OID
+	SessionOID     types.OID
 	ConversationID int64
 
 	// Base URL used for asset downloads.
@@ -71,7 +71,7 @@ type LoginResponse struct {
 func (res *LoginResponse) Serialize(writer gsf.ProtocolWriter) {
 	writer.WriteObject(&res.SiteInfo)
 	writer.WriteString(res.Status.String())
-	writer.WriteObject(&res.SessionID)
+	writer.WriteObject(&res.SessionOID)
 	writer.WriteInt64(res.ConversationID)
 	writer.WriteString(res.AssetDeliveryURL)
 	writer.WriteObject(&res.Player)

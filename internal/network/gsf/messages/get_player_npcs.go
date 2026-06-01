@@ -7,13 +7,13 @@ import (
 
 // GetPlayerNPCsRequest requests NPCs for a player and zone.
 type GetPlayerNPCsRequest struct {
-	PlayerID types.OID
-	ZoneID   types.OID
+	PlayerOID types.OID
+	ZoneOID   types.OID
 }
 
 func (req *GetPlayerNPCsRequest) Deserialize(reader gsf.ProtocolReader) {
-	reader.ReadObject(&req.PlayerID)
-	reader.ReadObject(&req.ZoneID)
+	reader.ReadObject(&req.PlayerOID)
+	reader.ReadObject(&req.ZoneOID)
 }
 
 // GetPlayerNPCsResponse contains NPC records for the requested zone.

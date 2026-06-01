@@ -5,15 +5,15 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// GetPublicItemsByOIDsRequest requests public item definitions by object ID.
+// GetPublicItemsByOIDsRequest requests public item definitions by OIDs.
 type GetPublicItemsByOIDsRequest struct {
-	OIDs             []types.OID
-	LangLocalePairID types.OID
-	TierID           types.OID
-	BirthDate        gsf.UnixTime
-	RegistrationDate gsf.UnixTime
-	PreviewDate      gsf.UnixTime
-	IsPreviewEnabled bool
+	OIDs              []types.OID
+	LangLocalePairOID types.OID
+	TierOID           types.OID
+	BirthDate         gsf.UnixTime
+	RegistrationDate  gsf.UnixTime
+	PreviewDate       gsf.UnixTime
+	IsPreviewEnabled  bool
 }
 
 func (req *GetPublicItemsByOIDsRequest) Deserialize(reader gsf.ProtocolReader) {
@@ -22,15 +22,15 @@ func (req *GetPublicItemsByOIDsRequest) Deserialize(reader gsf.ProtocolReader) {
 		reader.ReadObject(&value)
 		return value
 	})
-	reader.ReadObject(&req.LangLocalePairID)
-	reader.ReadObject(&req.TierID)
+	reader.ReadObject(&req.LangLocalePairOID)
+	reader.ReadObject(&req.TierOID)
 	req.BirthDate = reader.ReadUtcDate()
 	req.RegistrationDate = reader.ReadUtcDate()
 	req.PreviewDate = reader.ReadUtcDate()
 	req.IsPreviewEnabled = reader.ReadBool()
 }
 
-// GetPublicItemsByOIDsResponse contains public item definitions.
+// GetPublicItemsByOIDsResponse contains public item definitions for the requested OIDs.
 type GetPublicItemsByOIDsResponse struct {
 	Items []types.Item
 }

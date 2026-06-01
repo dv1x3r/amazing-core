@@ -7,24 +7,24 @@ import (
 
 // EnterBuildingRequest is sent when the client enters a building location.
 type EnterBuildingRequest struct {
-	LocID       types.OID
-	BuildingID  types.OID
+	LocOID      types.OID
+	BuildingOID types.OID
 	Pos         types.Position
 	Orientation types.QTH
 }
 
 func (req *EnterBuildingRequest) Deserialize(reader gsf.ProtocolReader) {
-	reader.ReadObject(&req.LocID)
-	reader.ReadObject(&req.BuildingID)
+	reader.ReadObject(&req.LocOID)
+	reader.ReadObject(&req.BuildingOID)
 	reader.ReadObject(&req.Pos)
 	reader.ReadObject(&req.Orientation)
 }
 
 // EnterBuildingResponse contains the building ID for the entered building.
 type EnterBuildingResponse struct {
-	BuildingID types.OID
+	BuildingOID types.OID
 }
 
 func (res *EnterBuildingResponse) Serialize(writer gsf.ProtocolWriter) {
-	writer.WriteObject(&res.BuildingID)
+	writer.WriteObject(&res.BuildingOID)
 }

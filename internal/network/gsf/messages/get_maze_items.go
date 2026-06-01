@@ -7,13 +7,13 @@ import (
 
 // GetMazeItemsRequest requests item instances placed in a player maze.
 type GetMazeItemsRequest struct {
-	PlayerMazeID types.OID
-	PlayerID     types.OID
+	PlayerMazeOID types.OID
+	PlayerOID     types.OID
 }
 
 func (req *GetMazeItemsRequest) Deserialize(reader gsf.ProtocolReader) {
-	reader.ReadObject(&req.PlayerMazeID)
-	reader.ReadObject(&req.PlayerID)
+	reader.ReadObject(&req.PlayerMazeOID)
+	reader.ReadObject(&req.PlayerOID)
 }
 
 // GetMazeItemsResponse contains item instances placed in a player maze.

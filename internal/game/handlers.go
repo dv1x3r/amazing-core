@@ -18,8 +18,14 @@ func NewHandler(svc services.Services) *Handler {
 	}
 }
 
-const PLAYER_ID = 1
-const MAX_OUTFIT = 1
+const (
+	PLAYER_ID  = 1
+	MAX_OUTFIT = 1
+
+	SCENE_HOMELOT_SMALL  = "OTYxMTQ4NDU5NDE5MA"
+	SCENE_HOMELOT_WINTER = "OTQ1MDc3NTY0MjEyNg"
+	SCENE_SPRINGTIME     = "OTYwOTUyODk5OTk1MA"
+)
 
 // ── General ──────────────────────────────────────────────────────────────────
 
@@ -147,7 +153,7 @@ func (h *Handler) RegisterPlayer(w gsf.ResponseWriter, r *gsf.Request) error {
 		return err
 	}
 	res := &messages.RegisterPlayerResponse{}
-	res.PlayerID = types.OID{Class: 1, Type: 2, Server: 3, Number: 4}
+	res.PlayerOID = types.OID{Class: 1, Type: 2, Server: 3, Number: 4}
 	return w.Write(res)
 }
 
@@ -276,7 +282,7 @@ func (h *Handler) GetTiers(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// GetPublicItemsByOIDs handles requests for public item definitions by object ID.
+// GetPublicItemsByOIDs handles requests for public item definitions by OIDs.
 func (h *Handler) GetPublicItemsByOIDs(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetPublicItemsByOIDsRequest{}
 	if err := r.Read(req); err != nil {
@@ -315,18 +321,16 @@ func (h *Handler) InitLocation(w gsf.ResponseWriter, r *gsf.Request) error {
 	res.SyncServerIP = config.Get().Settings.SyncServerIP
 	res.SyncServerPort = int32(config.Get().Settings.SyncServerPort)
 
-	// dummyScene := "OTYwOTUyODk5OTk1MA" // Springtime003.unity3d
-	// dummyScene := "OTYxMTQ4NDU5NDE5MA" // HomeLotSmall.unity3d
-	// dummyScene := "OTQ1MDc3NTY0MjEyNg" // HomeLot_Winter.unity3d
-
-	dummyScene, err := h.svc.Dummy.GetValue(r.Context(), "map")
+	scene, err := h.svc.Asset.GetGSFAssetByCDNID(r.Context(), SCENE_HOMELOT_SMALL)
 	if err != nil {
 		return err
 	}
 
-	scene, err := h.svc.Asset.GetGSFAssetByCDNID(r.Context(), dummyScene)
-	if err != nil {
-		return err
+	if req.LocOID.Int64() == 292733975781503755 {
+		scene, err = h.svc.Asset.GetGSFAssetByCDNID(r.Context(), SCENE_SPRINGTIME)
+		if err != nil {
+			return err
+		}
 	}
 
 	// The Home.PlayerMaze.HomeTheme.AssetMap["Scene_Unity3D"] asset drives scene loading via
@@ -426,5 +430,88 @@ func (h *Handler) GetPlayerNPCs(w gsf.ResponseWriter, r *gsf.Request) error {
 	}
 	res := &messages.GetPlayerNPCsResponse{}
 	res.NPCs = []types.NPC{}
+	return w.Write(res)
+}
+
+// GetStoreItems fetches the items placed in store.
+func (h *Handler) GetStoreItems(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.GetStoreItemsRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	res := &messages.GetStoreItemsResponse{}
+	res.StoreItems = []types.StoreItem{}
+	return w.Write(res)
+}
+
+// GetPlayerQuests fetches the quests associated with NPC.
+func (h *Handler) GetPlayerQuests(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.GetPlayerQuestsRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	res := &messages.GetPlayerQuestsResponse{}
+	res.PlayerQuests = []types.PlayerQuest{}
+	return w.Write(res)
+}
+
+// GetQuestFromParent fetches the quests associated with NPC.
+func (h *Handler) GetQuestFromParent(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.GetQuestFromParentRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	res := &messages.GetQuestFromParentResponse{}
+	return w.Write(res)
+}
+
+// CreateQuest requests a quest initialization.
+func (h *Handler) CreateQuest(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.CreateQuestRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	res := &messages.CreateQuestResponse{}
+	return w.Write(res)
+}
+
+// AcceptQuest requests a quest acceptance.
+func (h *Handler) AcceptQuest(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.AcceptQuestRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	res := &messages.AcceptQuestResponse{}
+	return w.Write(res)
+}
+
+// StartQuest requests a quest start.
+func (h *Handler) StartQuest(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.StartQuestRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	res := &messages.StartQuestResponse{}
+	return w.Write(res)
+}
+
+// CompleteQuest requests a quest start.
+func (h *Handler) CompleteQuest(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.CompleteQuestRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	res := &messages.CompleteQuestResponse{}
+	res.AwardSet = []types.QuestAwardElement{}
+	return w.Write(res)
+}
+
+// GetPlayerQuests fetches the quests by OIDs.
+func (h *Handler) GetPlayerQuestsByOIDs(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.GetPlayerQuestsByOIDsRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	res := &messages.GetPlayerQuestsByOIDsResponse{}
 	return w.Write(res)
 }

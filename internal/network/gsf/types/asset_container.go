@@ -2,9 +2,6 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// AssetMap maps asset type names to the assets in that group.
-type AssetMap map[string][]Asset
-
 // AssetContainer is a group of assets. It can contain multiple assets and/or asset packages.
 type AssetContainer struct {
 	// OID identifier.

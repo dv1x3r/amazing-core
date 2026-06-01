@@ -67,6 +67,14 @@ func NewServer(
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.ENTER_BUILDING), handler.EnterBuilding)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_ONLINE_STATUSES), handler.GetOnlineStatuses)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_PLAYER_NPCS), handler.GetPlayerNPCs)
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_STORE_ITEMS), handler.GetStoreItems)
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_PLAYER_QUESTS), handler.GetPlayerQuests)
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_QUEST_FROM_PARENT), handler.GetQuestFromParent)
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.CREATE_QUEST), handler.CreateQuest)
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.ACCEPT_QUEST), handler.AcceptQuest)
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.START_QUEST), handler.StartQuest)
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.COMPLETE_QUEST), handler.CompleteQuest)
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_PLAYER_QUESTS_BY_QUEST_IDS), handler.GetPlayerQuestsByOIDs)
 
 	server := &gsf.Server{
 		Router: router,

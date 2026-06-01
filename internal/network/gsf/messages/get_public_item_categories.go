@@ -8,10 +8,10 @@ import (
 // GetPublicItemCategoriesRequest requests public item category definitions.
 type GetPublicItemCategoriesRequest struct {
 	// The client always sends 293578400718237473.
-	LangLocalePairID types.OID
+	LangLocalePairOID types.OID
 
 	// The following fields are serialized but not used.
-	TierID           types.OID
+	TierOID          types.OID
 	BirthDate        gsf.UnixTime
 	RegistrationDate gsf.UnixTime
 	PreviewDate      gsf.UnixTime
@@ -19,8 +19,8 @@ type GetPublicItemCategoriesRequest struct {
 }
 
 func (req *GetPublicItemCategoriesRequest) Deserialize(reader gsf.ProtocolReader) {
-	reader.ReadObject(&req.LangLocalePairID)
-	reader.ReadObject(&req.TierID)
+	reader.ReadObject(&req.LangLocalePairOID)
+	reader.ReadObject(&req.TierOID)
 	req.BirthDate = reader.ReadUtcDate()
 	req.RegistrationDate = reader.ReadUtcDate()
 	req.PreviewDate = reader.ReadUtcDate()
