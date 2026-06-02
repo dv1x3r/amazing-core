@@ -271,6 +271,37 @@ func (h *Handler) GetOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
+// AddOutfit creates a new player outfit instance.
+func (h *Handler) AddOutfit(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.AddOutfitRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	outfitOID, err := h.svc.Player.CreateGSFOutfit(r.Context(), req.PlayerAvatarOID, req.OutfitNo)
+	if err != nil {
+		return err
+	}
+	res := &messages.AddOutfitResponse{}
+	res.PlayerAvatarOutfitOID = outfitOID
+	res.OutfitNo = req.OutfitNo
+	return w.Write(res)
+}
+
+// SetCurrentOutfit handles the active-outfit change request and returns update status.
+func (h *Handler) SetCurrentOutfit(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.SetCurrentOutfitRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	err := h.svc.Player.SetGSFPlayerActiveOutfit(r.Context(), req.PlayerAvatarOID, req.PlayerAvatarOutfitOID, req.OutfitNo)
+	if err != nil {
+		return err
+	}
+	res := &messages.SetCurrentOutfitResponse{}
+	res.IsUpdated = true
+	return w.Write(res)
+}
+
 // ── Login ────────────────────────────────────────────────────────────────────
 
 // GetTiers fetches all subscription tiers on initial login.

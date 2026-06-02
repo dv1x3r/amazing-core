@@ -54,6 +54,8 @@ func NewServer(
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.UPDATE_PLAYER_ACTIVE_AVATAR), handler.UpdatePlayerActiveAvatar)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_OUTFITS), handler.GetOutfits)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_OUTFIT_ITEMS), handler.GetOutfitItems)
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.ADD_OUTFIT), handler.AddOutfit)
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.SET_CURRENT_OUTFIT), handler.SetCurrentOutfit)
 
 	// ── Login ────────────────────────────────────────────────────────────────────
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_TIERS), handler.GetTiers)

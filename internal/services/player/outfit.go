@@ -130,3 +130,23 @@ func (s *Service) GetGSFOutfits(ctx context.Context, playerAvatarOID, playerOID 
 
 	return outfits, wrap.IfErr(op, rows.Err())
 }
+
+func (s *Service) CreateGSFOutfit(ctx context.Context, playerAvatarOID types.OID, outfitNo int16) (types.OID, error) {
+	const op = "player.Service.CreateGSFOutfit"
+	var outfitOID types.OID
+	row := s.store.DB().QueryRowContext(ctx, `
+			insert into player_avatar_outfit (gsfoid, player_avatar_id, outfit_no)
+			values (
+				(select max(gsfoid) + 1 from player_avatar_outfit),
+				(select id from player_avatar where gsfoid = ?),
+				?
+			) returning gsfoid;
+		`, playerAvatarOID, outfitNo)
+	return outfitOID, wrap.IfErr(op, row.Scan(&outfitOID))
+}
+
+func (s *Service) SetGSFPlayerActiveOutfit(ctx context.Context, playerAvatarOID, playerOutfitOID types.OID, outfitNo int16) error {
+	const op = "player.Service.SetGSFPlayerActiveOutfit"
+	_, err := s.store.DB().ExecContext(ctx, "update player_avatar set outfit_no = ? where gsfoid = ?;", outfitNo, playerAvatarOID)
+	return wrap.IfErr(op, err)
+}
