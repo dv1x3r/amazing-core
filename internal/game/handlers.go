@@ -1,6 +1,8 @@
 package game
 
 import (
+	"math/rand"
+
 	"github.com/dv1x3r/amazing-core/internal/config"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/messages"
@@ -317,38 +319,54 @@ func (h *Handler) InitLocation(w gsf.ResponseWriter, r *gsf.Request) error {
 	}
 
 	res := &messages.InitLocationResponse{}
-
 	res.SyncServerIP = config.Get().Settings.SyncServerIP
 	res.SyncServerPort = int32(config.Get().Settings.SyncServerPort)
 
-	scene, err := h.svc.Asset.GetGSFAssetByCDNID(r.Context(), SCENE_HOMELOT_SMALL)
-	if err != nil {
-		return err
-	}
+	// The Home.PlayerMaze.HomeTheme.AssetMap["Scene_Unity3D"] asset drives scene loading via
+	// LoadMazeCommand.cs -> LoadMainScene() -> AssetDownloadManager.cs -> LoadMainScene()
 
 	if req.LocOID.Int64() == 292733975781503755 {
-		scene, err = h.svc.Asset.GetGSFAssetByCDNID(r.Context(), SCENE_SPRINGTIME)
+		scene, err := h.svc.Asset.GetGSFAssetByCDNID(r.Context(), SCENE_SPRINGTIME)
 		if err != nil {
 			return err
 		}
-	}
 
-	// The Home.PlayerMaze.HomeTheme.AssetMap["Scene_Unity3D"] asset drives scene loading via
-	// LoadMazeCommand.cs -> LoadMainScene() -> AssetDownloadManager.cs -> LoadMainScene()
-	homeTheme := types.AssetContainer{}
-	homeTheme.AssetMap = types.AssetMap{}
-	homeTheme.AssetMap["Scene_Unity3D"] = []types.Asset{scene}
+		container := types.AssetContainer{}
+		container.AssetMap = types.AssetMap{}
+		container.AssetMap["Scene_Unity3D"] = []types.Asset{scene}
 
-	playerMaze := types.PlayerMaze{
-		Name:       "coremaze",
-		MazePieces: []types.PlayerMazePiece{},
-		HomeTheme:  homeTheme,
-	}
+		zoneInstance := &types.ZoneInstance{}
+		zoneInstance.Zone.OID = types.OIDFromInt64(292733975781503755)
+		zoneInstance.Zone.AssetContainer = container
 
-	res.Home = types.PlayerHome{
-		PlayerMaze:  playerMaze,
-		HomeTheme:   homeTheme,
-		PlayerMazes: []types.PlayerMaze{playerMaze},
+		res.ZoneInstance = zoneInstance
+
+	} else {
+		cdnid := SCENE_HOMELOT_SMALL
+		if rand.Intn(2) == 1 {
+			cdnid = SCENE_HOMELOT_WINTER
+		}
+
+		scene, err := h.svc.Asset.GetGSFAssetByCDNID(r.Context(), cdnid)
+		if err != nil {
+			return err
+		}
+
+		container := types.AssetContainer{}
+		container.AssetMap = types.AssetMap{}
+		container.AssetMap["Scene_Unity3D"] = []types.Asset{scene}
+
+		playerMaze := types.PlayerMaze{
+			Name:       "coremaze",
+			MazePieces: []types.PlayerMazePiece{},
+			HomeTheme:  container,
+		}
+
+		res.Home = &types.PlayerHome{
+			PlayerMaze:  playerMaze,
+			HomeTheme:   container,
+			PlayerMazes: []types.PlayerMaze{playerMaze},
+		}
 	}
 
 	return w.Write(res)

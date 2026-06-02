@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"reflect"
 	"time"
 
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
@@ -169,9 +170,25 @@ func (bw *BitWriter) CommitTo(writer io.Writer) {
 }
 
 func (bw *BitWriter) WriteObject(value gsf.Serializable) {
-	if !bw.stream.Put(value == nil) {
-		value.Serialize(bw)
+	// if !bw.stream.Put(value == nil) {
+	// 	value.Serialize(bw)
+	// }
+
+	if value == nil {
+		bw.stream.Put(true)
+		return
 	}
+
+	// Serializable values may be pointers. A typed nil pointer stored in
+	// an interface is not equal to nil, so check it before calling Serialize.
+	v := reflect.ValueOf(value)
+	if v.Kind() == reflect.Pointer && v.IsNil() {
+		bw.stream.Put(true)
+		return
+	}
+
+	bw.stream.Put(false)
+	value.Serialize(bw)
 }
 
 func (bw *BitWriter) PutByte(value byte) {
