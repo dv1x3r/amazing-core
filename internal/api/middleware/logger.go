@@ -1,10 +1,13 @@
 package middleware
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
+
+	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 )
 
 type loggerResponseWriter struct {
@@ -54,7 +57,11 @@ func Logger(logger *slog.Logger) Middleware {
 				slog.String("latency", latency),
 			}
 
-			if lw.err != nil {
+			var panicError wrap.PanicError
+			if errors.As(lw.err, &panicError) {
+				attrs = append(attrs, slog.String("error", panicError.Error()))
+				attrs = append(attrs, slog.String("stack", panicError.Stack()))
+			} else if lw.err != nil {
 				attrs = append(attrs, slog.String("error", lw.err.Error()))
 			}
 

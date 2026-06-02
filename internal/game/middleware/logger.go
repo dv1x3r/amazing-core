@@ -2,10 +2,12 @@ package middleware
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
 
+	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
 )
 
@@ -47,7 +49,11 @@ func Logger(logger *slog.Logger) gsf.Middleware {
 				attrs = append(attrs, slog.Any("response", w.Body()))
 			}
 
-			if err != nil {
+			var panicError wrap.PanicError
+			if errors.As(err, &panicError) {
+				attrs = append(attrs, slog.String("error", panicError.Error()))
+				attrs = append(attrs, slog.String("stack", panicError.Stack()))
+			} else if err != nil {
 				attrs = append(attrs, slog.String("error", err.Error()))
 			}
 

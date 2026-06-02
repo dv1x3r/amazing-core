@@ -18,6 +18,10 @@ func (e PanicError) Unwrap() error {
 	return e.err
 }
 
+func (e PanicError) Stack() string {
+	return e.stack
+}
+
 func Panic(fn func() error) (err error) {
 	defer func() {
 		if v := recover(); v != nil {
