@@ -287,7 +287,7 @@ func (h *Handler) AddOutfit(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// SetCurrentOutfit handles the active-outfit change request and returns update status.
+// SetCurrentOutfit handles the active-outfit change request and returns the update status.
 func (h *Handler) SetCurrentOutfit(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.SetCurrentOutfitRequest{}
 	if err := r.Read(req); err != nil {
@@ -298,6 +298,50 @@ func (h *Handler) SetCurrentOutfit(w gsf.ResponseWriter, r *gsf.Request) error {
 		return err
 	}
 	res := &messages.SetCurrentOutfitResponse{}
+	res.IsUpdated = true
+	return w.Write(res)
+}
+
+// GetBuildObjects fetches player-owned build objects.
+func (h *Handler) GetBuildObjects(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.GetBuildObjectsRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	res := &messages.GetBuildObjectsResponse{}
+	res.PlayerBuildObjects = []types.PlayerBuildObject{}
+	return w.Write(res)
+}
+
+// GetInventoryObjects fetches player-owned objects for the inventory grid.
+func (h *Handler) GetInventoryObjects(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.GetInventoryObjectsRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	res := &messages.GetInventoryObjectsResponse{}
+	res.PlayerItems = []types.PlayerItem{}
+	return w.Write(res)
+}
+
+// RemoveOutfitItems handles the item removal request and returns the update status.
+func (h *Handler) RemoveOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.RemoveOutfitItemsRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	res := &messages.RemoveOutfitItemsResponse{}
+	res.IsUpdated = true
+	return w.Write(res)
+}
+
+// AddOutfitItems handles the item assign request and returns the update status.
+func (h *Handler) AddOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.AddOutfitItemsRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	res := &messages.AddOutfitItemsResponse{}
 	res.IsUpdated = true
 	return w.Write(res)
 }
@@ -562,5 +606,6 @@ func (h *Handler) GetPlayerQuestsByOIDs(w gsf.ResponseWriter, r *gsf.Request) er
 		return err
 	}
 	res := &messages.GetPlayerQuestsByOIDsResponse{}
+	res.PlayerQuests = []types.PlayerQuest{}
 	return w.Write(res)
 }

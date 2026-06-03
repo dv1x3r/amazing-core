@@ -56,6 +56,10 @@ func NewServer(
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_OUTFIT_ITEMS), handler.GetOutfitItems)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.ADD_OUTFIT), handler.AddOutfit)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.SET_CURRENT_OUTFIT), handler.SetCurrentOutfit)
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_BUILD_OBJECTS), handler.GetBuildObjects)
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_INVENTORY_OBJECTS), handler.GetInventoryObjects)
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.REMOVE_OUTFIT_ITEMS), handler.RemoveOutfitItems)
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.ADD_OUTFIT_ITEMS), handler.AddOutfitItems)
 
 	// ── Login ────────────────────────────────────────────────────────────────────
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_TIERS), handler.GetTiers)
