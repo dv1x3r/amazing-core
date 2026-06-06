@@ -16,6 +16,10 @@ type loggerResponseWriter struct {
 	err        error
 }
 
+func (w *loggerResponseWriter) Unwrap() http.ResponseWriter {
+	return w.ResponseWriter
+}
+
 func (w *loggerResponseWriter) WriteHeader(statusCode int) {
 	w.statusCode = statusCode
 	w.ResponseWriter.WriteHeader(statusCode)
@@ -65,7 +69,7 @@ func Logger(logger *slog.Logger) Middleware {
 				attrs = append(attrs, slog.String("error", lw.err.Error()))
 			}
 
-			logFn("http", attrs...)
+			logFn("http request", attrs...)
 		})
 	}
 }

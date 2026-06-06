@@ -83,9 +83,6 @@ func NewServer(logger *slog.Logger, handler *Handler, store db.Store) *Server {
 	v1.HandleFunc("POST /container/package/remove", errorHandler(handler.PostContainerPackageRemove))
 	v1.HandleFunc("POST /container/package/reorder", errorHandler(handler.PostContainerPackageReorder))
 
-	v1.HandleFunc("GET /dummy/grid", errorHandler(handler.GetDummyGrid))
-	v1.HandleFunc("POST /dummy/grid", errorHandler(handler.PostDummyGrid))
-
 	v1.HandleFunc("GET /item", errorHandler(handler.GetItem))
 	v1.HandleFunc("GET /item/grid", errorHandler(handler.GetItemGrid))
 	v1.HandleFunc("POST /item/form", errorHandler(handler.PostItemForm))
@@ -135,6 +132,8 @@ func NewServer(logger *slog.Logger, handler *Handler, store db.Store) *Server {
 	v1.HandleFunc("POST /zone/form", errorHandler(handler.PostZoneForm))
 	v1.HandleFunc("POST /zone/remove", errorHandler(handler.PostZoneRemove))
 
+	v1.HandleFunc("GET /logs/watch", errorHandler(handler.GetLogsWatch))
+
 	if config.Get().Storage.Explorer {
 		v1.HandleFunc("GET /sql", errorHandler(w2widget.SQLiteSchemaHandler(store.DB())))
 		v1.HandleFunc("POST /sql", errorHandler(w2widget.SQLExecHandler(store.DB())))
@@ -152,10 +151,11 @@ func NewServer(logger *slog.Logger, handler *Handler, store db.Store) *Server {
 	)
 
 	server := &http.Server{
-		Handler:      stack(router),
-		IdleTimeout:  time.Minute,
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 30 * time.Second,
+		Handler:           stack(router),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       120 * time.Second,
 	}
 
 	return &Server{

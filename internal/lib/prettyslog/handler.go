@@ -78,10 +78,10 @@ func (h *Handler) Handle(ctx context.Context, r slog.Record) error {
 
 	message := r.Message
 	switch r.Message {
-	case "http":
-		message = processHTTP(attrs)
-	case "gsf":
-		message = processGSF(attrs)
+	case "http request":
+		message = processHTTP(r.Message, attrs)
+	case "gsf request":
+		message = processGSF(r.Message, attrs)
 	}
 
 	data, err := json.MarshalIndent(attrs, "", "  ")
@@ -113,7 +113,7 @@ func (h *Handler) computeAttrs(ctx context.Context, r slog.Record) (map[string]a
 	return attrs, nil
 }
 
-func processHTTP(attrs map[string]any) string {
+func processHTTP(message string, attrs map[string]any) string {
 	remoteIP := "-"
 	if v, ok := attrs["remote_ip"].(string); ok {
 		remoteIP = v
@@ -163,34 +163,22 @@ func processHTTP(attrs map[string]any) string {
 	}
 
 	return fmt.Sprintf(
-		"http %s %s %s %s %s %s",
-		remoteIP, Colorize(statusColor, status+" "+statusText), host, method, uri, latency,
+		"%s %s %s %s %s %s %s",
+		message,
+		remoteIP,
+		Colorize(statusColor, status+" "+statusText),
+		host,
+		method,
+		uri,
+		latency,
 	)
 }
 
-func processGSF(attrs map[string]any) string {
+func processGSF(message string, attrs map[string]any) string {
 	remoteIP := "-"
 	if v, ok := attrs["remote_ip"].(string); ok {
 		remoteIP = v
 		delete(attrs, "remote_ip")
-	}
-
-	requestID := "-"
-	if v, ok := attrs["request_id"].(float64); ok {
-		requestID = fmt.Sprint(v)
-		delete(attrs, "request_id")
-	}
-
-	reqFlags := "-"
-	if v, ok := attrs["req_flags"].(float64); ok {
-		reqFlags = fmt.Sprint(v)
-		delete(attrs, "req_flags")
-	}
-
-	resFlags := "-"
-	if v, ok := attrs["res_flags"].(float64); ok {
-		resFlags = fmt.Sprint(v)
-		delete(attrs, "res_flags")
 	}
 
 	resultCode := "-"
@@ -241,6 +229,24 @@ func processGSF(attrs map[string]any) string {
 		delete(attrs, "msg_type_text")
 	}
 
+	requestID := "-"
+	if v, ok := attrs["request_id"].(float64); ok {
+		requestID = fmt.Sprint(v)
+		delete(attrs, "request_id")
+	}
+
+	reqFlags := "-"
+	if v, ok := attrs["req_flags"].(float64); ok {
+		reqFlags = fmt.Sprint(v)
+		delete(attrs, "req_flags")
+	}
+
+	resFlags := "-"
+	if v, ok := attrs["res_flags"].(float64); ok {
+		resFlags = fmt.Sprint(v)
+		delete(attrs, "res_flags")
+	}
+
 	latency := "-"
 	if v, ok := attrs["latency"].(string); ok {
 		latency = v
@@ -248,13 +254,14 @@ func processGSF(attrs map[string]any) string {
 	}
 
 	return fmt.Sprintf(
-		"gsf %s %s %s | ID %s Flags %s %s | %s | %s | %s",
+		"%s %s %s %s | %s | %s | ID %s Flags %s %s | %s",
+		message,
 		remoteIP,
 		Colorize(Green, resultCode+" "+resultCodeText),
 		Colorize(Green, appCode+" "+appCodeText),
-		requestID, reqFlags, resFlags,
 		svcClass+" "+svcClassText,
 		msgType+" "+msgTypeText,
+		requestID, reqFlags, resFlags,
 		latency,
 	)
 }

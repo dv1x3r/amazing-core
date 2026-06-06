@@ -10,7 +10,6 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/services/auth"
 	"github.com/dv1x3r/amazing-core/internal/services/avatar"
 	"github.com/dv1x3r/amazing-core/internal/services/blob"
-	"github.com/dv1x3r/amazing-core/internal/services/dummy"
 	"github.com/dv1x3r/amazing-core/internal/services/item"
 	"github.com/dv1x3r/amazing-core/internal/services/player"
 	"github.com/dv1x3r/amazing-core/internal/services/randname"
@@ -23,7 +22,6 @@ type Services struct {
 	Asset     *asset.Service
 	Avatar    *avatar.Service
 	Blob      *blob.Service
-	Dummy     *dummy.Service
 	Item      *item.Service
 	Player    *player.Service
 	RandName  *randname.Service
@@ -40,7 +38,6 @@ func New(logger *slog.Logger, coreStore db.Store, blobStore db.Store, cfg config
 		Auth:      auth.NewService(cfg.Secure.Session.Secure, cfg.Secure.Session.Key, cfg.Secure.Auth.Username, cfg.Secure.Auth.Password),
 		Avatar:    avatars,
 		Blob:      blob.NewService(logger, blobStore, cfg.Settings.AssetDeliveryURL),
-		Dummy:     dummy.NewService(logger, coreStore),
 		Item:      items,
 		Player:    player.NewService(logger, coreStore, avatars, items),
 		RandName:  randname.NewService(logger, coreStore),

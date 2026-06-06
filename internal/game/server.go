@@ -93,10 +93,15 @@ func NewServer(
 				logger.Info(fmt.Sprintf("tcp %s disconnected: %s", conn.RemoteIP(), reason))
 			},
 			OnUnhandled: func(conn *gsf.Connection, header *gsf.Header, data []byte) {
-				logger.Debug(fmt.Sprintf("gsf unhandled %s: %+v", conn.RemoteIP(), header),
-					slog.String("service_class", header.ServiceClassText()),
-					slog.String("message_type", header.MessageTypeText()),
-					slog.Any("hex", fmt.Sprintf("%x", data)),
+				logger.Info("gsf unhandled request",
+					slog.String("remote_ip", conn.RemoteIP()),
+					slog.Int("svc_class", int(header.SvcClass)),
+					slog.String("svc_class_text", header.ServiceClassText()),
+					slog.Int("msg_type", int(header.MsgType)),
+					slog.String("msg_type_text", header.MessageTypeText()),
+					slog.Int("request_id", int(header.RequestID)),
+					slog.Int("req_flags", int(header.Flags)),
+					slog.String("hex", fmt.Sprintf("%x", data)),
 				)
 			},
 		},

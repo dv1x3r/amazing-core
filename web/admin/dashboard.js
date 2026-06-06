@@ -61,32 +61,14 @@ const dashboardSidebar = new w2sidebar({
             setDashboardWidget(module.createContainerLayout)
           },
         },
-        {
-          id: 'site-frame',
-          text: 'Site Frame',
-          icon: 'fa fa-layer-group',
-          onClick: async function() {
-            const module = await import('./widgets/site_frame.js')
-            setDashboardWidget(module.createSiteFrameLayout)
-          },
-        },
       ],
     },
     {
-      id: 'players-group',
-      text: 'Players',
+      id: 'collections',
+      text: 'Collections',
       group: true,
       expanded: true,
       nodes: [
-        {
-          id: 'players',
-          text: 'Players',
-          icon: 'fa fa-users',
-          onClick: async function() {
-            const module = await import('./widgets/players.js')
-            setDashboardWidget(module.createPlayerLayout)
-          },
-        },
         {
           id: 'avatars',
           text: 'Avatars',
@@ -96,23 +78,6 @@ const dashboardSidebar = new w2sidebar({
             setDashboardWidget(module.createAvatarLayout)
           },
         },
-        {
-          id: 'random-names',
-          text: 'Random Names',
-          icon: 'fa fa-dice',
-          onClick: async function() {
-            const module = await import('./widgets/random_names.js')
-            setDashboardWidget(module.createRandomNameLayout)
-          },
-        },
-      ],
-    },
-    {
-      id: 'items-group',
-      text: 'Items',
-      group: true,
-      expanded: true,
-      nodes: [
         {
           id: 'items',
           text: 'Items',
@@ -124,21 +89,31 @@ const dashboardSidebar = new w2sidebar({
         },
         {
           id: 'item-categories',
-          text: 'Categories',
+          text: 'Item Categories',
           icon: 'fa fa-tags',
           onClick: async function() {
             const module = await import('./widgets/items.js')
             setDashboardWidget(module.createCategoryLayout)
           },
         },
-      ],
-    },
-    {
-      id: 'zones-group',
-      text: 'Zones',
-      group: true,
-      expanded: true,
-      nodes: [
+        {
+          id: 'random-names',
+          text: 'Random Names',
+          icon: 'fa fa-dice',
+          onClick: async function() {
+            const module = await import('./widgets/random_names.js')
+            setDashboardWidget(module.createRandomNameLayout)
+          },
+        },
+        {
+          id: 'site-frame',
+          text: 'Site Frame',
+          icon: 'fa fa-layer-group',
+          onClick: async function() {
+            const module = await import('./widgets/site_frame.js')
+            setDashboardWidget(module.createSiteFrameLayout)
+          },
+        },
         {
           id: 'zones',
           text: 'Zones',
@@ -151,21 +126,38 @@ const dashboardSidebar = new w2sidebar({
       ],
     },
     {
-      id: 'configuration',
-      text: 'Configuration',
+      id: 'world-group',
+      text: 'World',
       group: true,
       expanded: true,
       nodes: [
         {
-          id: 'dummy-params',
-          text: 'Dummy Parameters',
-          icon: 'fa fa-person-digging',
+          id: 'players',
+          text: 'Players',
+          icon: 'fa fa-users',
           onClick: async function() {
-            const module = await import('./widgets/dummy_params.js')
-            setDashboardWidget(module.createDummyLayout)
+            const module = await import('./widgets/players.js')
+            setDashboardWidget(module.createPlayerLayout)
           },
         },
-      ]
+      ],
+    },
+    {
+      id: 'Requests',
+      text: 'Requests',
+      group: true,
+      expanded: true,
+      nodes: [
+        {
+          id: 'log-watcher',
+          text: 'Log Watcher',
+          icon: 'fa fa-terminal',
+          onClick: async function() {
+            const module = await import('./widgets/log_watcher.js')
+            setDashboardWidget(module.createLogWatcherGrid)
+          },
+        },
+      ],
     },
     {
       id: 'core-db',

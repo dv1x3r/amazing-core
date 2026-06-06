@@ -57,7 +57,7 @@ func Logger(logger *slog.Logger) gsf.Middleware {
 				attrs = append(attrs, slog.String("error", err.Error()))
 			}
 
-			logFn("gsf", attrs...)
+			logFn("gsf request", attrs...)
 			return err
 		}
 	}

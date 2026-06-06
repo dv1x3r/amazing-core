@@ -16,6 +16,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/lib/db"
 	"github.com/dv1x3r/amazing-core/internal/lib/downloader"
 	"github.com/dv1x3r/amazing-core/internal/lib/logger"
+	"github.com/dv1x3r/amazing-core/internal/lib/slogbus"
 	"github.com/dv1x3r/amazing-core/internal/services"
 
 	"github.com/dv1x3r/w2go/w2db"
@@ -151,9 +152,11 @@ func main() {
 	}
 
 	// ── Services & Servers ──────────────────────────────────────────────────────
+	logBus := slogbus.New()
 	svc := services.New(logger.Get(), coreStore, blobStore, cfg)
-	apiServer := api.NewServer(logger.Get(), api.NewHandler(svc), coreStore)
-	gameServer := game.NewServer(logger.Get(), game.NewHandler(svc))
+	gameLogger := slog.New(logBus.Handler(logger.Get().Handler()))
+	gameServer := game.NewServer(gameLogger, game.NewHandler(svc))
+	apiServer := api.NewServer(logger.Get(), api.NewHandler(svc, logBus), coreStore)
 
 	interruptCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
