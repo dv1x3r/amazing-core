@@ -192,3 +192,44 @@ func (s *Service) GetGSFOutfitItems(ctx context.Context, platform gsf.Platform, 
 
 	return playerItems, wrap.IfErr(op, rows.Err())
 }
+
+func (s *Service) GetGSFInventoryObjects(ctx context.Context, platform gsf.Platform) ([]types.PlayerItem, error) {
+	const op = "player.Service.GetGSFInventoryObjects"
+
+	rows, err := s.store.DB().QueryContext(ctx, `
+			select
+				pi.gsfoid as player_item_gsfoid,
+				pl.gsfoid as player_gsfoid,
+				pi.quantity as player_item_quantity,
+				pi.item_id
+			from player_item as pi
+			join player as pl on pl.id = pi.player_id
+			where pi.quantity > 0;
+		`)
+	if err != nil {
+		return nil, wrap.IfErr(op, err)
+	}
+	defer rows.Close()
+
+	playerItems := []types.PlayerItem{}
+	for rows.Next() {
+		var playerItem types.PlayerItem
+		var itemID int
+		if err := rows.Scan(
+			&playerItem.OID,
+			&playerItem.PlayerOID,
+			&playerItem.Quantity,
+			&itemID,
+		); err != nil {
+			return playerItems, wrap.IfErr(op, err)
+		}
+		item, err := s.items.GetGSFItem(ctx, platform, itemID)
+		if err != nil {
+			return playerItems, wrap.IfErr(op, err)
+		}
+		playerItem.Item = item
+		playerItems = append(playerItems, playerItem)
+	}
+
+	return playerItems, wrap.IfErr(op, rows.Err())
+}

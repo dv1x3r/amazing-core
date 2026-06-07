@@ -319,8 +319,14 @@ func (h *Handler) GetInventoryObjects(w gsf.ResponseWriter, r *gsf.Request) erro
 	if err := r.Read(req); err != nil {
 		return err
 	}
+	// TODO: filter by player, right now returns all the items.
+	// store PlayerOID in the gsf.Request on login/relogin?
+	items, err := h.svc.Player.GetGSFInventoryObjects(r.Context(), r.Platform())
+	if err != nil {
+		return err
+	}
 	res := &messages.GetInventoryObjectsResponse{}
-	res.PlayerItems = []types.PlayerItem{}
+	res.PlayerItems = items
 	return w.Write(res)
 }
 
