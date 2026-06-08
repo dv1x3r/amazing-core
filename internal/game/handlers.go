@@ -352,6 +352,17 @@ func (h *Handler) AddOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
+// ReplaceOutfitItems handles the item swap request and returns the update status.
+func (h *Handler) ReplaceOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.ReplaceOutfitItemsRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	res := &messages.ReplaceOutfitItemsResponse{}
+	res.IsUpdated = true
+	return w.Write(res)
+}
+
 // ── Login ────────────────────────────────────────────────────────────────────
 
 // GetTiers fetches all subscription tiers on initial login.
