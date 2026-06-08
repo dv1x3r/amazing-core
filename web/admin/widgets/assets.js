@@ -136,6 +136,12 @@ export function createAssetGrid() {
         searchable: 'text',
       },
       {
+        field: 'icon',
+        text: 'ICO',
+        size: '40px',
+        render: 'icon-small',
+      },
+      {
         field: 'hash',
         text: 'File Hash',
         size: '350px',

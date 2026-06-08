@@ -130,7 +130,7 @@ func (s *Service) UpdateItem(ctx context.Context, req w2.SaveFormRequest[Item]) 
 			Cols:    []string{"name", "container_id"},
 			Values:  []any{req.Record.Name, req.Record.Container.ID},
 			IDField: "id",
-			IDValue: req.RecID,
+			IDValue: req.Record.ID,
 		})
 		if s.store.IsErrConstraintUnique(err) {
 			return ErrItemExists

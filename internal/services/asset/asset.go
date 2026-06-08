@@ -32,6 +32,7 @@ type Asset struct {
 	SizeStr     string           `json:"size_str"`
 	Metadata    w2.Field[string] `json:"metadata"`
 	Version     w2.Field[string] `json:"version"`
+	Icon        string           `json:"icon"`
 }
 
 func (s *Service) GetAssetGrid(ctx context.Context, req w2.GetGridRequest) (w2.GetGridResponse[Asset], error) {
@@ -113,6 +114,9 @@ func (s *Service) GetAssetGrid(ctx context.Context, req w2.GetGridRequest) (w2.G
 			record.OIDStr = types.OIDFromString(record.OID).String()
 			record.SizeStr = humanize.Bytes(uint64(record.Size))
 			record.URL, _ = url.JoinPath(s.deliveryURL, record.CDNID)
+			if record.FileType.Text.V == "image/png" {
+				record.Icon, _ = url.JoinPath(s.deliveryURL, record.CDNID)
+			}
 			return nil
 		},
 	})
