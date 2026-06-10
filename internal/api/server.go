@@ -107,18 +107,10 @@ func NewServer(logger *slog.Logger, handler *Handler, store db.Store) *Server {
 	v1.HandleFunc("POST /player/{id}/avatar/form", errorHandler(handler.PostPlayerAvatarForm))
 	v1.HandleFunc("POST /player/avatar/remove", errorHandler(handler.PostPlayerAvatarRemove))
 
-	v1.HandleFunc("GET /player/{id}/avatar/item/grid", errorHandler(handler.GetPlayerAvatarItemGrid))
-	v1.HandleFunc("POST /player/avatar/item/form", errorHandler(handler.PostPlayerAvatarItemForm))
-	v1.HandleFunc("POST /player/avatar/item/remove", errorHandler(handler.PostPlayerAvatarItemRemove))
-
 	v1.HandleFunc("GET /player/{id}/outfit", errorHandler(handler.GetPlayerOutfit))
 	v1.HandleFunc("GET /player/{id}/outfit/grid", errorHandler(handler.GetPlayerOutfitGrid))
 	v1.HandleFunc("POST /player/outfit/form", errorHandler(handler.PostPlayerOutfitForm))
 	v1.HandleFunc("POST /player/outfit/remove", errorHandler(handler.PostPlayerOutfitRemove))
-
-	v1.HandleFunc("GET /player/{id}/outfit/item/grid", errorHandler(handler.GetPlayerOutfitItemGrid))
-	v1.HandleFunc("POST /player/outfit/item/form", errorHandler(handler.PostPlayerOutfitItemForm))
-	v1.HandleFunc("POST /player/outfit/item/remove", errorHandler(handler.PostPlayerOutfitItemRemove))
 
 	v1.HandleFunc("GET /randname/grid", errorHandler(handler.GetRandnameGrid))
 	v1.HandleFunc("POST /randname/form", errorHandler(handler.PostRandnameForm))
@@ -147,7 +139,7 @@ func NewServer(logger *slog.Logger, handler *Handler, store db.Store) *Server {
 		middleware.IPExtractor(),
 		middleware.Logger(logger),
 		middleware.Recover(),
-		middleware.RateLimiter(100, 200, 3*time.Minute),
+		middleware.RateLimiter(200, 300, 3*time.Minute),
 	)
 
 	server := &http.Server{

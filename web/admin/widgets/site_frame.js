@@ -30,20 +30,20 @@ export function createSiteFrameLayout() {
         searchable: 'int',
       },
       {
-        field: 'type_value',
-        text: 'Type Value',
-        size: '120px',
-        render: 'text',
-        sortable: true,
-        searchable: 'int',
-      },
-      {
         field: 'container',
         text: 'Asset Container',
         size: '200px',
         render: 'dropdown',
         sortable: true,
         searchable: 'text',
+      },
+      {
+        field: 'type_value',
+        text: 'Type Value',
+        size: '120px',
+        render: 'text',
+        sortable: true,
+        searchable: 'int',
       },
     ],
     defaultOperator: {
@@ -92,17 +92,6 @@ function openSiteFramePopup(event) {
         },
       },
       {
-        field: 'type_value',
-        type: 'int',
-        required: true,
-        html: {
-          label: 'Type Value',
-          attr: 'size="15"',
-          span: 6,
-          column: 0,
-        },
-      },
-      {
         field: 'container',
         type: 'list',
         required: true,
@@ -110,6 +99,17 @@ function openSiteFramePopup(event) {
         html: {
           label: 'Asset Container',
           attr: 'style="width:100%;" placeholder="Type to search..."',
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'type_value',
+        type: 'int',
+        required: true,
+        html: {
+          label: 'Type Value',
+          attr: 'size="15"',
           span: 6,
           column: 0,
         },

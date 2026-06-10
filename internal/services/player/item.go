@@ -14,11 +14,14 @@ import (
 )
 
 type PlayerItem struct {
-	ID       int              `json:"id"`
-	OID      w2.Field[string] `json:"oid"`
-	OIDStr   string           `json:"oid_str"`
-	Item     w2.Dropdown      `json:"item"`
-	Quantity w2.Field[int]    `json:"quantity"`
+	ID           int              `json:"id"`
+	OID          w2.Field[string] `json:"oid"`
+	OIDStr       string           `json:"oid_str"`
+	Item         w2.Dropdown      `json:"item"`
+	PlayerAvatar w2.Dropdown      `json:"player_avatar"`
+	PlayerOutfit w2.Dropdown      `json:"player_outfit"`
+	AvatarSlot   w2.Dropdown      `json:"avatar_slot"`
+	Quantity     w2.Field[int]    `json:"quantity"`
 }
 
 func (s *Service) GetPlayerItemGrid(ctx context.Context, req w2.GetGridRequest, playerID int) (w2.GetGridResponse[PlayerItem], error) {
@@ -30,10 +33,20 @@ func (s *Service) GetPlayerItemGrid(ctx context.Context, req w2.GetGridRequest, 
 			"pi.gsfoid",
 			"pi.item_id",
 			"it.name as item_name",
+			"pi.player_avatar_id",
+			"(pa.gsfoid || ' - ' || pa.name) as player_avatar_name",
+			"pi.player_avatar_outfit_id",
+			"(poa.name || ' / Outfit #' || po.outfit_no) as player_avatar_outfit_name",
+			"pi.avatar_slot_id",
+			"avs.slot as avatar_slot_name",
 			"pi.quantity",
 		},
 		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("item as it", "it.id = pi.item_id")
+			sb.JoinWithOption(sqlbuilder.LeftJoin, "player_avatar as pa", "pa.id = pi.player_avatar_id")
+			sb.JoinWithOption(sqlbuilder.LeftJoin, "player_avatar_outfit as po", "po.id = pi.player_avatar_outfit_id")
+			sb.JoinWithOption(sqlbuilder.LeftJoin, "player_avatar as poa", "poa.id = po.player_avatar_id")
+			sb.JoinWithOption(sqlbuilder.LeftJoin, "avatar_slot as avs", "avs.id = pi.avatar_slot_id")
 			sb.Where(sb.EQ("pi.player_id", playerID))
 			sb.OrderByAsc("pi.id")
 		},
@@ -43,6 +56,12 @@ func (s *Service) GetPlayerItemGrid(ctx context.Context, req w2.GetGridRequest, 
 				&record.OID,
 				&record.Item.ID,
 				&record.Item.Text,
+				&record.PlayerAvatar.ID,
+				&record.PlayerAvatar.Text,
+				&record.PlayerOutfit.ID,
+				&record.PlayerOutfit.Text,
+				&record.AvatarSlot.ID,
+				&record.AvatarSlot.Text,
 				&record.Quantity,
 			); err != nil {
 				return err
@@ -58,11 +77,22 @@ func (s *Service) CreatePlayerItem(ctx context.Context, req w2.SaveFormRequest[P
 	const op = "player.Service.CreatePlayerItem"
 	id, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{
 		Into: "player_item",
-		Cols: []string{"player_id", "gsfoid", "item_id", "quantity"},
+		Cols: []string{
+			"player_id",
+			"gsfoid",
+			"item_id",
+			"player_avatar_id",
+			"player_avatar_outfit_id",
+			"avatar_slot_id",
+			"quantity",
+		},
 		Values: []any{
 			playerID,
 			sqlbuilder.Buildf("(select coalesce(max(gsfoid) + 1, 1) from player_item)"),
 			req.Record.Item.ID,
+			req.Record.PlayerAvatar.ID,
+			req.Record.PlayerOutfit.ID,
+			req.Record.AvatarSlot.ID,
 			req.Record.Quantity,
 		},
 	})
@@ -75,9 +105,23 @@ func (s *Service) CreatePlayerItem(ctx context.Context, req w2.SaveFormRequest[P
 func (s *Service) UpdatePlayerItem(ctx context.Context, req w2.SaveFormRequest[PlayerItem]) error {
 	const op = "player.Service.UpdatePlayerItem"
 	_, err := w2db.UpdateContext(ctx, s.store.DB(), w2db.UpdateOptions{
-		Update:  "player_item",
-		Cols:    []string{"gsfoid", "item_id", "quantity"},
-		Values:  []any{req.Record.OID, req.Record.Item.ID, req.Record.Quantity},
+		Update: "player_item",
+		Cols: []string{
+			"gsfoid",
+			"item_id",
+			"player_avatar_id",
+			"player_avatar_outfit_id",
+			"avatar_slot_id",
+			"quantity",
+		},
+		Values: []any{
+			req.Record.OID,
+			req.Record.Item.ID,
+			req.Record.PlayerAvatar.ID,
+			req.Record.PlayerOutfit.ID,
+			req.Record.AvatarSlot.ID,
+			req.Record.Quantity,
+		},
 		IDField: "id",
 		IDValue: req.Record.ID,
 	})
@@ -96,23 +140,19 @@ func (s *Service) DeletePlayerItems(ctx context.Context, req w2.RemoveGridReques
 	return wrap.IfErr(op, err)
 }
 
-func (s *Service) GetGSFAvatarItems(ctx context.Context, platform gsf.Platform, playerAvatarOID, playerOID types.OID) ([]types.PlayerItem, error) {
-	const op = "player.Service.GetGSFAvatarItems"
+func (s *Service) GetGSFInventoryObjects(ctx context.Context, platform gsf.Platform) ([]types.PlayerItem, error) {
+	const op = "player.Service.GetGSFInventoryObjects"
 
 	rows, err := s.store.DB().QueryContext(ctx, `
 			select
+				pi.item_id,
 				pi.gsfoid as player_item_gsfoid,
-				pa.gsfoid as player_avatar_gsfoid,
 				pl.gsfoid as player_gsfoid,
-				avs.gsfoid as slot_gsfoid,
-				pi.item_id
-			from player_avatar_item as pai
-			join player_item as pi on pi.id = pai.player_item_id
-			join player_avatar as pa on pa.id = pai.player_avatar_id
-			join player as pl on pl.id = pa.player_id
-			left join avatar_slot as avs on avs.id = pai.avatar_slot_id
-			where pa.gsfoid = ? and pl.gsfoid = ?;
-		`, playerAvatarOID, playerOID)
+				pi.quantity as quantity
+			from player_item as pi
+			join player as pl on pl.id = pi.player_id
+			where pi.player_avatar_outfit_id is null;
+		`)
 	if err != nil {
 		return nil, wrap.IfErr(op, err)
 	}
@@ -120,14 +160,13 @@ func (s *Service) GetGSFAvatarItems(ctx context.Context, platform gsf.Platform, 
 
 	playerItems := []types.PlayerItem{}
 	for rows.Next() {
-		var playerItem types.PlayerItem
 		var itemID int
+		var playerItem types.PlayerItem
 		if err := rows.Scan(
-			&playerItem.OID,
-			&playerItem.PlayerAvatarOID,
-			&playerItem.PlayerOID,
-			&playerItem.SlotOID,
 			&itemID,
+			&playerItem.OID,
+			&playerItem.PlayerOID,
+			&playerItem.Quantity,
 		); err != nil {
 			return playerItems, wrap.IfErr(op, err)
 		}
@@ -147,20 +186,17 @@ func (s *Service) GetGSFOutfitItems(ctx context.Context, platform gsf.Platform, 
 
 	rows, err := s.store.DB().QueryContext(ctx, `
 			select
+				pi.item_id,
 				pi.gsfoid as player_item_gsfoid,
-				pao.gsfoid as player_avatar_outfit_gsfoid,
-				pa.gsfoid as player_avatar_gsfoid,
 				pl.gsfoid as player_gsfoid,
+				po.gsfoid as outfit_gsfoid,
 				avs.gsfoid as slot_gsfoid,
-				pi.quantity as player_item_quantity,
-				pi.item_id
-			from player_avatar_outfit_item as paoi
-			join player_item as pi on pi.id = paoi.player_item_id
-			join player_avatar_outfit as pao on pao.id = paoi.player_avatar_outfit_id
-			join player_avatar as pa on pa.id = pao.player_avatar_id
-			join player as pl on pl.id = pa.player_id
-			left join avatar_slot as avs on avs.id = paoi.avatar_slot_id
-			where pao.gsfoid = ? and pl.gsfoid = ?;
+				pi.quantity as quantity
+			from player_item as pi
+			join player as pl on pl.id = pi.player_id
+			join player_avatar_outfit as po on po.id = pi.player_avatar_outfit_id
+			join avatar_slot as avs on avs.id = pi.avatar_slot_id
+			where po.gsfoid = ? and pl.gsfoid = ?;
 		`, playerAvatarOutfitOID, playerOID)
 	if err != nil {
 		return nil, wrap.IfErr(op, err)
@@ -169,57 +205,15 @@ func (s *Service) GetGSFOutfitItems(ctx context.Context, platform gsf.Platform, 
 
 	playerItems := []types.PlayerItem{}
 	for rows.Next() {
-		var playerItem types.PlayerItem
 		var itemID int
+		var playerItem types.PlayerItem
 		if err := rows.Scan(
+			&itemID,
 			&playerItem.OID,
-			&playerItem.PlayerAvatarOutfitOID,
-			&playerItem.PlayerAvatarOID,
 			&playerItem.PlayerOID,
+			&playerItem.PlayerAvatarOutfitOID,
 			&playerItem.SlotOID,
 			&playerItem.Quantity,
-			&itemID,
-		); err != nil {
-			return playerItems, wrap.IfErr(op, err)
-		}
-		item, err := s.items.GetGSFItem(ctx, platform, itemID)
-		if err != nil {
-			return playerItems, wrap.IfErr(op, err)
-		}
-		playerItem.Item = item
-		playerItems = append(playerItems, playerItem)
-	}
-
-	return playerItems, wrap.IfErr(op, rows.Err())
-}
-
-func (s *Service) GetGSFInventoryObjects(ctx context.Context, platform gsf.Platform) ([]types.PlayerItem, error) {
-	const op = "player.Service.GetGSFInventoryObjects"
-
-	rows, err := s.store.DB().QueryContext(ctx, `
-			select
-				pi.gsfoid as player_item_gsfoid,
-				pl.gsfoid as player_gsfoid,
-				pi.quantity as player_item_quantity,
-				pi.item_id
-			from player_item as pi
-			join player as pl on pl.id = pi.player_id
-			where pi.quantity > 0;
-		`)
-	if err != nil {
-		return nil, wrap.IfErr(op, err)
-	}
-	defer rows.Close()
-
-	playerItems := []types.PlayerItem{}
-	for rows.Next() {
-		var playerItem types.PlayerItem
-		var itemID int
-		if err := rows.Scan(
-			&playerItem.OID,
-			&playerItem.PlayerOID,
-			&playerItem.Quantity,
-			&itemID,
 		); err != nil {
 			return playerItems, wrap.IfErr(op, err)
 		}

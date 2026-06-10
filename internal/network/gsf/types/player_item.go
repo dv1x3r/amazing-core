@@ -9,17 +9,26 @@ type PlayerItem struct {
 	SecretCode string
 	Ordinal    int32
 
-	// Player Inventory Object OID
+	// Parent Player Inventory Object OID
 	ParentPIOOID *OID
 
-	SlotOID                  *OID
-	PlayerAvatarOutfitOID    *OID
-	InventoryPosition        InventoryPosition
-	PlayerMazePiecesOID      *OID
-	IsYard                   bool
-	PlayerMazeOID            *OID
-	PlayerAvatarOID          *OID
-	PlayerOID                OID
+	// Avatar slot OID item is equipped to
+	SlotOID *OID
+
+	// Avatar outfit OID item is equipped to
+	PlayerAvatarOutfitOID *OID
+
+	InventoryPosition   InventoryPosition
+	PlayerMazePiecesOID *OID
+	IsYard              bool
+	PlayerMazeOID       *OID
+
+	// No references by client code, just for metadata
+	PlayerAvatarOID *OID
+
+	// Used for animation ownership and transferable effects
+	PlayerOID OID
+
 	IsItemUsed               bool
 	PlayerContainerOID       *OID
 	PlacedPlayerContainerOID *OID

@@ -211,17 +211,16 @@ func (h *Handler) GetAvatars(w gsf.ResponseWriter, r *gsf.Request) error {
 }
 
 // GetAvatarItems fetches item instances owned by the active player avatar.
+// This handler was used before outfit presets were implemented, probably.
+// It is retained for backwards compatibility and may be repurposed for active avatar effects.
+// Clothing should be managed with GetOutfitItems instead.
 func (h *Handler) GetAvatarItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetAvatarItemsRequest{}
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	items, err := h.svc.Player.GetGSFAvatarItems(r.Context(), r.Platform(), req.PlayerAvatarOID, req.PlayerOID)
-	if err != nil {
-		return err
-	}
 	res := &messages.GetAvatarItemsResponse{}
-	res.AvatarItems = items
+	res.AvatarItems = []types.PlayerItem{}
 	return w.Write(res)
 }
 
@@ -336,6 +335,10 @@ func (h *Handler) RemoveOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error 
 	if err := r.Read(req); err != nil {
 		return err
 	}
+	// err := h.svc.Player.RemoveGSFOutfitItems(r.Context(), req.PlayerAvatarOutfitOID, req.InventoryOIDs)
+	// if err != nil {
+	// 	return err
+	// }
 	res := &messages.RemoveOutfitItemsResponse{}
 	res.IsUpdated = true
 	return w.Write(res)

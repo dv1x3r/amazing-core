@@ -44,7 +44,7 @@ func (s *Service) GetPlayerOutfitsDropdown(ctx context.Context, req w2.GetDropdo
 	res, err := w2db.GetDropdownContext(ctx, s.store.DB(), req, w2db.GetDropdownOptions{
 		From:         "player_avatar_outfit as po",
 		IDField:      "po.id",
-		TextField:    "(pa.name || ' / Outfit ' || po.outfit_no)",
+		TextField:    "(pa.name || ' / Outfit #' || po.outfit_no)",
 		OrderByField: "pa.name, po.outfit_no",
 		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("player_avatar as pa", "pa.id = po.player_avatar_id")

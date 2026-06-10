@@ -30,18 +30,18 @@ export function createItemLayout() {
         searchable: 'int',
       },
       {
-        field: 'name',
-        text: 'Item Name',
-        size: '200px',
-        render: 'text',
-        sortable: true,
-        searchable: 'text',
-      },
-      {
         field: 'container',
         text: 'Asset Container',
         size: '200px',
         render: 'dropdown',
+        sortable: true,
+        searchable: 'text',
+      },
+      {
+        field: 'name',
+        text: 'Item Name',
+        size: '200px',
+        render: 'text',
         sortable: true,
         searchable: 'text',
       },
@@ -104,17 +104,6 @@ function openItemPopup(event) {
         },
       },
       {
-        field: 'name',
-        type: 'text',
-        required: true,
-        html: {
-          label: 'Item Name',
-          attr: 'style="width:100%;"',
-          span: 6,
-          column: 0,
-        },
-      },
-      {
         field: 'container',
         type: 'list',
         required: true,
@@ -122,6 +111,17 @@ function openItemPopup(event) {
         html: {
           label: 'Asset Container',
           attr: 'style="width:100%;" placeholder="Type to search..."',
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'name',
+        type: 'text',
+        required: true,
+        html: {
+          label: 'Item Name',
+          attr: 'style="width:100%;"',
           span: 6,
           column: 0,
         },

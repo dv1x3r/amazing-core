@@ -17,8 +17,8 @@ import (
 
 type Item struct {
 	ID         int              `json:"id"`
-	Name       w2.Field[string] `json:"name"`
 	Container  w2.Dropdown      `json:"container"`
+	Name       w2.Field[string] `json:"name"`
 	Categories []w2.Dropdown    `json:"categories"`
 	Slots      []w2.Dropdown    `json:"slots"`
 }
@@ -29,21 +29,21 @@ func (s *Service) GetItemGrid(ctx context.Context, req w2.GetGridRequest) (w2.Ge
 		From: "item as it",
 		Select: []string{
 			"it.id",
-			"it.name",
 			"it.container_id",
 			"(ac.gsfoid || ' - ' || ac.name) as container",
+			"it.name",
 			"cat.categories",
 			"slt.slots",
 		},
 		WhereMapping: map[string]string{
 			"id":        "it.id",
-			"name":      "it.name",
 			"container": "ac.gsfoid || ' - ' || ac.name",
+			"name":      "it.name",
 		},
 		OrderByMapping: map[string]string{
 			"id":        "it.id",
-			"name":      "it.name",
 			"container": "ac.gsfoid",
+			"name":      "it.name",
 		},
 		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("asset_container as ac", "ac.id = it.container_id")
@@ -74,9 +74,9 @@ func (s *Service) GetItemGrid(ctx context.Context, req w2.GetGridRequest) (w2.Ge
 			var categories, slots sql.Null[string]
 			if err := rows.Scan(
 				&record.ID,
-				&record.Name,
 				&record.Container.ID,
 				&record.Container.Text,
+				&record.Name,
 				&categories,
 				&slots,
 			); err != nil {
@@ -105,8 +105,8 @@ func (s *Service) CreateItem(ctx context.Context, req w2.SaveFormRequest[Item]) 
 		var err error
 		itemID, err = w2db.InsertContext(ctx, tx, w2db.InsertOptions{
 			Into:   "item",
-			Cols:   []string{"name", "container_id"},
-			Values: []any{req.Record.Name, req.Record.Container.ID},
+			Cols:   []string{"container_id", "name"},
+			Values: []any{req.Record.Container.ID, req.Record.Name},
 		})
 		if s.store.IsErrConstraintUnique(err) {
 			return ErrItemExists
@@ -127,8 +127,8 @@ func (s *Service) UpdateItem(ctx context.Context, req w2.SaveFormRequest[Item]) 
 	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
 		_, err := w2db.UpdateContext(ctx, tx, w2db.UpdateOptions{
 			Update:  "item",
-			Cols:    []string{"name", "container_id"},
-			Values:  []any{req.Record.Name, req.Record.Container.ID},
+			Cols:    []string{"container_id", "name"},
+			Values:  []any{req.Record.Container.ID, req.Record.Name},
 			IDField: "id",
 			IDValue: req.Record.ID,
 		})
@@ -160,18 +160,18 @@ func (s *Service) GetGSFItem(ctx context.Context, platform gsf.Platform, itemID 
 
 	row := s.store.DB().QueryRowContext(ctx, `
 			select
-				name,
-				container_id
+				container_id,
+				name
 			from item
 			where id = ?;
 		`, itemID)
 
-	var item types.Item
 	var containerID int
+	var item types.Item
 
 	if err := row.Scan(
-		&item.Name,
 		&containerID,
+		&item.Name,
 	); err != nil {
 		return item, wrap.IfErr(op, err)
 	}

@@ -15,8 +15,8 @@ import (
 
 type SiteFrame struct {
 	ID        int           `json:"id"`
-	TypeValue w2.Field[int] `json:"type_value"`
 	Container w2.Dropdown   `json:"container"`
+	TypeValue w2.Field[int] `json:"type_value"`
 }
 
 func (s *Service) GetSiteFrameGrid(ctx context.Context, req w2.GetGridRequest) (w2.GetGridResponse[SiteFrame], error) {
@@ -25,19 +25,19 @@ func (s *Service) GetSiteFrameGrid(ctx context.Context, req w2.GetGridRequest) (
 		From: "site_frame as sf",
 		Select: []string{
 			"sf.id",
-			"sf.type_value",
 			"sf.container_id",
 			"(ac.gsfoid || ' - ' || ac.name) as container",
+			"sf.type_value",
 		},
 		WhereMapping: map[string]string{
 			"id":         "sf.id",
-			"type_value": "sf.type_value",
 			"container":  "ac.gsfoid || ' - ' || ac.name",
+			"type_value": "sf.type_value",
 		},
 		OrderByMapping: map[string]string{
 			"id":         "sf.id",
-			"type_value": "sf.type_value",
 			"container":  "ac.gsfoid",
+			"type_value": "sf.type_value",
 		},
 		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("asset_container as ac", "ac.id = sf.container_id")
@@ -45,9 +45,9 @@ func (s *Service) GetSiteFrameGrid(ctx context.Context, req w2.GetGridRequest) (
 		Scan: func(rows *sql.Rows, record *SiteFrame) error {
 			return rows.Scan(
 				&record.ID,
-				&record.TypeValue,
 				&record.Container.ID,
 				&record.Container.Text,
+				&record.TypeValue,
 			)
 		},
 	})
@@ -58,8 +58,8 @@ func (s *Service) CreateSiteFrame(ctx context.Context, req w2.SaveFormRequest[Si
 	const op = "siteframe.Service.CreateSiteFrame"
 	id, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{
 		Into:   "site_frame",
-		Cols:   []string{"type_value", "container_id"},
-		Values: []any{req.Record.TypeValue, req.Record.Container.ID},
+		Cols:   []string{"container_id", "type_value"},
+		Values: []any{req.Record.Container.ID, req.Record.TypeValue},
 	})
 	if s.store.IsErrConstraintUnique(err) {
 		return 0, wrap.IfErr(op, ErrSiteFrameExists)
@@ -71,8 +71,8 @@ func (s *Service) UpdateSiteFrame(ctx context.Context, req w2.SaveFormRequest[Si
 	const op = "siteframe.Service.UpdateSiteFrame"
 	_, err := w2db.UpdateContext(ctx, s.store.DB(), w2db.UpdateOptions{
 		Update:  "site_frame",
-		Cols:    []string{"type_value", "container_id"},
-		Values:  []any{req.Record.TypeValue, req.Record.Container.ID},
+		Cols:    []string{"container_id", "type_value"},
+		Values:  []any{req.Record.Container.ID, req.Record.TypeValue},
 		IDField: "id",
 		IDValue: req.Record.ID,
 	})
