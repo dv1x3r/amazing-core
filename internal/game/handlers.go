@@ -361,6 +361,11 @@ func (h *Handler) ReplaceOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error
 	if err := r.Read(req); err != nil {
 		return err
 	}
+	// TODO: ownership check, acceptable slot sheck, outfit oid check
+	err := h.svc.Player.ReplaceGSFOutfitItems(r.Context(), req.OldInventoryOIDs, req.NewInventoryOIDs)
+	if err != nil {
+		return err
+	}
 	res := &messages.ReplaceOutfitItemsResponse{}
 	res.IsUpdated = true
 	return w.Write(res)

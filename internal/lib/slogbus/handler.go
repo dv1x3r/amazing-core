@@ -10,13 +10,6 @@ type handler struct {
 	bus *Bus
 }
 
-func (b *Bus) Handler(next slog.Handler) slog.Handler {
-	return &handler{
-		Handler: next,
-		bus:     b,
-	}
-}
-
 func (h *handler) Handle(ctx context.Context, record slog.Record) error {
 	attrs := make([]slog.Attr, 0, record.NumAttrs())
 	record.Attrs(func(attr slog.Attr) bool {

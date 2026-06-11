@@ -3,6 +3,8 @@ package player
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"strings"
 
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
@@ -226,4 +228,51 @@ func (s *Service) GetGSFOutfitItems(ctx context.Context, platform gsf.Platform, 
 	}
 
 	return playerItems, wrap.IfErr(op, rows.Err())
+}
+
+func (s *Service) ReplaceGSFOutfitItems(ctx context.Context, oldOIDs, newOIDs []types.OID) error {
+	const op = "player.Service.ReplaceGSFOutfitItems"
+
+	if len(oldOIDs) == 0 || len(newOIDs) == 0 || len(oldOIDs) != len(newOIDs) {
+		return wrap.IfErr(op, fmt.Errorf("invalid OIDs length"))
+	}
+
+	values := make([]string, len(oldOIDs))
+	args := make([]any, 0, len(oldOIDs)*2+1)
+	for i := range oldOIDs {
+		values[i] = "(?, ?)"
+		args = append(args, oldOIDs[i], newOIDs[i])
+	}
+
+	query := fmt.Sprintf(`
+		with pairs(old_oid, new_oid) as (values %s)
+		update player_item
+		set
+			player_avatar_outfit_id = swap.player_avatar_outfit_id,
+			avatar_slot_id = swap.avatar_slot_id
+		from (
+			select
+				old_item.id as id,
+				new_item.player_avatar_outfit_id,
+				new_item.avatar_slot_id
+			from pairs
+				join player_item as old_item on old_item.gsfoid = pairs.old_oid
+				join player_item as new_item on new_item.gsfoid = pairs.new_oid
+			union all
+			select
+				new_item.id as id,
+				old_item.player_avatar_outfit_id,
+				old_item.avatar_slot_id
+			from pairs
+				join player_item as old_item on old_item.gsfoid = pairs.old_oid
+				join player_item as new_item on new_item.gsfoid = pairs.new_oid
+		) swap
+		where player_item.id = swap.id;
+	`, strings.Join(values, ", "))
+
+	if _, err := s.store.DB().ExecContext(ctx, query, args...); err != nil {
+		return wrap.IfErr(op, err)
+	}
+
+	return nil
 }

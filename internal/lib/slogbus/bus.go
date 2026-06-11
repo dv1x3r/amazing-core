@@ -2,6 +2,7 @@ package slogbus
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 	"sync/atomic"
 )
@@ -17,6 +18,13 @@ type Bus struct {
 func New() *Bus {
 	return &Bus{
 		subscribers: make(map[uint64]chan Record),
+	}
+}
+
+func (b *Bus) Handler(next slog.Handler) slog.Handler {
+	return &handler{
+		Handler: next,
+		bus:     b,
 	}
 }
 
