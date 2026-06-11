@@ -56,7 +56,7 @@ type LoginResponse struct {
 	// Information about the player including his active avatar.
 	Player types.Player
 
-	// Number of maximum outfit presets available (subscription based).
+	// Number of maximum outfit presets available (legacy, not in use).
 	MaxOutfit int16
 
 	PlayerStats             []types.PlayerStats

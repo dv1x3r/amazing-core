@@ -113,7 +113,8 @@ func (s *Service) GetGSFPlayerAvatars(ctx context.Context, platform gsf.Platform
 				pa.name as player_avatar_name,
 				pa.outfit_no,
 				pao.gsfoid as player_avatar_outfit_gsfoid,
-				pa.avatar_id
+				pa.avatar_id,
+				pl.max_outfits
 			from player_avatar as pa
 			join player as pl on pl.id = pa.player_id
 			left join player_avatar_outfit as pao on pao.player_avatar_id = pa.id and pao.outfit_no = pa.outfit_no
@@ -128,6 +129,7 @@ func (s *Service) GetGSFPlayerAvatars(ctx context.Context, platform gsf.Platform
 	for rows.Next() {
 		var playerAvatar types.PlayerAvatar
 		var avatarID int
+		var maxOutfits int16
 		if err := rows.Scan(
 			&playerAvatar.OID,
 			&playerAvatar.PlayerOID,
@@ -135,6 +137,7 @@ func (s *Service) GetGSFPlayerAvatars(ctx context.Context, platform gsf.Platform
 			&playerAvatar.OutfitNo,
 			&playerAvatar.PlayerAvatarOutfitOID,
 			&avatarID,
+			&maxOutfits,
 		); err != nil {
 			return playerAvatars, wrap.IfErr(op, err)
 		}
@@ -142,6 +145,7 @@ func (s *Service) GetGSFPlayerAvatars(ctx context.Context, platform gsf.Platform
 		if err != nil {
 			return playerAvatars, wrap.IfErr(op, err)
 		}
+		avatar.MaxOutfits = maxOutfits
 		playerAvatar.Avatar = avatar
 		playerAvatars = append(playerAvatars, playerAvatar)
 	}

@@ -27,6 +27,7 @@ type PlayerDetails struct {
 	CreatedAt           w2.UnixTime `json:"created_at"`
 	IsTutorialCompleted bool        `json:"is_tutorial_completed"`
 	IsQA                bool        `json:"is_qa"`
+	MaxOutfits          int         `json:"max_outfits"`
 	ActiveAvatar        w2.Dropdown `json:"active_avatar"`
 }
 
@@ -81,6 +82,7 @@ func (s *Service) GetPlayerDetailsForm(ctx context.Context, req w2.GetFormReques
 			"p.created_at",
 			"p.is_tutorial_completed",
 			"p.is_qa",
+			"p.max_outfits",
 			"pa.id as active_avatar_id",
 			"pa.name as active_avatar_name",
 		},
@@ -101,6 +103,7 @@ func (s *Service) GetPlayerDetailsForm(ctx context.Context, req w2.GetFormReques
 				&record.CreatedAt,
 				&record.IsTutorialCompleted,
 				&record.IsQA,
+				&record.MaxOutfits,
 				&record.ActiveAvatar.ID,
 				&record.ActiveAvatar.Text,
 			)
@@ -119,8 +122,8 @@ func (s *Service) UpdatePlayerDetails(ctx context.Context, req w2.SaveFormReques
 	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
 		affected, err := w2db.UpdateContext(ctx, tx, w2db.UpdateOptions{
 			Update:  "player",
-			Cols:    []string{"gsfoid", "is_tutorial_completed", "is_qa"},
-			Values:  []any{req.Record.OID, req.Record.IsTutorialCompleted, req.Record.IsQA},
+			Cols:    []string{"gsfoid", "is_tutorial_completed", "is_qa", "max_outfits"},
+			Values:  []any{req.Record.OID, req.Record.IsTutorialCompleted, req.Record.IsQA, req.Record.MaxOutfits},
 			IDField: "id",
 			IDValue: playerID,
 		})

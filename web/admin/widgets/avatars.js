@@ -45,14 +45,6 @@ export function createAvatarLayout() {
         sortable: true,
         searchable: 'text',
       },
-      {
-        field: 'max_outfits',
-        text: 'Max Outfits',
-        size: '120px',
-        render: 'int',
-        sortable: true,
-        searchable: 'int',
-      },
     ],
     defaultOperator: {
       'text': 'contains',
@@ -122,17 +114,6 @@ function openAvatarPopup(event) {
           column: 0,
         },
       },
-      {
-        field: 'max_outfits',
-        type: 'int',
-        required: true,
-        html: {
-          label: 'Max Outfits',
-          attr: 'size="15"',
-          span: 6,
-          column: 0,
-        },
-      },
     ],
     actions: {
       async Save() {
@@ -148,7 +129,7 @@ function openAvatarPopup(event) {
   w2popup.open({
     title: isEditMode ? 'Edit Avatar' : 'New Avatar',
     body: '<div id="avatar-form" style="width: 100%; height: 100%;"></div>',
-    width: 600, height: 300, showMax: false, resizable: false,
+    width: 600, height: 270, showMax: false, resizable: false,
   })
     .then(() => form.render('#avatar-form'))
     .close(() => form.destroy())

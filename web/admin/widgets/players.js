@@ -200,6 +200,16 @@ function createPlayerDetailsForm() {
           column: 0,
         },
       },
+      {
+        field: 'max_outfits',
+        type: 'int',
+        html: {
+          label: 'Max Outfits',
+          attr: 'size="15"',
+          span: 6,
+          column: 0,
+        },
+      },
     ],
     toolbar: {
       items: [

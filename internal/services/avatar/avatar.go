@@ -14,10 +14,9 @@ import (
 )
 
 type Avatar struct {
-	ID         int              `json:"id"`
-	Container  w2.Dropdown      `json:"container"`
-	Name       w2.Field[string] `json:"name"`
-	MaxOutfits w2.Field[int]    `json:"max_outfits"`
+	ID        int              `json:"id"`
+	Container w2.Dropdown      `json:"container"`
+	Name      w2.Field[string] `json:"name"`
 }
 
 func (s *Service) GetAvatarGrid(ctx context.Context, req w2.GetGridRequest) (w2.GetGridResponse[Avatar], error) {
@@ -29,19 +28,16 @@ func (s *Service) GetAvatarGrid(ctx context.Context, req w2.GetGridRequest) (w2.
 			"av.container_id",
 			"(ac.gsfoid || ' - ' || ac.name) as container",
 			"av.name",
-			"av.max_outfits",
 		},
 		WhereMapping: map[string]string{
-			"id":          "av.id",
-			"container":   "ac.gsfoid || ' - ' || ac.name",
-			"name":        "av.name",
-			"max_outfits": "av.max_outfits",
+			"id":        "av.id",
+			"container": "ac.gsfoid || ' - ' || ac.name",
+			"name":      "av.name",
 		},
 		OrderByMapping: map[string]string{
-			"id":          "av.id",
-			"container":   "ac.gsfoid",
-			"name":        "av.name",
-			"max_outfits": "av.max_outfits",
+			"id":        "av.id",
+			"container": "ac.gsfoid",
+			"name":      "av.name",
 		},
 		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("asset_container as ac", "ac.id = av.container_id")
@@ -52,7 +48,6 @@ func (s *Service) GetAvatarGrid(ctx context.Context, req w2.GetGridRequest) (w2.
 				&record.Container.ID,
 				&record.Container.Text,
 				&record.Name,
-				&record.MaxOutfits,
 			)
 		},
 	})
@@ -63,8 +58,8 @@ func (s *Service) CreateAvatar(ctx context.Context, req w2.SaveFormRequest[Avata
 	const op = "avatar.Service.CreateAvatar"
 	id, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{
 		Into:   "avatar",
-		Cols:   []string{"container_id", "name", "max_outfits"},
-		Values: []any{req.Record.Container.ID, req.Record.Name, req.Record.MaxOutfits},
+		Cols:   []string{"container_id", "name"},
+		Values: []any{req.Record.Container.ID, req.Record.Name},
 	})
 	if s.store.IsErrConstraintUnique(err) {
 		return 0, wrap.IfErr(op, ErrAvatarExists)
@@ -76,8 +71,8 @@ func (s *Service) UpdateAvatar(ctx context.Context, req w2.SaveFormRequest[Avata
 	const op = "avatar.Service.UpdateAvatar"
 	_, err := w2db.UpdateContext(ctx, s.store.DB(), w2db.UpdateOptions{
 		Update:  "avatar",
-		Cols:    []string{"container_id", "name", "max_outfits"},
-		Values:  []any{req.Record.Container.ID, req.Record.Name, req.Record.MaxOutfits},
+		Cols:    []string{"container_id", "name"},
+		Values:  []any{req.Record.Container.ID, req.Record.Name},
 		IDField: "id",
 		IDValue: req.Record.ID,
 	})
@@ -100,10 +95,7 @@ func (s *Service) GetGSFAvatar(ctx context.Context, platform gsf.Platform, avata
 	const op = "avatar.Service.GetGSFAvatar"
 
 	row := s.store.DB().QueryRowContext(ctx, `
-			select
-				container_id,
-				name,
-				max_outfits
+			select container_id, name
 			from avatar
 			where id = ?;
 		`, avatarID)
@@ -114,7 +106,6 @@ func (s *Service) GetGSFAvatar(ctx context.Context, platform gsf.Platform, avata
 	if err := row.Scan(
 		&containerID,
 		&avatar.Name,
-		&avatar.MaxOutfits,
 	); err != nil {
 		return avatar, wrap.IfErr(op, err)
 	}

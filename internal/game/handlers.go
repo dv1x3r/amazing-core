@@ -21,8 +21,7 @@ func NewHandler(svc services.Services) *Handler {
 }
 
 const (
-	PLAYER_ID  = 1
-	MAX_OUTFIT = 1
+	PLAYER_ID = 1
 
 	SCENE_HOMELOT_SMALL  = "OTYxMTQ4NDU5NDE5MA"
 	SCENE_HOMELOT_WINTER = "OTQ1MDc3NTY0MjEyNg"
@@ -80,7 +79,6 @@ func (h *Handler) Login(w gsf.ResponseWriter, r *gsf.Request) error {
 
 	res := &messages.LoginResponse{}
 	res.AssetDeliveryURL = h.svc.Asset.DeliveryURL()
-	res.MaxOutfit = MAX_OUTFIT
 	res.Player = player
 
 	return w.Write(res)
