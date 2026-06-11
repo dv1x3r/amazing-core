@@ -230,6 +230,81 @@ func (s *Service) GetGSFOutfitItems(ctx context.Context, platform gsf.Platform, 
 	return playerItems, wrap.IfErr(op, rows.Err())
 }
 
+func (s *Service) AddGSFOutfitItems(ctx context.Context, outfitOID types.OID, inventoryOIDs, slotOIDs []types.OID) error {
+	const op = "player.Service.AddGSFOutfitItems"
+
+	if len(inventoryOIDs) == 0 || len(slotOIDs) == 0 || len(inventoryOIDs) != len(slotOIDs) {
+		return wrap.IfErr(op, fmt.Errorf("invalid OIDs length"))
+	}
+
+	values := make([]string, len(inventoryOIDs))
+	args := make([]any, 0, len(inventoryOIDs)*2+1)
+	for i := range inventoryOIDs {
+		values[i] = "(?, ?)"
+		args = append(args, inventoryOIDs[i], slotOIDs[i])
+	}
+	args = append(args, outfitOID)
+
+	query := fmt.Sprintf(`
+		with add_items(inventory_oid, slot_oid) as (values %s)
+		update player_item
+		set
+			player_avatar_outfit_id = ?,
+			avatar_slot_id = new.avatar_slot_id
+		from (
+			select
+				pi.id as player_item_id,
+				avs.id as avatar_slot_id
+			from add_items
+				join player_item as pi on pi.gsfoid = add_items.inventory_oid
+				join avatar_slot as avs on avs.gsfoid = add_items.slot_oid
+		) new
+		where player_item.id = new.player_item_id;
+	`, strings.Join(values, ", "))
+
+	if _, err := s.store.DB().ExecContext(ctx, query, args...); err != nil {
+		return wrap.IfErr(op, err)
+	}
+
+	return nil
+}
+
+func (s *Service) RemoveGSFOutfitItems(ctx context.Context, outfitOID types.OID, inventoryOIDs []types.OID) error {
+	const op = "player.Service.RemoveGSFOutfitItems"
+
+	if len(inventoryOIDs) == 0 {
+		return wrap.IfErr(op, fmt.Errorf("invalid OIDs length"))
+	}
+
+	values := make([]string, len(inventoryOIDs))
+	args := make([]any, 0, len(inventoryOIDs)+1)
+	for i := range inventoryOIDs {
+		values[i] = "(?)"
+		args = append(args, inventoryOIDs[i])
+	}
+	args = append(args, outfitOID)
+
+	query := fmt.Sprintf(`
+		with remove_items(inventory_oid) as (values %s)
+		update player_item
+		set
+			player_avatar_outfit_id = null,
+			avatar_slot_id = null
+		from (
+			select pi.id as player_item_id
+			from remove_items
+				join player_item as pi on pi.gsfoid = remove_items.inventory_oid
+		) remove
+		where player_item.id = remove.player_item_id;
+	`, strings.Join(values, ", "))
+
+	if _, err := s.store.DB().ExecContext(ctx, query, args...); err != nil {
+		return wrap.IfErr(op, err)
+	}
+
+	return nil
+}
+
 func (s *Service) ReplaceGSFOutfitItems(ctx context.Context, oldOIDs, newOIDs []types.OID) error {
 	const op = "player.Service.ReplaceGSFOutfitItems"
 

@@ -44,22 +44,24 @@ func NewServer(
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.CHECK_USERNAME), handler.CheckUsername)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.REGISTER_PLAYER), handler.RegisterPlayer)
 
-	// ── Items & Categories ───────────────────────────────────────────────────────
+	// ── Inventory ────────────────────────────────────────────────────────────────
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_PUBLIC_ITEM_CATEGORIES), handler.GetPublicItemCategories)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_CMS_ITEMCATEGORIES), handler.GetCMSItemCategories)
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_BUILD_OBJECTS), handler.GetBuildObjects)
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_INVENTORY_OBJECTS), handler.GetInventoryObjects)
 
-	// ── Avatars & Outfits ────────────────────────────────────────────────────────
+	// ── Avatars ──────────────────────────────────────────────────────────────────
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_AVATARS), handler.GetAvatars)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_AVATAR_ITEMS), handler.GetAvatarItems)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.UPDATE_PLAYER_ACTIVE_AVATAR), handler.UpdatePlayerActiveAvatar)
+
+	// ──  Outfits ─────────────────────────────────────────────────────────────────
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_OUTFITS), handler.GetOutfits)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_OUTFIT_ITEMS), handler.GetOutfitItems)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.ADD_OUTFIT), handler.AddOutfit)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.SET_CURRENT_OUTFIT), handler.SetCurrentOutfit)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_BUILD_OBJECTS), handler.GetBuildObjects)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_INVENTORY_OBJECTS), handler.GetInventoryObjects)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.REMOVE_OUTFIT_ITEMS), handler.RemoveOutfitItems)
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_OUTFIT_ITEMS), handler.GetOutfitItems)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.ADD_OUTFIT_ITEMS), handler.AddOutfitItems)
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.REMOVE_OUTFIT_ITEMS), handler.RemoveOutfitItems)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.REPLACE_OUTFIT_ITEMS), handler.ReplaceOutfitItems)
 
 	// ── Login ────────────────────────────────────────────────────────────────────

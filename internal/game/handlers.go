@@ -157,7 +157,7 @@ func (h *Handler) RegisterPlayer(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// ── Items & Categories ───────────────────────────────────────────────────────
+// ── Inventory ────────────────────────────────────────────────────────────────
 
 // GetPublicItemCategories sends public item categories to classify temporary player items.
 // Requested during the new player registration.
@@ -191,7 +191,35 @@ func (h *Handler) GetCMSItemCategories(w gsf.ResponseWriter, r *gsf.Request) err
 	return w.Write(res)
 }
 
-// ── Avatars & Outfits ────────────────────────────────────────────────────────
+// GetBuildObjects fetches player-owned build objects.
+func (h *Handler) GetBuildObjects(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.GetBuildObjectsRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	res := &messages.GetBuildObjectsResponse{}
+	res.PlayerBuildObjects = []types.PlayerBuildObject{}
+	return w.Write(res)
+}
+
+// GetInventoryObjects fetches player-owned objects for the inventory grid.
+func (h *Handler) GetInventoryObjects(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.GetInventoryObjectsRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	// TODO: filter by player, right now returns all the items.
+	// store PlayerOID in the gsf.Request on login/relogin?
+	items, err := h.svc.Player.GetGSFInventoryObjects(r.Context(), r.Platform())
+	if err != nil {
+		return err
+	}
+	res := &messages.GetInventoryObjectsResponse{}
+	res.PlayerItems = items
+	return w.Write(res)
+}
+
+// ── Avatars ──────────────────────────────────────────────────────────────────
 
 // GetAvatars fetches the list of player avatars. The returned list is stored in AvatarManager.Instance.GSFPlayerAvatars.
 func (h *Handler) GetAvatars(w gsf.ResponseWriter, r *gsf.Request) error {
@@ -237,6 +265,8 @@ func (h *Handler) UpdatePlayerActiveAvatar(w gsf.ResponseWriter, r *gsf.Request)
 	return w.Write(res)
 }
 
+// ── Outfits ──────────────────────────────────────────────────────────────────
+
 // GetOutfits fetches the saved outfits for a given player avatar.
 // The results are stored as PresetOutfits on the AvatarAssets object.
 func (h *Handler) GetOutfits(w gsf.ResponseWriter, r *gsf.Request) error {
@@ -250,21 +280,6 @@ func (h *Handler) GetOutfits(w gsf.ResponseWriter, r *gsf.Request) error {
 	}
 	res := &messages.GetOutfitsResponse{}
 	res.PlayerAvatarOutfits = outfits
-	return w.Write(res)
-}
-
-// GetOutfitItems fetches the item instances associated with a player avatar outfit.
-func (h *Handler) GetOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error {
-	req := &messages.GetOutfitItemsRequest{}
-	if err := r.Read(req); err != nil {
-		return err
-	}
-	items, err := h.svc.Player.GetGSFOutfitItems(r.Context(), r.Platform(), req.PlayerAvatarOutfitOID, req.PlayerOID)
-	if err != nil {
-		return err
-	}
-	res := &messages.GetOutfitItemsResponse{}
-	res.OutfitItems = items
 	return w.Write(res)
 }
 
@@ -299,46 +314,18 @@ func (h *Handler) SetCurrentOutfit(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// GetBuildObjects fetches player-owned build objects.
-func (h *Handler) GetBuildObjects(w gsf.ResponseWriter, r *gsf.Request) error {
-	req := &messages.GetBuildObjectsRequest{}
+// GetOutfitItems fetches the item instances associated with a player avatar outfit.
+func (h *Handler) GetOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.GetOutfitItemsRequest{}
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	res := &messages.GetBuildObjectsResponse{}
-	res.PlayerBuildObjects = []types.PlayerBuildObject{}
-	return w.Write(res)
-}
-
-// GetInventoryObjects fetches player-owned objects for the inventory grid.
-func (h *Handler) GetInventoryObjects(w gsf.ResponseWriter, r *gsf.Request) error {
-	req := &messages.GetInventoryObjectsRequest{}
-	if err := r.Read(req); err != nil {
-		return err
-	}
-	// TODO: filter by player, right now returns all the items.
-	// store PlayerOID in the gsf.Request on login/relogin?
-	items, err := h.svc.Player.GetGSFInventoryObjects(r.Context(), r.Platform())
+	items, err := h.svc.Player.GetGSFOutfitItems(r.Context(), r.Platform(), req.PlayerAvatarOutfitOID, req.PlayerOID)
 	if err != nil {
 		return err
 	}
-	res := &messages.GetInventoryObjectsResponse{}
-	res.PlayerItems = items
-	return w.Write(res)
-}
-
-// RemoveOutfitItems handles the item removal request and returns the update status.
-func (h *Handler) RemoveOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error {
-	req := &messages.RemoveOutfitItemsRequest{}
-	if err := r.Read(req); err != nil {
-		return err
-	}
-	// err := h.svc.Player.RemoveGSFOutfitItems(r.Context(), req.PlayerAvatarOutfitOID, req.InventoryOIDs)
-	// if err != nil {
-	// 	return err
-	// }
-	res := &messages.RemoveOutfitItemsResponse{}
-	res.IsUpdated = true
+	res := &messages.GetOutfitItemsResponse{}
+	res.OutfitItems = items
 	return w.Write(res)
 }
 
@@ -348,7 +335,28 @@ func (h *Handler) AddOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
+	// TODO: ownership check, acceptable slot sheck, outfit oid check
+	err := h.svc.Player.AddGSFOutfitItems(r.Context(), req.PlayerAvatarOutfitOID, req.InventoryOIDs, req.SlotOIDs)
+	if err != nil {
+		return err
+	}
 	res := &messages.AddOutfitItemsResponse{}
+	res.IsUpdated = true
+	return w.Write(res)
+}
+
+// RemoveOutfitItems handles the item removal request and returns the update status.
+func (h *Handler) RemoveOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.RemoveOutfitItemsRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	// TODO: ownership check, outfit oid check
+	err := h.svc.Player.RemoveGSFOutfitItems(r.Context(), req.PlayerAvatarOutfitOID, req.InventoryOIDs)
+	if err != nil {
+		return err
+	}
+	res := &messages.RemoveOutfitItemsResponse{}
 	res.IsUpdated = true
 	return w.Write(res)
 }
