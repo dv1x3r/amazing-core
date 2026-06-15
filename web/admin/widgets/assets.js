@@ -82,6 +82,12 @@ export function createAssetGrid() {
         clipboardCopy: true,
       },
       {
+        field: 'icon',
+        text: '',
+        size: '40px',
+        render: 'icon-sm',
+      },
+      {
         field: 'file_type',
         text: 'File Type',
         size: '150px',
@@ -109,7 +115,7 @@ export function createAssetGrid() {
       },
       {
         field: 'res_name',
-        text: 'ResName',
+        text: 'Res Name',
         size: '200px',
         render: 'hover',
         sortable: true,
@@ -118,28 +124,12 @@ export function createAssetGrid() {
         editable: { type: 'text' },
       },
       {
-        field: 'description',
-        text: 'Description',
-        size: '200px',
-        render: 'text',
-        sortable: true,
-        searchAll: true,
-        searchable: 'text',
-        editable: { type: 'text' },
-      },
-      {
         field: 'version',
-        text: 'Version',
+        text: 'Bundle Version',
         size: '200px',
         render: 'text',
         sortable: true,
         searchable: 'text',
-      },
-      {
-        field: 'icon',
-        text: 'ICO',
-        size: '40px',
-        render: 'icon-small',
       },
       {
         field: 'hash',

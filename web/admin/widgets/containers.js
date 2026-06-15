@@ -62,6 +62,12 @@ export function createContainerLayout() {
         searchable: 'text',
       },
       {
+        field: 'icon',
+        text: '',
+        size: '40px',
+        render: 'icon-sm',
+      },
+      {
         field: 'assets',
         text: 'Assets',
         size: '60px',
@@ -262,10 +268,10 @@ function openContainerPopup(event) {
       {
         field: 'oid',
         type: 'text',
-        required: isEditMode,
+        required: true,
         html: {
           label: 'Container OID',
-          attr: isEditMode ? 'size="15"' : 'size="15" readonly',
+          attr: 'size="15"',
           span: 6,
           column: 0,
         },

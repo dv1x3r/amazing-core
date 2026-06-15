@@ -17,22 +17,21 @@ import (
 )
 
 type Asset struct {
-	ID          int              `json:"id"`
-	OID         string           `json:"oid"`
-	OIDStr      string           `json:"oid_str"`
-	CDNID       string           `json:"cdnid"`
-	URL         string           `json:"url"`
-	FileType    w2.Dropdown      `json:"file_type"`
-	AssetType   w2.Dropdown      `json:"asset_type"`
-	AssetGroup  w2.Dropdown      `json:"asset_group"`
-	ResName     w2.Field[string] `json:"res_name"`
-	Description w2.Field[string] `json:"description"`
-	Hash        string           `json:"hash"`
-	Size        int              `json:"size"`
-	SizeStr     string           `json:"size_str"`
-	Metadata    w2.Field[string] `json:"metadata"`
-	Version     w2.Field[string] `json:"version"`
-	Icon        string           `json:"icon"`
+	ID         int              `json:"id"`
+	OID        string           `json:"oid"`
+	OIDStr     string           `json:"oid_str"`
+	CDNID      string           `json:"cdnid"`
+	URL        string           `json:"url"`
+	FileType   w2.Dropdown      `json:"file_type"`
+	AssetType  w2.Dropdown      `json:"asset_type"`
+	AssetGroup w2.Dropdown      `json:"asset_group"`
+	ResName    w2.Field[string] `json:"res_name"`
+	Hash       string           `json:"hash"`
+	Size       int              `json:"size"`
+	SizeStr    string           `json:"size_str"`
+	Metadata   w2.Field[string] `json:"metadata"`
+	Version    w2.Field[string] `json:"version"`
+	Icon       string           `json:"icon"`
 }
 
 func (s *Service) GetAssetGrid(ctx context.Context, req w2.GetGridRequest) (w2.GetGridResponse[Asset], error) {
@@ -50,7 +49,6 @@ func (s *Service) GetAssetGrid(ctx context.Context, req w2.GetGridRequest) (w2.G
 			"a.asset_group_id",
 			"ag.name as group_name",
 			"a.res_name",
-			"a.description",
 			"a.hash",
 			"a.size",
 			"json(am.metadata) as metadata",
@@ -64,7 +62,6 @@ func (s *Service) GetAssetGrid(ctx context.Context, req w2.GetGridRequest) (w2.G
 			"asset_type":  "a.asset_type_id",
 			"asset_group": "a.asset_group_id",
 			"res_name":    "a.res_name",
-			"description": "a.description",
 			"hash":        "a.hash",
 			"size":        "a.size",
 			"version":     "(am.metadata ->> '$.assets[0].target_platform') || ' ' || (am.metadata ->> '$.info.version_engine')",
@@ -79,7 +76,6 @@ func (s *Service) GetAssetGrid(ctx context.Context, req w2.GetGridRequest) (w2.G
 			"asset_type":  "at.name",
 			"asset_group": "ag.name",
 			"res_name":    "a.res_name",
-			"description": "a.description",
 			"hash":        "a.hash",
 			"size":        "a.size",
 			"size_str":    "a.size",
@@ -103,7 +99,6 @@ func (s *Service) GetAssetGrid(ctx context.Context, req w2.GetGridRequest) (w2.G
 				&record.AssetGroup.ID,
 				&record.AssetGroup.Text,
 				&record.ResName,
-				&record.Description,
 				&record.Hash,
 				&record.Size,
 				&record.Metadata,
@@ -129,8 +124,8 @@ func (s *Service) UpdateAssets(ctx context.Context, req w2.SaveGridRequest[Asset
 		BuildOptions: func(change Asset) w2db.UpdateOptions {
 			return w2db.UpdateOptions{
 				Update:  "asset",
-				Cols:    []string{"asset_type_id", "asset_group_id", "res_name", "description"},
-				Values:  []any{change.AssetType.ID, change.AssetGroup.ID, change.ResName, change.Description},
+				Cols:    []string{"asset_type_id", "asset_group_id", "res_name"},
+				Values:  []any{change.AssetType.ID, change.AssetGroup.ID, change.ResName},
 				IDField: "id",
 				IDValue: change.ID,
 			}

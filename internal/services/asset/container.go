@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/url"
 
 	"github.com/dv1x3r/amazing-core/internal/lib/graph"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
@@ -21,6 +22,7 @@ type Container struct {
 	OIDStr    string           `json:"oid_str"`
 	Name      w2.Field[string] `json:"name"`
 	PTag      w2.Field[string] `json:"ptag"`
+	Icon      string           `json:"icon"`
 	Assets    int              `json:"assets"`
 	Packages  int              `json:"packages"`
 	CreatedAt w2.UnixTime      `json:"created_at"`
@@ -53,6 +55,7 @@ func (s *Service) GetContainerGrid(ctx context.Context, req w2.GetGridRequest) (
 			"coalesce(a.assets, 0) as assets",
 			"coalesce(p.packages, 0) as packages",
 			"c.created_at",
+			"icon.cdnid",
 		},
 		WhereMapping: map[string]string{
 			"id":   "c.id",
@@ -71,6 +74,18 @@ func (s *Service) GetContainerGrid(ctx context.Context, req w2.GetGridRequest) (
 			"created_at": "c.created_at",
 		},
 		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
+			sb.JoinWithOption(sqlbuilder.LeftJoin, `(
+					select
+						am.container_id,
+					    a.cdnid,
+					    row_number() over (partition by am.container_id order by am.position) as rn
+					from asset_container_assetmap as am
+					join asset as a on a.id = am.win_asset_id
+					join file_type as ft on ft.id = a.file_type_id
+					where ft.name = 'image/png'
+				) as icon`,
+				"icon.container_id = c.id and icon.rn = 1",
+			)
 			sb.JoinWithOption(sqlbuilder.LeftJoin,
 				"(select container_id, count(*) as assets from asset_container_assetmap group by container_id) as a",
 				"a.container_id = c.id",
@@ -81,6 +96,7 @@ func (s *Service) GetContainerGrid(ctx context.Context, req w2.GetGridRequest) (
 			)
 		},
 		Scan: func(rows *sql.Rows, record *Container) error {
+			var icon *string
 			if err := rows.Scan(
 				&record.ID,
 				&record.OID,
@@ -89,10 +105,14 @@ func (s *Service) GetContainerGrid(ctx context.Context, req w2.GetGridRequest) (
 				&record.Assets,
 				&record.Packages,
 				&record.CreatedAt,
+				&icon,
 			); err != nil {
 				return err
 			}
 			record.OIDStr = types.OIDFromString(record.OID.V).String()
+			if icon != nil {
+				record.Icon, _ = url.JoinPath(s.deliveryURL, *icon)
+			}
 			return nil
 		},
 	})
@@ -165,13 +185,9 @@ func (s *Service) GetContainerPackageGrid(ctx context.Context, req w2.GetGridReq
 func (s *Service) CreateContainer(ctx context.Context, req w2.SaveFormRequest[Container]) (int, error) {
 	const op = "asset.Service.CreateContainer"
 	id, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{
-		Into: "asset_container",
-		Cols: []string{"gsfoid", "name", "ptag"},
-		Values: []any{
-			sqlbuilder.Raw("(select coalesce(max(gsfoid) + 1, 1) from asset_container)"),
-			req.Record.Name,
-			req.Record.PTag,
-		},
+		Into:   "asset_container",
+		Cols:   []string{"gsfoid", "name", "ptag"},
+		Values: []any{req.Record.OID, req.Record.Name, req.Record.PTag},
 	})
 	if s.store.IsErrConstraintUnique(err) {
 		return 0, wrap.IfErr(op, ErrContainerExists)

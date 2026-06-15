@@ -9,9 +9,9 @@ import (
 )
 
 var (
-	ErrContainerExists         = errors.New("container with this GSF OID already exists")
+	ErrContainerExists         = errors.New("container with the same OID or name already exists")
 	ErrContainerInUse          = errors.New("container is still in use and cannot be removed")
-	ErrContainerAssetExists    = errors.New("container already contains this primary asset")
+	ErrContainerAssetExists    = errors.New("container already contains this asset")
 	ErrContainerPackageExists  = errors.New("container already contains this package")
 	ErrPackageCyclicDependency = errors.New("circular dependency detected (A → B → A)")
 )

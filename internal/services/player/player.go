@@ -47,10 +47,13 @@ func (s *Service) GetPlayerListGrid(ctx context.Context, req w2.GetGridRequest) 
 		},
 		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
 			sb.JoinWithOption(sqlbuilder.LeftJoin, `(
-				select id, player_id, name,
-					row_number() over (partition by player_id order by id) as rn
-				from player_avatar
-				where is_active = 1
+					select
+						id,
+						player_id,
+						(gsfoid || ' - ' || name) as name,
+						row_number() over (partition by player_id order by id) as rn
+					from player_avatar
+					where is_active = 1
 				) as pa`,
 				"pa.player_id = p.id and pa.rn = 1",
 			)
@@ -88,10 +91,13 @@ func (s *Service) GetPlayerDetailsForm(ctx context.Context, req w2.GetFormReques
 		},
 		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
 			sb.JoinWithOption(sqlbuilder.LeftJoin, `(
-				select id, player_id, name,
-					row_number() over (partition by player_id order by id) as rn
-				from player_avatar
-				where is_active = 1
+					select
+						id,
+						player_id,
+						(gsfoid || ' - ' || name) as name,
+						row_number() over (partition by player_id order by id) as rn
+					from player_avatar
+					where is_active = 1
 				) as pa`,
 				"pa.player_id = p.id and pa.rn = 1",
 			)
