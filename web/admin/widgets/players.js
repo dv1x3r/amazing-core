@@ -80,7 +80,6 @@ export function createPlayerLayout() {
             { id: 'avatars', text: 'Avatars' },
             { id: 'outfits', text: 'Outfits' },
             { id: 'items', text: 'Items' },
-            { id: 'information', text: 'Information' },
           ],
           onClick(event) {
             renderActiveTab(event.target)
@@ -111,9 +110,6 @@ export function createPlayerLayout() {
         break
       case 'items':
         subLayout.html('main', createPlayerItemsGrid())
-        break
-      case 'information':
-        subLayout.load('main', '/admin/pages/players.html')
         break
     }
   }
