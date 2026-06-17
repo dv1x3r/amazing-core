@@ -2,6 +2,7 @@
 
 Amazing World used Unity Streaming Assets, meaning things like images, audio, and asset bundles were stored on official servers and loaded by the game whenever they were needed.
 These files were also cached locally. Below is a list of known assets that have been found and shared by members of the community.
+Check out our [Google Sheets](https://docs.google.com/spreadsheets/d/1LVDjtQbFJokXxEb50u7-Ar8IRX5qcuF2snd2qMX9Yag/edit?usp=sharing) for more details!
 
 <br>
 
