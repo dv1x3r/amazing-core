@@ -143,7 +143,27 @@ You can customize server settings using the `config.json` file.
 
 ## Running the game on macOS
 
-The Steam version of the game is not compatible with modern macOS (Apple Silicon), but you can try following [this guide](https://github.com/boggydigital/mac-gaming-guides/blob/main/common/unity-porting.md#from-32-bits-to-64-bits-macos).
+The Steam version of the game is not compatible with modern macOS (Apple Silicon), but I created a patcher that fixes it.
+
+1. Download the game [using Steam](#download-the-game).
+
+2. Open the game folder by right-clicking the game in your Steam library and selecting **Manage** -> **Browse local files**.
+
+3. Open the folder in terminal:
+
+<img src="/images/mac-1.png" />
+
+4. Paste the following command into Terminal and press Enter.
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/dv1x3r/amazing-core/master/tools/silicon.sh | bash
+```
+
+<img src="/images/mac-2.png" />
+
+5. Once the patcher has finished, you can launch the game normally!
+
+You can also patch the game manually by following [this guide](https://github.com/boggydigital/mac-gaming-guides/blob/main/common/unity-porting.md#from-32-bits-to-64-bits-macos).
 
 ## License
 
