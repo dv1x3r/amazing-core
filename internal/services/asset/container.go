@@ -128,12 +128,12 @@ func (s *Service) GetContainerAssetGrid(ctx context.Context, req w2.GetGridReque
 			"ca.position",
 			"ca.win_asset_id",
 			"ca.osx_asset_id",
-			"concat_ws(' - ', at.name, a.gsfoid, coalesce(a.res_name, '[NULL]'), (am.metadata ->> '$.assets[0].target_platform') || ' ' || (am.metadata ->> '$.info.version_engine')) as windows",
-			"iif(ax.id is null, null, concat_ws(' - ', axt.name, ax.gsfoid, coalesce(ax.res_name, '[NULL]'), (axm.metadata ->> '$.assets[0].target_platform') || ' ' || (axm.metadata ->> '$.info.version_engine'))) as osx",
+			"concat_ws(' - ', coalesce(at.name, '[NO TYPE]'), a.gsfoid, coalesce(a.res_name, '[NULL]'), (am.metadata ->> '$.assets[0].target_platform') || ' ' || (am.metadata ->> '$.info.version_engine')) as windows",
+			"iif(ax.id is null, null, concat_ws(' - ', coalesce(axt.name, '[NO TYPE]'), ax.gsfoid, coalesce(ax.res_name, '[NULL]'), (axm.metadata ->> '$.assets[0].target_platform') || ' ' || (axm.metadata ->> '$.info.version_engine'))) as osx",
 		},
 		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("asset as a", "a.id = ca.win_asset_id")
-			sb.Join("asset_type as at", "at.id = a.asset_type_id")
+			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_type as at", "at.id = a.asset_type_id")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_metadata as am", "am.asset_id = a.id")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset as ax", "ax.id = ca.osx_asset_id")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_type as axt", "axt.id = ax.asset_type_id")
@@ -429,14 +429,14 @@ func (s *Service) getGSFAssetContainer(ctx context.Context, containerID int, pla
 	rows, err := s.store.DB().QueryContext(ctx, `
 		select
 			a.gsfoid,
-			at.name as type_name,
 			a.cdnid,
 			coalesce(a.res_name, '') as res_name,
+			coalesce(at.name, '') as type_name,
 			coalesce(ag.name, '') as group_name,
 			a.size
 		from asset_container_assetmap as ca
 		join asset as a on a.id = iif(? = 1 and ca.osx_asset_id is not null, ca.osx_asset_id, ca.win_asset_id)
-		join asset_type as at on at.id = a.asset_type_id
+		left join asset_type as at on at.id = a.asset_type_id
 		left join asset_group as ag on ag.id = a.asset_group_id
 		where ca.container_id = ?
 		order by ca.position;
@@ -450,9 +450,9 @@ func (s *Service) getGSFAssetContainer(ctx context.Context, containerID int, pla
 		var asset types.Asset
 		if err := rows.Scan(
 			&asset.OID,
-			&asset.AssetTypeName,
 			&asset.CDNID,
 			&asset.ResName,
+			&asset.AssetTypeName,
 			&asset.GroupName,
 			&asset.FileSize,
 		); err != nil {

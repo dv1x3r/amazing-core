@@ -793,7 +793,7 @@ Check out our [Google Sheets](https://docs.google.com/spreadsheets/d/1LVDjtQbFJo
             </div>
           </template>
           <!-- Preview asset bundle -->
-          <template x-if="current.file.type.startsWith('AssetBundle/')">
+          <template x-if="current.file.type.startsWith('AssetBundle/') || current.file.type.startsWith('Unity/')">
             <div x-data="zipLoader({url: base + '/unpacked/' + current.file.name + '.zip'})">
               <p x-show="loading">Loading archive...</p>
               <p x-show="error" x-text="error" style="color:red"></p>

@@ -4,6 +4,7 @@ import sys
 import json
 import base64
 import shutil
+import struct
 import hashlib
 import argparse
 import subprocess
@@ -232,10 +233,10 @@ class UnitySceneParser:
 
 def get_bundle_info(env):
     return {
-        "signature": env.file.signature,
-        "version": env.file.version,
-        "version_player": env.file.version_player,
-        "version_engine": env.file.version_engine,
+        "signature": getattr(env.file, "signature", None),
+        "version": getattr(env.file, "version", None),
+        "version_player": getattr(env.file, "version_player", None),
+        "version_engine": getattr(env.file, "version_engine", None),
     }
 
 
@@ -262,22 +263,22 @@ def get_bundle_containers(env):
     return {v.m_PathID: k for k, v in env.container.items()}
 
 
-def unpack_assets(env, unpack_dir, ffmpeg_mp3, zip):
-    base = os.path.join(unpack_dir, env.file.name)
+def unpack_assets(env, file_path, unpack_dir, ffmpeg_mp3, zip):
+    base_path = os.path.join(unpack_dir, os.path.basename(file_path))
     unpacked_assets = 0
 
     for obj in env.objects:
         if obj.type.name == "AudioClip":
             clip = obj.parse_as_object()
             for sample_name, sample_data in clip.samples.items():
-                os.makedirs(os.path.join(base, "audio"), exist_ok=True)
-                tmp = os.path.join(base, "audio", sample_name)
+                os.makedirs(os.path.join(base_path, "audio"), exist_ok=True)
+                tmp = os.path.join(base_path, "audio", sample_name)
                 with open(tmp, "wb") as f:
                     f.write(sample_data)
                 if ffmpeg_mp3:
                     print("    converting to mp3:", sample_name, file=sys.stderr)
                     file_name = f"{obj.path_id}.{os.path.splitext(sample_name)[0]}.mp3"
-                    out = os.path.join(base, "audio", file_name)
+                    out = os.path.join(base_path, "audio", file_name)
                     subprocess.run(
                         ["ffmpeg", "-y", "-i", tmp, out],
                         capture_output=True,
@@ -288,9 +289,9 @@ def unpack_assets(env, unpack_dir, ffmpeg_mp3, zip):
         elif obj.type.name == "Mesh":
             data = obj.parse_as_object()
             file_name = f"{obj.path_id}.{data.m_Name}.obj"
-            out = os.path.join(base, "models", file_name)
+            out = os.path.join(base_path, "models", file_name)
             if wavefront := data.export():
-                os.makedirs(os.path.join(base, "models"), exist_ok=True)
+                os.makedirs(os.path.join(base_path, "models"), exist_ok=True)
                 with open(out, "wt", newline="") as f:
                     f.write(wavefront)
                 unpacked_assets += 1
@@ -300,8 +301,8 @@ def unpack_assets(env, unpack_dir, ffmpeg_mp3, zip):
         elif obj.type.name == "Texture2D":
             data = obj.parse_as_object()
             file_name = f"{obj.path_id}.{data.m_Name}.png"
-            out = os.path.join(base, "images", file_name)
-            os.makedirs(os.path.join(base, "images"), exist_ok=True)
+            out = os.path.join(base_path, "images", file_name)
+            os.makedirs(os.path.join(base_path, "images"), exist_ok=True)
             try:
                 data.image.save(out)
                 unpacked_assets += 1
@@ -309,10 +310,10 @@ def unpack_assets(env, unpack_dir, ffmpeg_mp3, zip):
                 print("    no image data:", data.m_Name, file=sys.stderr)
 
     if zip and unpacked_assets > 0:
-        zip_path = f"{base}.zip"
+        zip_path = f"{base_path}.zip"
         print("    compressing to zip:", zip_path, file=sys.stderr)
-        shutil.make_archive(base, "zip", unpack_dir, env.file.name)
-        shutil.rmtree(base)
+        shutil.make_archive(base_path, "zip", unpack_dir, env.file.name)
+        shutil.rmtree(base_path)
 
     return unpacked_assets
 
@@ -329,12 +330,45 @@ def get_file_info(file_path):
 
 def detect_file_type(file_path):
     with open(file_path, "rb") as f:
-        sample = f.read(32)
-    sample = sample.strip().removeprefix(UTF8_BOM)
+        raw_sample = f.read(256)
+
+    sample = raw_sample.strip().removeprefix(UTF8_BOM)
+
     for type_name, signature in SIGNATURES:
         if sample.startswith(signature):
             return type_name
+
+    if is_unity_serialized_file(file_path, raw_sample):
+        return "Unity/SerializedFile"
+
+    # if (
+    #     b"MonoBehaviour" in sample
+    #     or b"GameObject" in sample
+    #     or b"Texture2D" in sample
+    #     or b"Transform" in sample
+    # ):
+    #     return "Unity/SerializedFile"
+
     return "Unknown"
+
+
+def is_unity_serialized_file(file_path, sample):
+    if len(sample) < 16:
+        return False
+
+    metadata_size, file_size, version, data_offset = struct.unpack(">IIII", sample[:16])
+    actual_size = os.path.getsize(file_path)
+
+    if version < 5 or version > 30:
+        return False
+    if file_size < actual_size:
+        return False
+    if metadata_size <= 0 or metadata_size >= actual_size:
+        return False
+    if version >= 9 and (data_offset < metadata_size or data_offset > actual_size):
+        return False
+
+    return True
 
 
 def calculate_file_hash(file_path):
@@ -357,7 +391,11 @@ def process_file(
 ):
     file_info = get_file_info(file_path)
     summary = {"file": file_info}
-    if file_info["type"] in ["AssetBundle/UnityFS", "AssetBundle/UnityWeb"]:
+    if file_info["type"] in [
+        "AssetBundle/UnityFS",
+        "AssetBundle/UnityWeb",
+        "Unity/SerializedFile",
+    ]:
         with open(file_path, "rb") as f:
             env = UnityPy.load(f)
             bundle = {}
@@ -373,7 +411,7 @@ def process_file(
             if unpack_dir:
                 print("    unpacking assets...", file=sys.stderr)
                 bundle["unpacked_assets"] = unpack_assets(
-                    env, unpack_dir, ffmpeg_mp3, zip
+                    env, file_path, unpack_dir, ffmpeg_mp3, zip
                 )
             summary["bundle"] = bundle
     return summary

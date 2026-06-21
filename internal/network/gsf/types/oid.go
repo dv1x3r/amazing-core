@@ -73,6 +73,11 @@ func (oid OID) String() string {
 	return fmt.Sprintf("%d-%d-%d-%d", oid.Class, oid.Type, oid.Server, oid.Number)
 }
 
+// CDNID encodes OID integer into a base64 CDN ID.
+func (oid OID) CDNID() string {
+	return base64.RawStdEncoding.EncodeToString([]byte(strconv.Itoa(int(oid.Int64()))))
+}
+
 // UnmarshalJSON implements json.Unmarshaler for OID.
 func (oid *OID) UnmarshalJSON(data []byte) error {
 	if string(data) == "null" || string(data) == `""` {

@@ -17,14 +17,14 @@ func (s *Service) GetAssetsDropdown(ctx context.Context, req w2.GetDropdownReque
 		IDField: "a.id",
 		TextField: `
 			concat_ws(' - ',
-				at.name,
+				coalesce(at.name, '[NO TYPE]'),
 				a.gsfoid,
 				coalesce(a.res_name, '[NULL]'),
 				(am.metadata ->> '$.assets[0].target_platform') || ' ' || (am.metadata ->> '$.info.version_engine')
 			)`,
 		OrderByField: "at.name, a.gsfoid",
 		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
-			sb.Join("asset_type as at", "at.id = a.asset_type_id")
+			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_type as at", "at.id = a.asset_type_id")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_metadata as am", "am.asset_id = a.id")
 		},
 	})

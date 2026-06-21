@@ -83,7 +83,7 @@ func (s *Service) GetAssetGrid(ctx context.Context, req w2.GetGridRequest) (w2.G
 		},
 		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("file_type as ft", "ft.id = a.file_type_id")
-			sb.Join("asset_type as at", "at.id = a.asset_type_id")
+			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_type as at", "at.id = a.asset_type_id")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_group as ag", "ag.id = a.asset_group_id")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_metadata as am", "am.asset_id = a.id")
 		},
@@ -140,17 +140,17 @@ func (s *Service) GetGSFAssetByCDNID(ctx context.Context, cdnid string) (types.A
 	row := s.store.DB().QueryRowContext(ctx, `
 			select
 				a.gsfoid,
-				at.name as type_name,
 				a.cdnid,
-				coalesce(a.res_name, 'Undefined') as res_name,
-				coalesce(ag.name, 'Undefined') as group_name,
+				coalesce(a.res_name, '') as res_name,
+				coalesce(at.name, '') as type_name,
+				coalesce(ag.name, '') as group_name,
 				a.size
 			from asset as a
-			join asset_type as at on at.id = a.asset_type_id
+			left join asset_type as at on at.id = a.asset_type_id
 			left join asset_group as ag on ag.id = a.asset_group_id
 			where a.cdnid = ?;
 		`, strings.TrimSpace(cdnid))
-	if err := row.Scan(&a.OID, &a.AssetTypeName, &a.CDNID, &a.ResName, &a.GroupName, &a.FileSize); err != nil {
+	if err := row.Scan(&a.OID, &a.CDNID, &a.ResName, &a.AssetTypeName, &a.GroupName, &a.FileSize); err != nil {
 		return a, wrap.IfErr(op, fmt.Errorf("cdnid %s: %w", cdnid, err))
 	}
 	return a, nil
