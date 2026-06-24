@@ -91,7 +91,7 @@ export function createContainerLayout() {
       'text': 'contains',
     },
     sortData: [
-      { field: 'oid', direction: 'desc' },
+      { field: 'id', direction: 'desc' },
     ],
     onAdd: function(event) { openContainerPopup(event) },
     onEdit: function(event) { openContainerPopup(event) },

@@ -62,7 +62,7 @@ export function createItemLayout() {
       'text': 'contains',
     },
     sortData: [
-      { field: 'id', direction: 'asc' },
+      { field: 'name', direction: 'asc' },
     ],
     onAdd: function(event) { openItemPopup(event) },
     onEdit: function(event) { openItemPopup(event) },
@@ -255,7 +255,7 @@ export function createCategoryLayout() {
       'text': 'contains',
     },
     sortData: [
-      { field: 'id', direction: 'asc' },
+      { field: 'name', direction: 'asc' },
     ],
     onAdd: function(event) { openCategoryPopup(event) },
     onEdit: function(event) { openCategoryPopup(event) },

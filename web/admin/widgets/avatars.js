@@ -50,7 +50,7 @@ export function createAvatarLayout() {
       'text': 'contains',
     },
     sortData: [
-      { field: 'id', direction: 'asc' },
+      { field: 'name', direction: 'asc' },
     ],
     onAdd: function(event) { openAvatarPopup(event) },
     onEdit: function(event) { openAvatarPopup(event) },

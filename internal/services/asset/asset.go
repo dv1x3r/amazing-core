@@ -52,7 +52,7 @@ func (s *Service) GetAssetGrid(ctx context.Context, req w2.GetGridRequest) (w2.G
 			"a.hash",
 			"a.size",
 			"json(am.metadata) as metadata",
-			"(am.metadata ->> '$.assets[0].target_platform') || ' ' || (am.metadata ->> '$.info.version_engine') as platform",
+			"concat_ws(' ', am.metadata ->> '$.assets[0].target_platform', am.metadata ->> '$.info.version_engine') as platform",
 		},
 		WhereMapping: map[string]string{
 			"id":          "a.id",
@@ -64,7 +64,6 @@ func (s *Service) GetAssetGrid(ctx context.Context, req w2.GetGridRequest) (w2.G
 			"res_name":    "a.res_name",
 			"hash":        "a.hash",
 			"size":        "a.size",
-			"version":     "(am.metadata ->> '$.assets[0].target_platform') || ' ' || (am.metadata ->> '$.info.version_engine')",
 			"metadata":    "json(am.metadata)",
 		},
 		OrderByMapping: map[string]string{
@@ -76,10 +75,8 @@ func (s *Service) GetAssetGrid(ctx context.Context, req w2.GetGridRequest) (w2.G
 			"asset_type":  "at.name",
 			"asset_group": "ag.name",
 			"res_name":    "a.res_name",
-			"hash":        "a.hash",
 			"size":        "a.size",
 			"size_str":    "a.size",
-			"version":     "(am.metadata ->> '$.assets[0].target_platform') || ' ' || (am.metadata ->> '$.info.version_engine')",
 		},
 		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("file_type as ft", "ft.id = a.file_type_id")

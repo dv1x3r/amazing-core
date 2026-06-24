@@ -106,7 +106,6 @@ export function createBlobGrid() {
         text: 'File Hash',
         size: '350px',
         render: 'text',
-        sortable: true,
         searchAll: true,
         searchable: 'text',
         clipboardCopy: true,

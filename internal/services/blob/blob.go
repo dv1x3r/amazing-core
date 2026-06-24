@@ -62,7 +62,6 @@ func (s *Service) GetBlobGrid(ctx context.Context, req w2.GetGridRequest) (w2.Ge
 			"id":       "id",
 			"cdnid":    "cdnid COLLATE BINARY",
 			"url":      "cdnid COLLATE BINARY",
-			"hash":     "hash",
 			"size":     "length(blob)",
 			"size_str": "length(blob)",
 		},

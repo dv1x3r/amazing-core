@@ -1,10 +1,18 @@
 select
 	a.id
     ,a.cdnid
+    ,a.gsfoid
     ,ft.name as file_type
-    ,am.metadata ->> '$.info.version_engine' as engine
-    ,am.metadata ->> '$.assets[0].target_platform' as platform
-    ,replace(replace(replace(replace(am.metadata ->> '$.assets[0].name', 'BuildPlayer-', ''), '.sharedAssets', ''), 'CustomAssetBundle-', ''), 'CAB-', '') as asset
+    ,at.name as asset_type
+    ,ag.name as asset_group
+    ,a.res_name
+    ,replace(replace(replace(replace(
+      am.metadata ->> '$.assets[0].name',
+      'BuildPlayer-', ''),
+      '.sharedAssets', ''),
+      'CustomAssetBundle-', ''),
+      'CAB-', '') || '.unity3d' as clean_asset_name
+    ,concat_ws(' ', am.metadata ->> '$.assets[0].target_platform', am.metadata ->> '$.info.version_engine') as bundle_version
     , (
         SELECT group_concat(name, ', ')
         FROM (
@@ -15,6 +23,7 @@ select
       ) as top3_roots
 from asset as a
 join file_type as ft on ft.id = a.file_type_id
-join asset_metadata as am on am.asset_id = a.id
-where ft.name like 'AssetBundle/%'
+left join asset_type as at on at.id = a.asset_type_id
+left join asset_group as ag on ag.id = a.asset_group_id
+left join asset_metadata as am on am.asset_id = a.id
 

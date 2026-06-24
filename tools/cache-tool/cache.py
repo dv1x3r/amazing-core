@@ -232,12 +232,25 @@ class UnitySceneParser:
 
 
 def get_bundle_info(env):
-    return {
-        "signature": getattr(env.file, "signature", None),
-        "version": getattr(env.file, "version", None),
-        "version_player": getattr(env.file, "version_player", None),
-        "version_engine": getattr(env.file, "version_engine", None),
-    }
+    info = {}
+
+    for attr in (
+        "signature",
+        "version",
+        "version_player",
+        "version_engine",
+    ):
+        value = getattr(env.file, attr, None)
+        if value is not None:
+            info[attr] = str(value)
+
+    # Fallback: derive version_engine from version
+    if "version_engine" not in info:
+        version = info.get("version")
+        if version and version.startswith("UnityVersion "):
+            info["version_engine"] = version.split(" ", 1)[1]
+
+    return info
 
 
 def get_bundle_counts(env):
