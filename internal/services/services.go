@@ -29,19 +29,19 @@ type Services struct {
 	Zone      *zone.Service
 }
 
-func New(logger *slog.Logger, coreStore db.Store, blobStore db.Store, cfg config.Config) Services {
-	assets := asset.NewService(logger, coreStore, cfg.Settings.AssetDeliveryURL)
-	avatars := avatar.NewService(logger, coreStore, assets)
-	items := item.NewService(logger, coreStore, assets)
+func New(logger *slog.Logger, store db.Store, cfg config.Config) Services {
+	assets := asset.NewService(logger, store, cfg.Settings.AssetDeliveryURL)
+	avatars := avatar.NewService(logger, store, assets)
+	items := item.NewService(logger, store, assets)
 	return Services{
 		Asset:     assets,
 		Auth:      auth.NewService(cfg.Secure.Session.Secure, cfg.Secure.Session.Key, cfg.Secure.Auth.Username, cfg.Secure.Auth.Password),
 		Avatar:    avatars,
-		Blob:      blob.NewService(logger, blobStore, cfg.Settings.AssetDeliveryURL),
+		Blob:      blob.NewService(logger, store, cfg.Settings.AssetDeliveryURL),
 		Item:      items,
-		Player:    player.NewService(logger, coreStore, avatars, items),
-		RandName:  randname.NewService(logger, coreStore),
-		SiteFrame: siteframe.NewService(logger, coreStore, assets),
-		Zone:      zone.NewService(logger, coreStore, assets),
+		Player:    player.NewService(logger, store, avatars, items),
+		RandName:  randname.NewService(logger, store),
+		SiteFrame: siteframe.NewService(logger, store, assets),
+		Zone:      zone.NewService(logger, store, assets),
 	}
 }

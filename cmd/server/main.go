@@ -111,41 +111,23 @@ func main() {
 		}
 	}
 
-	// ── Database stores ─────────────────────────────────────────────────────────
-	coreStore, err := db.NewSQLiteStore(cfg.Storage.Databases.Core)
-	if err != nil {
+	// ── Database store ──────────────────────────────────────────────────────────
+	store := db.NewSQLiteStore(logger.Get(), cfg.Storage.Databases.Core, db.WithAttach("blob", cfg.Storage.Databases.Blob))
+	if err := store.Open(); err != nil {
 		logger.Get().Error("unable to connect to core.db", "err", err)
 		fmt.Scanln()
 		os.Exit(1)
 	}
-	defer coreStore.DB().Close()
-
-	logger.Get().Info(fmt.Sprintf("connected to the %s using the %s driver", cfg.Storage.Databases.Core, coreStore.DriverName()))
-
-	blobStore, err := db.NewSQLiteStore(cfg.Storage.Databases.Blob)
-	if err != nil {
-		logger.Get().Error("unable to connect to blob.db", "err", err)
-		fmt.Scanln()
-		os.Exit(1)
-	}
-	defer blobStore.DB().Close()
-
-	logger.Get().Info(fmt.Sprintf("connected to the %s using the %s driver", cfg.Storage.Databases.Blob, blobStore.DriverName()))
+	defer store.Close()
 
 	// ── Database migrations ─────────────────────────────────────────────────────
-	if err := coreStore.MigrateFile(logger.Get(), data.FS, "sql/core_db/base.sql"); err != nil {
+	if err := store.MigrateFile(data.FS, "sql/core_db/base.sql"); err != nil {
 		logger.Get().Error("unable to initialize core.db", "err", err)
 		fmt.Scanln()
 		os.Exit(1)
 	}
 
-	if err := blobStore.MigrateFile(logger.Get(), data.FS, "sql/blob_db/base.sql"); err != nil {
-		logger.Get().Error("unable to initialize blob.db", "err", err)
-		fmt.Scanln()
-		os.Exit(1)
-	}
-
-	if err := coreStore.MigrateUp(logger.Get(), data.FS, "sql/core_db/updates"); err != nil {
+	if err := store.MigrateUp(data.FS, "sql/core_db/updates"); err != nil {
 		logger.Get().Error("unable to apply core.db updates", "err", err)
 		fmt.Scanln()
 		os.Exit(1)
@@ -153,10 +135,10 @@ func main() {
 
 	// ── Services & Servers ──────────────────────────────────────────────────────
 	logBus := slogbus.New()
-	svc := services.New(logger.Get(), coreStore, blobStore, cfg)
+	svc := services.New(logger.Get(), store, cfg)
 	gameLogger := slog.New(logBus.Handler(logger.Get().Handler()))
 	gameServer := game.NewServer(gameLogger, game.NewHandler(svc))
-	apiServer := api.NewServer(logger.Get(), api.NewHandler(svc, logBus), coreStore)
+	apiServer := api.NewServer(logger.Get(), api.NewHandler(svc, logBus), store)
 
 	interruptCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()

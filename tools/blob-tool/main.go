@@ -35,11 +35,11 @@ func main() {
 func run(logger *slog.Logger, mode string, dbPath string, dir string, overwrite bool) error {
 	ctx := context.Background()
 
-	store, err := db.NewSQLiteStore(dbPath)
-	if err != nil {
+	store := db.NewSQLiteStore(dbPath)
+	if err := store.Open(); err != nil {
 		return fmt.Errorf("open database: %w", err)
 	}
-	defer store.DB().Close()
+	defer store.Close()
 
 	switch mode {
 	case "import":

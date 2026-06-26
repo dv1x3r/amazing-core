@@ -1,7 +1,8 @@
-create table asset_file (
+CREATE TABLE asset_file (
     [id] integer primary key,
     [cdnid] text not null unique collate nocase,
     [blob] blob not null,
-    [hash] text not null
+    [metadata] blob,
+    [hash] text not null unique collate nocase,
 ) strict;
 

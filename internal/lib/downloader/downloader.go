@@ -16,7 +16,7 @@ import (
 func DownloadIfNotExists(logger *slog.Logger, filePath string, url string) error {
 	fileName := filepath.Base(filePath)
 	if _, err := os.Stat(filePath); err == nil {
-		logger.Info(fmt.Sprintf("skipping the %s download: already exists", fileName))
+		logger.Info(fmt.Sprintf("skipping the %s download: file already exists", fileName))
 		return nil
 	}
 

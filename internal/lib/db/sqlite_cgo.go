@@ -3,19 +3,36 @@
 package db
 
 import (
+	"context"
 	"database/sql"
+	"database/sql/driver"
 	"errors"
+	"fmt"
 
 	"github.com/mattn/go-sqlite3"
 )
 
-func NewSQLiteStore(filePath string) (Store, error) {
-	const args = "?_journal=WAL&_fk=1&_busy_timeout=10000"
-	sqlDB, err := sql.Open("sqlite3", filePath+args)
-	if err != nil {
-		return nil, err
-	}
-	return &SQLiteStore{filePath: filePath, sqlDB: sqlDB}, nil
+const dataSourceArgs = "?_journal_mode=WAL&_foreign_keys=1&_busy_timeout=10000"
+
+func (s SQLiteStore) openSingleDB() (*sql.DB, error) {
+	return sql.Open("sqlite3", s.filePath+dataSourceArgs)
+}
+
+func (s SQLiteStore) openWithAttachedDBs() (*sql.DB, error) {
+	driverName := nextSQLiteDriverName("sqlite3")
+	sql.Register(driverName, &sqlite3.SQLiteDriver{
+		ConnectHook: func(conn *sqlite3.SQLiteConn) error {
+			for name, filePath := range s.attached {
+				query := fmt.Sprintf("ATTACH DATABASE ? AS %s;", name)
+				args := []driver.NamedValue{{Ordinal: 1, Value: filePath}}
+				if _, err := conn.ExecContext(context.Background(), query, args); err != nil {
+					return fmt.Errorf("attach database %q: %w", name, err)
+				}
+			}
+			return nil
+		},
+	})
+	return sql.Open(driverName, s.filePath+dataSourceArgs)
 }
 
 func (SQLiteStore) DriverName() string {
