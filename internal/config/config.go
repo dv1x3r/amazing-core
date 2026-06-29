@@ -36,6 +36,9 @@ type Config struct {
 		} `json:"databases"`
 		Explorer bool `json:"explorer"`
 	} `json:"storage"`
+	Python struct {
+		Venv string `json:"venv"`
+	} `json:"python"`
 	Secure  Secure `json:"secure,omitzero"`
 	Version string `json:"-"`
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/dv1x3r/amazing-core/internal/config"
 	"github.com/dv1x3r/amazing-core/internal/lib/db"
+	"github.com/dv1x3r/amazing-core/internal/lib/python"
 
 	"github.com/dv1x3r/amazing-core/internal/services/asset"
 	"github.com/dv1x3r/amazing-core/internal/services/auth"
@@ -33,11 +34,12 @@ func New(logger *slog.Logger, store db.Store, cfg config.Config) Services {
 	assets := asset.NewService(logger, store, cfg.Settings.AssetDeliveryURL)
 	avatars := avatar.NewService(logger, store, assets)
 	items := item.NewService(logger, store, assets)
+	pythonRunner := python.NewRunner(logger, cfg.Python.Venv)
 	return Services{
 		Asset:     assets,
 		Auth:      auth.NewService(cfg.Secure.Session.Secure, cfg.Secure.Session.Key, cfg.Secure.Auth.Username, cfg.Secure.Auth.Password),
 		Avatar:    avatars,
-		Blob:      blob.NewService(logger, store, cfg.Settings.AssetDeliveryURL),
+		Blob:      blob.NewService(logger, store, pythonRunner),
 		Item:      items,
 		Player:    player.NewService(logger, store, avatars, items),
 		RandName:  randname.NewService(logger, store),

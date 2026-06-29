@@ -1,4 +1,3 @@
-import io
 import os
 import sys
 import json
@@ -8,7 +7,9 @@ import struct
 import hashlib
 import argparse
 import subprocess
+import mutagen
 import UnityPy
+from PIL import Image
 from collections import Counter
 
 SIGNATURES = [
@@ -60,22 +61,6 @@ class UnitySceneParser:
                 else:
                     parent_id = tr.m_Father.path_id
                     self.children_dict.setdefault(parent_id, []).append(obj.path_id)
-
-    def get_roots(self):
-        roots = []
-        for rid in self.roots:
-            name = self.transform_dict[rid].m_GameObject.read().m_Name
-            node = {"name": name}
-            children = sorted(
-                set(
-                    self.transform_dict[cid].m_GameObject.read().m_Name
-                    for cid in self.children_dict.get(rid, [])
-                )
-            )
-            if children:
-                node["children"] = children
-            roots.append(node)
-        return roots
 
     def parse(self):
         return [self._build_tree(root_id) for root_id in self.roots]
@@ -258,7 +243,7 @@ def get_bundle_counts(env):
         "assets": len(env.assets),
         "objects": len(env.objects),
         "container": len(env.container),
-        "types": dict(Counter(obj.type.name for obj in env.objects)),
+        "types": dict(sorted(Counter(obj.type.name for obj in env.objects).items())),
     }
 
 
@@ -276,22 +261,24 @@ def get_bundle_containers(env):
     return {v.m_PathID: k for k, v in env.container.items()}
 
 
-def unpack_assets(env, file_path, unpack_dir, ffmpeg_mp3, zip):
-    base_path = os.path.join(unpack_dir, os.path.basename(file_path))
+def unpack_assets(env, file_path, mp3_convert, zip_assets):
+    base_name = os.path.basename(file_path)
+    base_dir = os.path.dirname(file_path)
+    assets_dir = os.path.join(base_dir, f"{base_name}_assets")
     unpacked_assets = 0
 
     for obj in env.objects:
         if obj.type.name == "AudioClip":
             clip = obj.parse_as_object()
             for sample_name, sample_data in clip.samples.items():
-                os.makedirs(os.path.join(base_path, "audio"), exist_ok=True)
-                tmp = os.path.join(base_path, "audio", sample_name)
+                os.makedirs(os.path.join(assets_dir, "audio"), exist_ok=True)
+                tmp = os.path.join(assets_dir, "audio", sample_name)
                 with open(tmp, "wb") as f:
                     f.write(sample_data)
-                if ffmpeg_mp3:
+                if mp3_convert:
                     print("    converting to mp3:", sample_name, file=sys.stderr)
                     file_name = f"{obj.path_id}.{os.path.splitext(sample_name)[0]}.mp3"
-                    out = os.path.join(base_path, "audio", file_name)
+                    out = os.path.join(assets_dir, "audio", file_name)
                     subprocess.run(
                         ["ffmpeg", "-y", "-i", tmp, out],
                         capture_output=True,
@@ -302,9 +289,9 @@ def unpack_assets(env, file_path, unpack_dir, ffmpeg_mp3, zip):
         elif obj.type.name == "Mesh":
             data = obj.parse_as_object()
             file_name = f"{obj.path_id}.{data.m_Name}.obj"
-            out = os.path.join(base_path, "models", file_name)
+            out = os.path.join(assets_dir, "models", file_name)
             if wavefront := data.export():
-                os.makedirs(os.path.join(base_path, "models"), exist_ok=True)
+                os.makedirs(os.path.join(assets_dir, "models"), exist_ok=True)
                 with open(out, "wt", newline="") as f:
                     f.write(wavefront)
                 unpacked_assets += 1
@@ -314,31 +301,86 @@ def unpack_assets(env, file_path, unpack_dir, ffmpeg_mp3, zip):
         elif obj.type.name == "Texture2D":
             data = obj.parse_as_object()
             file_name = f"{obj.path_id}.{data.m_Name}.png"
-            out = os.path.join(base_path, "images", file_name)
-            os.makedirs(os.path.join(base_path, "images"), exist_ok=True)
+            out = os.path.join(assets_dir, "images", file_name)
+            os.makedirs(os.path.join(assets_dir, "images"), exist_ok=True)
             try:
                 data.image.save(out)
                 unpacked_assets += 1
             except IsADirectoryError:
                 print("    no image data:", data.m_Name, file=sys.stderr)
 
-    if zip and unpacked_assets > 0:
-        zip_path = f"{base_path}.zip"
+    if zip_assets and unpacked_assets > 0:
+        zip_path = os.path.join(base_dir, f"{base_name}.zip")
         print("    compressing to zip:", zip_path, file=sys.stderr)
-        shutil.make_archive(base_path, "zip", unpack_dir, env.file.name)
-        shutil.rmtree(base_path)
-
-    return unpacked_assets
+        shutil.make_archive(os.path.splitext(zip_path)[0], "zip", assets_dir)
+        shutil.rmtree(assets_dir)
 
 
 def get_file_info(file_path):
-    return {
-        "name": os.path.basename(file_path),
-        "size": os.path.getsize(file_path),
+    file_name = os.path.basename(file_path)
+    info = {
+        "name": file_name,
+        "oid": cdnid_to_oid(file_name),
         "type": detect_file_type(file_path),
         "hash": calculate_file_hash(file_path),
-        "oid": cdnid_to_oid(os.path.basename(file_path)),
+        "size": os.path.getsize(file_path),
     }
+    return info
+
+
+def get_audio_info(file_path):
+    duration = get_audio_duration(file_path)
+    if duration is None:
+        print("    unable to get audio duration:", file_path, file=sys.stderr)
+        duration = 0
+
+    return {
+        "duration": format_duration(duration),
+    }
+
+
+def get_image_info(file_path):
+    dimensions = get_image_dimensions(file_path)
+    if dimensions is None:
+        print("    unable to get image dimensions:", file_path, file=sys.stderr)
+        dimensions = "0x0"
+
+    return {
+        "dimensions": dimensions,
+    }
+
+
+def get_audio_duration(file_path):
+    try:
+        audio = mutagen.File(file_path)
+    except Exception:
+        return None
+
+    if audio is None or not hasattr(audio, "info"):
+        return None
+    duration = getattr(audio.info, "length", None)
+    if duration is None:
+        return None
+    return duration
+
+
+def get_image_dimensions(file_path):
+    try:
+        with Image.open(file_path) as image:
+            width, height = image.size
+    except Exception:
+        return None
+
+    return f"{width}x{height}"
+
+
+def format_duration(seconds):
+    total_seconds = max(0, int(round(seconds)))
+    minutes, secs = divmod(total_seconds, 60)
+    hours, minutes = divmod(minutes, 60)
+    if hours:
+        return f"{hours:02}:{minutes:02}:{secs:02}"
+    return f"{minutes:02}:{secs:02}"
 
 
 def detect_file_type(file_path):
@@ -353,14 +395,6 @@ def detect_file_type(file_path):
 
     if is_unity_serialized_file(file_path, raw_sample):
         return "Unity/SerializedFile"
-
-    # if (
-    #     b"MonoBehaviour" in sample
-    #     or b"GameObject" in sample
-    #     or b"Texture2D" in sample
-    #     or b"Transform" in sample
-    # ):
-    #     return "Unity/SerializedFile"
 
     return "Unknown"
 
@@ -393,18 +427,20 @@ def cdnid_to_oid(cdnid):
     try:
         padded = cdnid + "=" * (-len(cdnid) % 4)
         decoded = base64.b64decode(padded)
-        return int(decoded.decode("ascii"))
+        return decoded.decode("ascii")
     except:
         print("    unable to get oid from cdnid:", cdnid, file=sys.stderr)
         return 0
 
 
-def process_file(
-    file_path, parse_scene=None, unpack_dir=None, ffmpeg_mp3=None, zip=None
-):
+def process_file(file_path, unpack=None, mp3_convert=None, zip_assets=None):
     file_info = get_file_info(file_path)
-    summary = {"file": file_info}
-    if file_info["type"] in [
+    metadata = {"file": file_info}
+    if file_info["type"] in ("audio/mp3", "audio/ogg"):
+        metadata["audio"] = get_audio_info(file_path)
+    elif file_info["type"] == "image/png":
+        metadata["image"] = get_image_info(file_path)
+    elif file_info["type"] in [
         "AssetBundle/UnityFS",
         "AssetBundle/UnityWeb",
         "Unity/SerializedFile",
@@ -413,21 +449,55 @@ def process_file(
             env = UnityPy.load(f)
             bundle = {}
             bundle["info"] = get_bundle_info(env)
-            bundle["counts"] = get_bundle_counts(env)
             bundle["assets"] = get_bundle_assets(env)
+            bundle["counts"] = get_bundle_counts(env)
             bundle["containers"] = get_bundle_containers(env)
             scene = UnitySceneParser(env)
-            bundle["roots"] = scene.get_roots()
-            if parse_scene:
-                print("    parsing scene...", file=sys.stderr)
-                bundle["scene"] = scene.parse()
-            if unpack_dir:
+            print("    parsing scene...", file=sys.stderr)
+            bundle["scene"] = scene.parse()
+            if unpack:
                 print("    unpacking assets...", file=sys.stderr)
-                bundle["unpacked_assets"] = unpack_assets(
-                    env, file_path, unpack_dir, ffmpeg_mp3, zip
-                )
-            summary["bundle"] = bundle
-    return summary
+                unpack_assets(env, file_path, mp3_convert, zip_assets)
+            metadata["bundle"] = bundle
+    return metadata
+
+
+def write_metadata(metadata, json_path):
+    if json_dir := os.path.dirname(json_path):
+        os.makedirs(json_dir, exist_ok=True)
+    with open(json_path, "w") as f:
+        json.dump(metadata, f, indent=2)
+
+
+def should_skip_path(path):
+    name = os.path.basename(path).lower()
+    return (
+        name.endswith(".meta.json") or name.endswith(".zip") or name.endswith("_assets")
+    )
+
+
+def process_manifest(manifest_path, unpack=None, mp3_convert=None, zip_assets=None):
+    with open(manifest_path) as f:
+        manifest = json.load(f)
+
+    files = manifest.get("files", [])
+    for i, entry in enumerate(files, 1):
+        file_path = entry["file_path"]
+        json_path = entry["json_path"]
+        print(f"processing file {i}/{len(files)}: {file_path}", file=sys.stderr)
+
+        try:
+            metadata = process_file(
+                file_path,
+                unpack=unpack,
+                mp3_convert=mp3_convert,
+                zip_assets=zip_assets,
+            )
+            write_metadata(metadata, json_path)
+        except Exception as err:
+            raise RuntimeError(f"failed to process file: {file_path}") from err
+
+        print("    metadata written:", json_path, file=sys.stderr)
 
 
 def main():
@@ -437,85 +507,101 @@ def main():
     )
     parser.add_argument(
         "path",
+        nargs="?",
         help="Path to a single cache file or a folder containing multiple files.",
     )
     parser.add_argument(
-        "--parse-scene",
-        action="store_true",
-        help="Parse and include scene hierarchy in the summary. Can produce large output for complex scenes.",
+        "--manifest",
+        help="JSON manifest with file_path/json_path entries.",
     )
     parser.add_argument(
-        "--ffmpeg-mp3",
+        "--stdout",
         action="store_true",
-        help="Convert audio to mp3 using ffmpeg (requires --unpack-dir).",
+        help="Write JSON metadata to stdout.",
+    )
+    parser.add_argument(
+        "--json",
+        help="Write JSON metadata to .meta.json files.",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--unpack",
+        action="store_true",
+        help="Unpack assets (audio, images, models).",
+    )
+    parser.add_argument(
+        "--mp3",
+        action="store_true",
+        help="Convert audio to mp3 using ffmpeg (requires --unpack).",
     )
     parser.add_argument(
         "--zip",
         action="store_true",
-        help="Zip unpacked assets (requires --unpack-dir).",
-    )
-    parser.add_argument(
-        "--summary-file",
-        help="File to write a single JSON summary file.",
-    )
-    parser.add_argument(
-        "--summaries-dir",
-        metavar="DIR",
-        help="Directory to write JSON summary files.",
-    )
-    parser.add_argument(
-        "--unpack-dir",
-        metavar="DIR",
-        help="Directory to unpack assets (audio, images, models) into.",
+        help="Zip unpacked assets (requires --unpack).",
     )
 
     args = parser.parse_args()
 
-    if not args.summary_file and not args.summaries_dir and not args.unpack_dir:
-        parser.error(
-            "at least one of --summary-file, --summaries-dir or --unpack-dir is required"
+    if args.manifest:
+        if args.path:
+            parser.error("path cannot be used with --manifest")
+        if args.stdout:
+            parser.error("--stdout cannot be used with --manifest")
+        if args.json:
+            parser.error("--json cannot be used with --manifest")
+        if (args.mp3 or args.zip) and not args.unpack:
+            parser.error("--mp3 and --zip require --unpack")
+        process_manifest(
+            args.manifest,
+            unpack=args.unpack,
+            mp3_convert=args.mp3,
+            zip_assets=args.zip,
         )
+        return
 
-    if os.path.isdir(args.path):
+    if not args.path:
+        parser.error("path is required unless --manifest is used")
+
+    if (args.mp3 or args.zip) and not args.unpack:
+        parser.error("--mp3 and --zip require --unpack")
+
+    if not args.stdout and not args.json and not args.unpack:
+        parser.error("at least one of --stdout, --json or --unpack is required")
+
+    if should_skip_path(args.path):
+        files = []
+    elif os.path.isdir(args.path):
         files = sorted(
             [
                 os.path.join(args.path, f)
                 for f in os.listdir(args.path)
                 if os.path.isfile(os.path.join(args.path, f))
+                and not should_skip_path(os.path.join(args.path, f))
             ]
         )
     else:
         files = [args.path]
 
-    if args.summaries_dir:
-        os.makedirs(args.summaries_dir, exist_ok=True)
-
-    summaries = []
+    metadata_entries = []
     for i, file_path in enumerate(files, 1):
         print(f"processing file {i}/{len(files)}: {file_path}", file=sys.stderr)
 
-        summary = process_file(
+        metadata = process_file(
             file_path,
-            parse_scene=args.parse_scene,
-            unpack_dir=args.unpack_dir,
-            ffmpeg_mp3=args.ffmpeg_mp3,
-            zip=args.zip,
+            unpack=args.unpack,
+            mp3_convert=args.mp3,
+            zip_assets=args.zip,
         )
-        summaries.append(summary)
+        metadata_entries.append(metadata)
 
-        if args.summaries_dir:
-            out_path = os.path.join(
-                args.summaries_dir, os.path.basename(file_path) + ".json"
-            )
-            with open(out_path, "w") as f:
-                json.dump(summary, f, indent=2)
-            print("    summary written:", out_path, file=sys.stderr)
+        if args.json:
+            out_path = file_path + ".meta.json"
+            write_metadata(metadata, out_path)
+            print("    metadata written:", out_path, file=sys.stderr)
 
-    if args.summary_file:
-        os.makedirs(os.path.dirname(args.summary_file), exist_ok=True)
-        with open(args.summary_file, "w") as f:
-            json.dump(summaries, f, indent=2)
-        print("summary written:", args.summary_file, file=sys.stderr)
+    if args.stdout:
+        value = metadata_entries[0] if len(metadata_entries) == 1 else metadata_entries
+        print(json.dumps(value, separators=(",", ":")))
 
 
 if __name__ == "__main__":

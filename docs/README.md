@@ -14,14 +14,14 @@ mdbook serve docs/
 
 To self-host cache archive:
 
-1. Use `cache.py` from `cache-tool` to unpack cache bundles:
+1. Use `cache.py` to unpack cache bundles:
 
 ```sh
 # make index cache.json
-python cache.py /path/to/cache/folder --summary-file /path/to/output/cache.json
+python tools/cache.py /path/to/cache/folder --summary-file /path/to/output/cache.json
 
 # make summary.json per cache file, and unpack assets
-python cache.py /path/to/cache/folder \
+python tools/cache.py /path/to/cache/folder \
   --parse-scene --ffmpeg-mp3 --zip \
   --summaries-dir /path/to/output/unpacked \
   --unpack-dir /path/to/output/unpacked

@@ -207,7 +207,7 @@ const dashboardSidebar = new w2sidebar({
           icon: 'fa fa-file',
           onClick: async function() {
             const module = await import('./widgets/blob_db.js')
-            setDashboardWidget(module.createBlobGrid)
+            setDashboardWidget(module.createBlobLayout)
           },
         },
       ],

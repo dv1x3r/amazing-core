@@ -111,6 +111,27 @@ func main() {
 		}
 	}
 
+	// ── Blob database schema ────────────────────────────────────────────────────
+	blobStore := db.NewSQLiteStore(logger.Get(), cfg.Storage.Databases.Blob)
+	if err := blobStore.Open(); err != nil {
+		logger.Get().Error("unable to connect to blob.db", "err", err)
+		fmt.Scanln()
+		os.Exit(1)
+	}
+
+	if err := blobStore.MigrateFile(data.FS, "sql/blob_db/base.sql"); err != nil {
+		blobStore.Close()
+		logger.Get().Error("unable to initialize blob.db", "err", err)
+		fmt.Scanln()
+		os.Exit(1)
+	}
+
+	if err := blobStore.Close(); err != nil {
+		logger.Get().Error("unable to close blob.db", "err", err)
+		fmt.Scanln()
+		os.Exit(1)
+	}
+
 	// ── Database store ──────────────────────────────────────────────────────────
 	store := db.NewSQLiteStore(logger.Get(), cfg.Storage.Databases.Core, db.WithAttach("blob", cfg.Storage.Databases.Blob))
 	if err := store.Open(); err != nil {

@@ -4,5 +4,6 @@ CREATE TABLE asset_file (
     [blob] blob not null,
     [metadata] blob,
     [hash] text not null unique collate nocase,
+    [created_at] integer not null default (unixepoch()),
+    [updated_at] integer not null default (unixepoch())
 ) strict;
-

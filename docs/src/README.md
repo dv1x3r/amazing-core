@@ -136,6 +136,7 @@ You can customize server settings using the `config.json` file.
 | `storage.databases.core`    | Path to `core.db` - main SQLite database                     |
 | `storage.databases.blob`    | Path to `blob.db` - assets SQLite database                   |
 | `storage.explorer`          | Enable the dashboard SQL explorer - **only for testing!**    |
+| `python.venv`               | Path to the managed Python virtual environment               |
 | `secure.auth.username`      | Dashboard admin username                                     |
 | `secure.auth.password`      | Dashboard admin password                                     |
 | `secure.session.key`        | Cookie session signing key                                   |

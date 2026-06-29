@@ -8,7 +8,6 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/amazing-core/internal/services/blob"
 	"github.com/dv1x3r/w2go/w2"
-	"github.com/dv1x3r/w2go/w2file"
 )
 
 func (h *Handler) GetBlob(w http.ResponseWriter, r *http.Request) error {
@@ -46,36 +45,33 @@ func (h *Handler) PostBlobRemove(w http.ResponseWriter, r *http.Request) error {
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)
 }
 
-func (h *Handler) PostBlobUpload(w http.ResponseWriter, r *http.Request) error {
-	headers, err := w2file.ParseMultipartFiles(r)
+func (h *Handler) PostBlobImport(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseSaveFormRequest[blob.ImportOptions](r.Body)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	err = h.svc.Blob.SaveFiles(r.Context(), headers)
-	if errors.Is(err, blob.ErrFileExists) {
-		return wrap.WithHTTPStatus(err, http.StatusConflict)
-	} else if err != nil {
-		return err
-	}
-	return w2.NewSuccessResponse().Write(w, http.StatusOK)
-}
-
-func (h *Handler) PostBlobImport(w http.ResponseWriter, r *http.Request) error {
-	result, err := h.svc.Blob.ImportFromFolder(r.Context())
+	result, err := h.svc.Blob.ImportFromFolder(r.Context(), req.Record)
 	if err != nil {
 		return err
 	}
 	res := w2.NewSuccessResponse()
-	res.Message = fmt.Sprintf("Import completed: %d imported, %d skipped", result.ImportedFiles, result.SkippedFiles)
+	res.Message = fmt.Sprintf(
+		"Import completed: %d imported, %d skipped, %d metadata generated",
+		result.ImportedFiles, result.SkippedFiles, result.GeneratedMetadata,
+	)
 	return res.Write(w, http.StatusOK)
 }
 
-func (h *Handler) PostBlobExport(w http.ResponseWriter, r *http.Request) error {
-	result, err := h.svc.Blob.ExportToFolder(r.Context())
+func (h *Handler) PostBlobExtract(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseSaveFormRequest[blob.ExtractOptions](r.Body)
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	result, err := h.svc.Blob.ExtractFiles(r.Context(), req.Record)
 	if err != nil {
 		return err
 	}
 	res := w2.NewSuccessResponse()
-	res.Message = fmt.Sprintf("Export completed: %d exported, %d skipped", result.ExportedFiles, result.SkippedFiles)
+	res.Message = fmt.Sprintf("Extraction completed: %d files extracted", result.ExtractedFiles)
 	return res.Write(w, http.StatusOK)
 }

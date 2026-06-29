@@ -23,6 +23,9 @@
     },
     "explorer": true
   },
+  "python": {
+    "venv": "./data_db/.venv"
+  },
   "secure": {
     "auth": {
       "username": "admin",
