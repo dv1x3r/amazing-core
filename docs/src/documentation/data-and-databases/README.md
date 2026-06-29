@@ -39,10 +39,10 @@ The database can be populated using the [**blob-tool**](https://github.com/dv1x3
 
 A summary of known cache files, including name (CDN ID), size, type, hash, GSF OID and basic bundle info (version, object counts, scene roots).
 
-Generated with the [**cache-tool**](https://github.com/dv1x3r/amazing-core/tree/master/tools/cache-tool) Python script:
+Generated with the cache tool Python script:
 
 ```sh
-python tools/cache-tool/cache.py /path/to/cache/folder \
+python tools/cache.py /path/to/cache/folder \
   --summary-file data/cache.json
 ```
 

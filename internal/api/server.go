@@ -62,9 +62,8 @@ func NewServer(logger *slog.Logger, handler *Handler, store db.Store) *Server {
 
 	v1.HandleFunc("GET /blob/grid", errorHandler(handler.GetBlobGrid))
 	v1.HandleFunc("POST /blob/remove", errorHandler(handler.PostBlobRemove))
-	v1.HandleFunc("POST /blob/upload", errorHandler(handler.PostBlobUpload))
 	v1.HandleFunc("POST /blob/import", errorHandler(handler.PostBlobImport))
-	v1.HandleFunc("POST /blob/export", errorHandler(handler.PostBlobExport))
+	v1.HandleFunc("POST /blob/extract", errorHandler(handler.PostBlobExtract))
 
 	v1.HandleFunc("GET /container", errorHandler(handler.GetContainer))
 	v1.HandleFunc("GET /container/grid", errorHandler(handler.GetContainerGrid))
@@ -126,7 +125,7 @@ func NewServer(logger *slog.Logger, handler *Handler, store db.Store) *Server {
 
 	v1.HandleFunc("GET /logs/watch", errorHandler(handler.GetLogsWatch))
 
-	if config.Get().Storage.Explorer {
+	if config.Get().Storage.SQLExplorer {
 		v1.HandleFunc("GET /sql", errorHandler(w2widget.SQLiteSchemaHandler(store.DB())))
 		v1.HandleFunc("POST /sql", errorHandler(w2widget.SQLExecHandler(store.DB())))
 	}

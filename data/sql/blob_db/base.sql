@@ -3,6 +3,5 @@ CREATE TABLE asset_file (
     [cdnid] text not null unique collate nocase,
     [blob] blob not null,
     [metadata] blob,
-    [hash] text not null unique collate nocase,
+    [hash] text not null unique collate nocase
 ) strict;
-

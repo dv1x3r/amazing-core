@@ -1,11 +1,11 @@
 package blob
 
 import (
-	"context"
 	"errors"
 	"log/slog"
 
 	"github.com/dv1x3r/amazing-core/internal/lib/db"
+	"github.com/dv1x3r/amazing-core/internal/lib/python"
 )
 
 var (
@@ -14,23 +14,15 @@ var (
 )
 
 type Service struct {
-	logger      *slog.Logger
-	store       db.Store
-	deliveryURL string
+	logger *slog.Logger
+	store  db.Store
+	python *python.Runner
 }
 
-func NewService(logger *slog.Logger, store db.Store, deliveryURL string) *Service {
+func NewService(logger *slog.Logger, store db.Store, pythonRunner *python.Runner) *Service {
 	return &Service{
-		logger:      logger,
-		store:       store,
-		deliveryURL: deliveryURL,
+		logger: logger,
+		store:  store,
+		python: pythonRunner,
 	}
-}
-
-func (s *Service) ImportFromFolder(ctx context.Context) (*ImportResult, error) {
-	return ImportFromFolder(ctx, s.logger, s.store.DB(), "cache")
-}
-
-func (s *Service) ExportToFolder(ctx context.Context) (*ExportResult, error) {
-	return ExportToFolder(ctx, s.logger, s.store.DB(), "cache", true)
 }

@@ -21,7 +21,7 @@ func (h *Handler) GetDashboard(w http.ResponseWriter, r *http.Request) error {
 	data := map[string]any{
 		"username": username,
 		"version":  cfg.Version,
-		"explorer": cfg.Storage.Explorer,
+		"explorer": cfg.Storage.SQLExplorer,
 	}
 	return tmpl.ExecuteTemplate(w, "dashboard.gohtml", data)
 }

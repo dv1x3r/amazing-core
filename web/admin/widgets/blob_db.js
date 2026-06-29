@@ -1,8 +1,8 @@
-import { w2confirm, w2grid } from '/lib/w2ui.es6.min.js'
+import { w2form, w2grid, w2layout, w2popup } from '/lib/w2ui.es6.min.js'
 import * as helpers from '/lib/w2ui.helpers.js'
 
-export function createBlobGrid() {
-  return new w2grid({
+export function createBlobLayout() {
+  const grid = new w2grid({
     name: 'blobGrid',
     url: {
       get: '/api/v1/blob/grid',
@@ -13,7 +13,7 @@ export function createBlobGrid() {
     show: {
       footer: true,
       toolbar: true,
-      toolbarAdd: true,
+      toolbarAdd: false,
       toolbarEdit: false,
       toolbarDelete: true,
       toolbarSave: false,
@@ -27,49 +27,19 @@ export function createBlobGrid() {
         {
           type: 'button',
           id: 'import',
-          text: 'Import from folder',
-          tooltip: 'Import cache files from the ./cache folder',
-          icon: 'fa fa-file-arrow-down',
+          text: 'Import files',
+          icon: 'fa fa-file-import',
           onClick: function() {
-            w2confirm({
-              title: 'Import Cache Files',
-              msg: 'This will import all files from the `cache` folder into blob.db.',
-              btn_yes: { text: 'Import', class: 'w2ui-btn-blue' },
-              btn_no: { text: 'Cancel' },
-            }).yes(async () => {
-              await new Promise(r => setTimeout(r, 300));
-              await helpers.w2fetch({
-                owner: this.owner,
-                reload: true,
-                lock: 'Importing cache files...',
-                url: '/api/v1/blob/import',
-                method: 'POST',
-              })
-            })
+            openImportFilesPopup()
           },
         },
         {
           type: 'button',
-          id: 'export',
-          text: 'Export to folder',
-          tooltip: 'Export cache files to the ./cache folder',
-          icon: 'fa fa-file-arrow-up',
+          id: 'extract',
+          text: 'Extract files',
+          icon: 'fa fa-box-open',
           onClick: function() {
-            w2confirm({
-              title: 'Export Cache Files',
-              msg: 'This will create a `cache` folder containing all assets.',
-              btn_yes: { text: 'Export', class: 'w2ui-btn-blue' },
-              btn_no: { text: 'Cancel' },
-            }).yes(async () => {
-              await new Promise(r => setTimeout(r, 300));
-              await helpers.w2fetch({
-                owner: this.owner,
-                reload: false,
-                lock: 'Exporting cache files...',
-                url: '/api/v1/blob/export',
-                method: 'POST',
-              })
-            })
+            openExtractFilesPopup()
           },
         },
       ],
@@ -89,16 +59,7 @@ export function createBlobGrid() {
         size: '200px',
         render: 'text',
         sortable: true,
-        searchAll: true,
         searchable: 'text',
-        clipboardCopy: true,
-      },
-      {
-        field: 'url',
-        text: 'File URL',
-        size: '400px',
-        render: 'text',
-        sortable: true,
         clipboardCopy: true,
       },
       {
@@ -106,17 +67,8 @@ export function createBlobGrid() {
         text: 'File Hash',
         size: '350px',
         render: 'text',
-        searchAll: true,
         searchable: 'text',
         clipboardCopy: true,
-      },
-      {
-        field: 'size',
-        text: 'Bytes',
-        size: '80px',
-        render: 'text',
-        sortable: true,
-        searchable: 'int',
       },
       {
         field: 'size_str',
@@ -132,17 +84,154 @@ export function createBlobGrid() {
     sortData: [
       { field: 'id', direction: 'desc' },
     ],
-    onAdd: function() {
-      helpers.w2upload({
-        owner: this,
-        reload: true,
-        lock: 'Uploading files...',
-        url: '/api/v1/blob/upload',
-        method: 'POST',
-        multiple: true,
-      })
+    onSelect: async function(event) {
+      await event.complete
+      const selection = event.owner.getSelection()
+      const selectedBlobID = selection.length == 1 ? selection[0] : null
+      if (selectedBlobID) {
+        form.setValue('metadata', event.owner.get(selectedBlobID).metadata)
+      } else {
+        form.clear()
+      }
     },
-    onSearch: function(event) { helpers.searchAllFilter(event) },
   })
+
+  const form = new w2form({
+    name: `blobDetailsForm`,
+    focus: -1,
+    fields: [
+      {
+        field: 'metadata',
+        type: 'textarea',
+        html: {
+          label: '',
+          group: 'Metadata',
+          attr: 'style="width: 100%; height: calc(100vh - 85px); resize: none;" readonly',
+          span: 0,
+          column: 0,
+        },
+      },
+    ],
+  })
+
+  return new w2layout({
+    name: 'blobLayout',
+    panels: [
+      { type: 'left', html: grid, resizable: true, size: -420 },
+      { type: 'main', html: form },
+    ],
+    onDestroy: function() {
+      grid.destroy()
+      form.destroy()
+    },
+  })
+}
+
+function openImportFilesPopup() {
+  const userAgent = navigator.userAgent.toLowerCase()
+  const isWindows = userAgent.includes('win')
+  const form = new w2form({
+    name: 'importFilesForm',
+    url: '/api/v1/blob/import',
+    fields: [
+      {
+        field: 'import_path',
+        type: 'text',
+        required: true,
+        html: {
+          label: 'Import Path',
+          attr: isWindows
+            ? 'style="width:100%;" placeholder="C:\\Users\\Bloom\\amazing-world\\cache"'
+            : 'style="width:100%;" placeholder="/home/bloom/amazing-world/cache"',
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'generate_metadata',
+        type: 'checkbox',
+        html: {
+          text: 'Generate metadata',
+          label: '<span style="font-size:11px;">&nbsp;&nbsp;(python3 is required)</span>',
+          span: 6,
+          column: 0,
+        },
+      },
+    ],
+    actions: {
+      import: {
+        text: 'Import',
+        class: 'w2ui-btn-blue',
+        async onClick() {
+          const res = await this.save()
+          if (res) {
+            this.message(res.message)
+          }
+        }
+      },
+      Cancel() { w2popup.close() },
+    },
+  })
+  w2popup.open({
+    title: 'Import files',
+    body: '<div id="import-files-form" style="width: 100%; height: 100%;"></div>',
+    width: 600, height: 220, showMax: false, resizable: false,
+  })
+    .then(() => form.render('#import-files-form'))
+    .close(() => form.destroy())
+}
+
+function openExtractFilesPopup() {
+  const userAgent = navigator.userAgent.toLowerCase()
+  const isWindows = userAgent.includes('win')
+  const form = new w2form({
+    name: 'extractFilesForm',
+    url: '/api/v1/blob/extract',
+    fields: [
+      {
+        field: 'extract_path',
+        type: 'text',
+        required: true,
+        html: {
+          label: 'Extract Path',
+          attr: isWindows
+            ? 'style="width:100%;" placeholder="C:\\Users\\Bloom\\amazing-world\\cache"'
+            : 'style="width:100%;" placeholder="/home/bloom/amazing-world/cache"',
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'extract_metadata',
+        type: 'checkbox',
+        html: {
+          text: 'Extract metadata',
+          label: '<span style="font-size:11px;">&nbsp;&nbsp;(.meta.json files)</span>',
+          span: 6,
+          column: 0,
+        },
+      },
+    ],
+    actions: {
+      extract: {
+        text: 'Extract',
+        class: 'w2ui-btn-blue',
+        async onClick() {
+          const res = await this.save()
+          if (res) {
+            this.message(res.message)
+          }
+        }
+      },
+      Cancel() { w2popup.close() },
+    },
+  })
+  w2popup.open({
+    title: 'Extract files',
+    body: '<div id="extract-files-form" style="width: 100%; height: 100%;"></div>',
+    width: 600, height: 220, showMax: false, resizable: false,
+  })
+    .then(() => form.render('#extract-files-form'))
+    .close(() => form.destroy())
 }
 

@@ -21,7 +21,8 @@
       "core": "./data_db/core.db",
       "blob": "./data_db/blob.db"
     },
-    "explorer": true
+    "pythonVenv": "./data_db/.venv",
+    "sqlExplorer": true
   },
   "secure": {
     "auth": {

@@ -332,13 +332,15 @@ def unpack_assets(env, file_path, unpack_dir, ffmpeg_mp3, zip):
 
 
 def get_file_info(file_path):
-    return {
-        "name": os.path.basename(file_path),
+    file_name = os.path.basename(file_path)
+    info = {
+        "name": file_name,
         "size": os.path.getsize(file_path),
         "type": detect_file_type(file_path),
         "hash": calculate_file_hash(file_path),
-        "oid": cdnid_to_oid(os.path.basename(file_path)),
+        "oid": cdnid_to_oid(file_name),
     }
+    return info
 
 
 def detect_file_type(file_path):
@@ -399,11 +401,9 @@ def cdnid_to_oid(cdnid):
         return 0
 
 
-def process_file(
-    file_path, parse_scene=None, unpack_dir=None, ffmpeg_mp3=None, zip=None
-):
+def process_file(file_path, unpack_dir=None, ffmpeg_mp3=None, zip=None):
     file_info = get_file_info(file_path)
-    summary = {"file": file_info}
+    metadata = {"file": file_info}
     if file_info["type"] in [
         "AssetBundle/UnityFS",
         "AssetBundle/UnityWeb",
@@ -418,16 +418,15 @@ def process_file(
             bundle["containers"] = get_bundle_containers(env)
             scene = UnitySceneParser(env)
             bundle["roots"] = scene.get_roots()
-            if parse_scene:
-                print("    parsing scene...", file=sys.stderr)
-                bundle["scene"] = scene.parse()
+            print("    parsing scene...", file=sys.stderr)
+            bundle["scene"] = scene.parse()
             if unpack_dir:
                 print("    unpacking assets...", file=sys.stderr)
                 bundle["unpacked_assets"] = unpack_assets(
                     env, file_path, unpack_dir, ffmpeg_mp3, zip
                 )
-            summary["bundle"] = bundle
-    return summary
+            metadata["bundle"] = bundle
+    return metadata
 
 
 def main():
@@ -437,12 +436,13 @@ def main():
     )
     parser.add_argument(
         "path",
+        nargs="?",
         help="Path to a single cache file or a folder containing multiple files.",
     )
     parser.add_argument(
-        "--parse-scene",
+        "--stdout",
         action="store_true",
-        help="Parse and include scene hierarchy in the summary. Can produce large output for complex scenes.",
+        help="Write JSON metadata to stdout.",
     )
     parser.add_argument(
         "--ffmpeg-mp3",
@@ -455,13 +455,9 @@ def main():
         help="Zip unpacked assets (requires --unpack-dir).",
     )
     parser.add_argument(
-        "--summary-file",
-        help="File to write a single JSON summary file.",
-    )
-    parser.add_argument(
-        "--summaries-dir",
+        "--metadata-dir",
         metavar="DIR",
-        help="Directory to write JSON summary files.",
+        help="Directory to write .meta.json files.",
     )
     parser.add_argument(
         "--unpack-dir",
@@ -471,9 +467,12 @@ def main():
 
     args = parser.parse_args()
 
-    if not args.summary_file and not args.summaries_dir and not args.unpack_dir:
+    if not args.path:
+        parser.error("path is required")
+
+    if not args.stdout and not args.metadata_dir and not args.unpack_dir:
         parser.error(
-            "at least one of --summary-file, --summaries-dir or --unpack-dir is required"
+            "at least one of --stdout, --metadata-dir or --unpack-dir is required"
         )
 
     if os.path.isdir(args.path):
@@ -487,35 +486,32 @@ def main():
     else:
         files = [args.path]
 
-    if args.summaries_dir:
-        os.makedirs(args.summaries_dir, exist_ok=True)
+    if args.metadata_dir:
+        os.makedirs(args.metadata_dir, exist_ok=True)
 
-    summaries = []
+    metadata_entries = []
     for i, file_path in enumerate(files, 1):
         print(f"processing file {i}/{len(files)}: {file_path}", file=sys.stderr)
 
-        summary = process_file(
+        metadata = process_file(
             file_path,
-            parse_scene=args.parse_scene,
             unpack_dir=args.unpack_dir,
             ffmpeg_mp3=args.ffmpeg_mp3,
             zip=args.zip,
         )
-        summaries.append(summary)
+        metadata_entries.append(metadata)
 
-        if args.summaries_dir:
+        if args.metadata_dir:
             out_path = os.path.join(
-                args.summaries_dir, os.path.basename(file_path) + ".json"
+                args.metadata_dir, os.path.basename(file_path) + ".json"
             )
             with open(out_path, "w") as f:
-                json.dump(summary, f, indent=2)
-            print("    summary written:", out_path, file=sys.stderr)
+                json.dump(metadata, f, indent=2)
+            print("    metadata written:", out_path, file=sys.stderr)
 
-    if args.summary_file:
-        os.makedirs(os.path.dirname(args.summary_file), exist_ok=True)
-        with open(args.summary_file, "w") as f:
-            json.dump(summaries, f, indent=2)
-        print("summary written:", args.summary_file, file=sys.stderr)
+    if args.stdout:
+        value = metadata_entries[0] if len(metadata_entries) == 1 else metadata_entries
+        print(json.dumps(value, separators=(",", ":")))
 
 
 if __name__ == "__main__":

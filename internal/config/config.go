@@ -34,7 +34,8 @@ type Config struct {
 			Core string `json:"core"`
 			Blob string `json:"blob"`
 		} `json:"databases"`
-		Explorer bool `json:"explorer"`
+		PythonVenv  string `json:"pythonVenv"`
+		SQLExplorer bool   `json:"sqlExplorer"`
 	} `json:"storage"`
 	Secure  Secure `json:"secure,omitzero"`
 	Version string `json:"-"`
