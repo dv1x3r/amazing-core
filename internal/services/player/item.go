@@ -249,7 +249,7 @@ func (s *Service) AddGSFOutfitItems(ctx context.Context, outfitOID types.OID, in
 		with add_items(inventory_oid, slot_oid) as (values %s)
 		update player_item
 		set
-			player_avatar_outfit_id = ?,
+			player_avatar_outfit_id = (select id from player_avatar_outfit where gsfoid = ?),
 			avatar_slot_id = new.avatar_slot_id
 		from (
 			select
