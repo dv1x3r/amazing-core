@@ -35,13 +35,13 @@ Check out our [Google Sheets](https://docs.google.com/spreadsheets/d/1LVDjtQbFJo
       loading: true,
       error: null,
 
-      _items: [],      // all items from cache.json
+      _items: [],      // all items from index.json
       _filtered: [],   // cached filtered+sorted list of items
       _selected: null, // index into items[]
 
       search: '',
       view: 'list',      // 'list' or 'detail'
-      sortCol: 'name',   // 'name', 'type', 'asset', 'size'
+      sortCol: 'cdnid',   // 'cdnid', 'type', 'asset', 'size'
       sortDir: 'desc',
       page: 1,
       perPage: 25,
@@ -49,12 +49,13 @@ Check out our [Google Sheets](https://docs.google.com/spreadsheets/d/1LVDjtQbFJo
 
       async init() {
         try {
-          const res = await fetch(`${this.base}/cache.json`)
+          const res = await fetch(`${this.base}/index.json`)
           if (!res.ok) throw new Error('HTTP ' + res.status)
-          this._items = await res.json()
+          const index = await res.json()
+          this._items = index.assets || []
           this._refilter()
         } catch (e) {
-          this.error = 'Failed to load cache.json: ' + e.toString()
+          this.error = 'Failed to load index.json: ' + e.toString()
         } finally {
           this.loading = false
         }
@@ -65,22 +66,22 @@ Check out our [Google Sheets](https://docs.google.com/spreadsheets/d/1LVDjtQbFJo
         let list = this._items.map((item, idx) => ({item, idx}))
         if (q) {
           list = list.filter(({item}) => {
-            const f = item.file
-            if (f.name.toLowerCase().includes(q)) return true
-            if (f.type.toLowerCase().includes(q)) return true
-            if (String(f.oid).toLowerCase().includes(q)) return true
-            if (this.shortestAsset(item).name.toLowerCase().includes(q)) return true
-            return false
+            return [
+              item.cdnid,
+              item.file_type,
+              item.res_name,
+              item.bundle_version,
+            ].some(v => String(v || '').toLowerCase().includes(q))
           })
         }
         const col = this.sortCol
         const dir = this.sortDir === 'asc' ? 1 : -1
         list.sort((a, b) => {
           let va, vb
-          if (col === 'name') { va = a.item.file.name; vb = b.item.file.name; return va < vb ? -dir : va > vb ? dir : 0 }
-          if (col === 'type') { va = a.item.file.type.toLowerCase(); vb = b.item.file.type.toLowerCase(); return va < vb ? -dir : va > vb ? dir : 0 }
-          if (col === 'asset') { va = this.shortestAsset(a.item).name.toLowerCase(); vb = this.shortestAsset(b.item).name.toLowerCase(); return va < vb ? -dir : va > vb ? dir : 0 }
-          if (col === 'size') { return (a.item.file.size - b.item.file.size) * dir }
+          if (col === 'cdnid') { va = a.item.cdnid; vb = b.item.cdnid; return va < vb ? -dir : va > vb ? dir : 0 }
+          if (col === 'type') { va = String(a.item.file_type || '').toLowerCase(); vb = String(b.item.file_type || '').toLowerCase(); return va < vb ? -dir : va > vb ? dir : 0 }
+          if (col === 'asset') { va = this.assetText(a.item).toLowerCase(); vb = this.assetText(b.item).toLowerCase(); return va < vb ? -dir : va > vb ? dir : 0 }
+          if (col === 'size') { return ((a.item.size || 0) - (b.item.size || 0)) * dir }
           return 0
         })
         this._filtered = list
@@ -92,25 +93,16 @@ Check out our [Google Sheets](https://docs.google.com/spreadsheets/d/1LVDjtQbFJo
         return bytes + ' B'
       },
 
-      shortestAsset(item) {
-        const assets = (item.bundle && item.bundle.assets) || []
-        if (assets.length === 0) {
-          return {name: '', platform: ''}
-        }
-        let shortest = assets[0]
-        for (let i = 1; i < assets.length; i++) {
-          if (assets[i].name.length < shortest.name.length) {
-            shortest = assets[i]
-          }
-        }
-        return {name: shortest.name, platform: shortest.target_platform || ''}
+      assetText(item) {
+        return [item.res_name, item.bundle_version].filter(Boolean).join(' ')
+      },
+
+      assetFileName(item) {
+        return item.cdnid
       },
 
       sceneFlag(item) {
-        if (item.bundle && item.bundle.roots.length > 0 && item.bundle.counts.types.Mesh > 0) {
-          return '✅'
-        }
-        return ''
+        return item.scene ? '✅' : ''
       },
 
       selectItem(idx) {
@@ -161,39 +153,23 @@ Check out our [Google Sheets](https://docs.google.com/spreadsheets/d/1LVDjtQbFJo
         return this._selected !== null ? this._items[this._selected] : null
       },
 
-      get detailRows() {
+      detailRows(content = null) {
         const item = this.current
         if (!item) return []
-        const b = item.bundle
-        const f = item.file
+        const b = content && content.bundle
 
         if (this.detailTab === 'info') {
           const rows = [
-            {key: 'File Name', value: f.name},
-            {key: 'File Size', value: this.formatSize(f.size)},
-            {key: 'File Type', value: f.type},
-            {key: 'Hash', value: f.hash},
-            {key: 'OID', value: f.oid},
+            {key: 'CDN ID', value: item.cdnid},
+            {key: 'OID', value: item.oid || ''},
+            {key: 'File Type', value: item.file_type},
+            {key: 'Asset Type', value: item.asset_type || ''},
+            {key: 'Hash', value: item.hash || ''},
+            {key: 'File Size', value: this.formatSize(item.size || 0)},
+            {key: 'Bundle Version', value: item.bundle_version || ''},
           ]
-          if (b && b.info) {
-            rows.push(
-              {key: 'Signature', value: b.info.signature},
-              {key: 'Bundle Version', value: b.info.version},
-              {key: 'Player Version', value: b.info.version_player},
-              {key: 'Engine Version', value: b.info.version_engine},
-            )
-          }
-          if (b && b.counts) {
-            rows.push(
-              {key: 'Total Assets', value: b.counts.assets},
-              {key: 'Total Objects', value: b.counts.objects},
-              {key: 'Total Containers', value: b.counts.container},
-            )
-          }
-          if (b && b.assets) {
-            b.assets.forEach((a, idx) => {
-              rows.push({key: 'Asset ' + (idx + 1), value: a.name + ' (' + a.target_platform + ')'})
-            })
+          if (item.scene) {
+            rows.push({key: '3D Scene', value: 'Yes'})
           }
           return rows
         }
@@ -244,9 +220,9 @@ Check out our [Google Sheets](https://docs.google.com/spreadsheets/d/1LVDjtQbFJo
           }
           const keys = Object.keys(this.zip.files).filter(f => !f.endsWith('/'))
           const [audio, images, models] = await Promise.all([
-            Promise.all(keys.filter(f => f.includes('/audio/')).map(resolve)),
-            Promise.all(keys.filter(f => f.includes('/images/')).map(resolve)),
-            Promise.all(keys.filter(f => f.includes('/models/')).map(resolve)),
+            Promise.all(keys.filter(f => f.includes('audio/')).map(resolve)),
+            Promise.all(keys.filter(f => f.includes('images/')).map(resolve)),
+            Promise.all(keys.filter(f => f.includes('models/')).map(resolve)),
           ])
           this.files = {
             audio: audio.sort((a, b) => a.name.localeCompare(b.name)),
@@ -463,6 +439,8 @@ Check out our [Google Sheets](https://docs.google.com/spreadsheets/d/1LVDjtQbFJo
 
       async load(files, content) {
         if (!files?.models?.length) return
+        const scene = content?.bundle?.scene || []
+        if (scene.length === 0) return
 
         const meshMap = {}
         for (const model of files.models) {
@@ -488,7 +466,7 @@ Check out our [Google Sheets](https://docs.google.com/spreadsheets/d/1LVDjtQbFJo
 
         //console.log('models', meshMap)
         //console.log('images', textureMap)
-        //console.log('scene', this.content.bundle.scene)
+        //console.log('scene', scene)
 
         const results = []
 
@@ -530,8 +508,8 @@ Check out our [Google Sheets](https://docs.google.com/spreadsheets/d/1LVDjtQbFJo
           }
         }
 
-        for (const root of content.bundle.scene) {
-          walkNode(root, new THREE.Matrix4(), content.bundle.scene.length)
+        for (const root of scene) {
+          walkNode(root, new THREE.Matrix4(), scene.length)
         }
 
         for (const result of results) {
@@ -580,7 +558,7 @@ Check out our [Google Sheets](https://docs.google.com/spreadsheets/d/1LVDjtQbFJo
         <div style="margin-bottom:8px;">
           <input type="text" x-model="search"
             @input="page=1, _refilter()"
-            placeholder="Search by name, type, oid or asset…"
+            placeholder="Search by CDN ID, type or asset…"
             style="font-family:monospace; padding:3px 6px; width:300px;">
           <span style="margin-left:10px; font-size:1.25rem;" x-text="_filtered.length + ' items'"></span>
         </div>
@@ -588,7 +566,7 @@ Check out our [Google Sheets](https://docs.google.com/spreadsheets/d/1LVDjtQbFJo
           <thead>
             <tr>
               <th style="width:25%; text-align:left; padding:4px 8px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:1rem;"
-                @click="toggleListSort('name')">Name<span x-text="listSortIndicator('name')"></span>
+                @click="toggleListSort('cdnid')">CDN ID<span x-text="listSortIndicator('cdnid')"></span>
               </th>
               <th style="width:20%; text-align:left; padding:4px 8px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:1rem;"
                 @click="toggleListSort('type')">Type<span x-text="listSortIndicator('type')"></span>
@@ -606,21 +584,21 @@ Check out our [Google Sheets](https://docs.google.com/spreadsheets/d/1LVDjtQbFJo
             <template x-for="entry in listPaged" :key="entry.idx">
               <tr @click="selectItem(entry.idx)" style="cursor:pointer;"
                   @mouseenter="$el.style.background='var(--table-header-bg)'" @mouseleave="$el.style.background=''">
-                <td style="padding:3px 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" x-text="entry.item.file.name"></td>
-                <td style="padding:3px 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" x-text="entry.item.file.type"></td>
+                <td style="padding:3px 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" x-text="entry.item.cdnid"></td>
+                <td style="padding:3px 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" x-text="entry.item.file_type"></td>
                 <td style="padding:3px 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                  <span x-text="shortestAsset(entry.item).name"></span>
+                  <span x-text="entry.item.res_name"></span>
                   <span style="color:#888; font-size:0.85em;"
-                    x-show="shortestAsset(entry.item).platform"
-                    x-text="' (' + shortestAsset(entry.item).platform + ')'"></span>
+                    x-show="entry.item.bundle_version"
+                    x-text="' (' + entry.item.bundle_version + ')'"></span>
                 </td>
                 <td style="padding:3px 8px; overflow:hidden; font-size:1rem;" x-text="sceneFlag(entry.item)"></td>
                 <td style="padding:3px 8px; text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:1rem;"
-                  x-text="formatSize(entry.item.file.size)"></td>
+                  x-text="formatSize(entry.item.size || 0)"></td>
               </tr>
             </template>
             <tr x-show="listPaged.length === 0">
-              <td colspan="4" style="padding:8px; color:#888;">No results.</td>
+              <td colspan="5" style="padding:8px; color:#888;">No results.</td>
             </tr>
           </tbody>
         </table>
@@ -643,7 +621,7 @@ Check out our [Google Sheets](https://docs.google.com/spreadsheets/d/1LVDjtQbFJo
     </template>
     <!-- Detail View -->
     <template x-if="view === 'detail' && current">
-      <div x-data="fileLoader({url: base + '/unpacked/' + current.file.name + '.json', type: 'json'})">
+      <div x-data="fileLoader({url: base + '/cache/' + assetFileName(current) + '.meta.json', type: 'json'})">
         <!-- Tabs -->
         <div style="font-size:1.25rem; margin-bottom:10px;">
           <button @click="goBack()"
@@ -652,11 +630,11 @@ Check out our [Google Sheets](https://docs.google.com/spreadsheets/d/1LVDjtQbFJo
             :style="detailTab === 'info' ? { fontWeight: 'bold', textDecoration: 'underline' } : {}"
             style="font-family:monospace; margin-right:4px; cursor:pointer;">Info</button>
           <button @click="detailTab = 'counts'"
-            x-show="current.file.type.startsWith('AssetBundle/')"
+            x-show="current.file_type.startsWith('AssetBundle/')"
             :style="detailTab === 'counts' ? { fontWeight: 'bold', textDecoration: 'underline' } : {}"
             style="font-family:monospace; margin-right:4px; cursor:pointer;">Counts</button>
           <button @click="detailTab = 'containers'"
-            x-show="current.file.type.startsWith('AssetBundle/')"
+            x-show="current.file_type.startsWith('AssetBundle/')"
             :style="detailTab === 'containers' ? { fontWeight: 'bold', textDecoration: 'underline' } : {}"
             style="font-family:monospace; margin-right:4px; cursor:pointer;">Containers</button>
           <button @click="detailTab = 'json'"
@@ -678,13 +656,13 @@ Check out our [Google Sheets](https://docs.google.com/spreadsheets/d/1LVDjtQbFJo
                 </tr>
               </thead>
               <tbody>
-                <template x-for="row in detailRows">
+                <template x-for="row in detailRows(content)">
                   <tr>
                     <td x-text="row.key"></td>
                     <td x-text="row.value"></td>
                   </tr>
                 </template>
-                <tr x-show="detailRows.length === 0">
+                <tr x-show="detailRows(content).length === 0">
                   <td colspan="2" style="padding:8px; color:#888;">No results.</td>
                 </tr>
               </tbody>
@@ -708,13 +686,13 @@ Check out our [Google Sheets](https://docs.google.com/spreadsheets/d/1LVDjtQbFJo
                 </tr>
               </thead>
               <tbody>
-                <template x-for="row in detailRows">
+                <template x-for="row in detailRows(content)">
                   <tr>
                     <td x-text="row.type"></td>
                     <td x-text="row.count"></td>
                   </tr>
                 </template>
-                <tr x-show="detailRows.length === 0">
+                <tr x-show="detailRows(content).length === 0">
                   <td colspan="2" style="padding:8px; color:#888;">No results.</td>
                 </tr>
               </tbody>
@@ -731,12 +709,12 @@ Check out our [Google Sheets](https://docs.google.com/spreadsheets/d/1LVDjtQbFJo
                 </tr>
               </thead>
               <tbody>
-                <template x-for="row in detailRows">
+                <template x-for="row in detailRows(content)">
                   <tr>
                     <td x-text="row.path"></td>
                   </tr>
                 </template>
-                <tr x-show="detailRows.length === 0">
+                <tr x-show="detailRows(content).length === 0">
                   <td colspan="2" style="padding:8px; color:#888;">No results.</td>
                 </tr>
               </tbody>
@@ -746,16 +724,16 @@ Check out our [Google Sheets](https://docs.google.com/spreadsheets/d/1LVDjtQbFJo
         <div>
           <h2>Preview</h2>
           <!-- Preview images -->
-          <template x-if="current.file.type.startsWith('image/')">
-            <div x-data="imageCanvas({url: base + '/cache/' + current.file.name})">
+          <template x-if="current.file_type.startsWith('image/')">
+            <div x-data="imageCanvas({url: base + '/cache/' + assetFileName(current)})">
               <p x-show="loading">Loading image...</p>
               <p x-show="error" x-text="error" style="color:red"></p>
               <canvas x-show="!loading && !error" x-init="draw($el)"></canvas>
             </div>
           </template>
           <!-- Preview audio -->
-          <template x-if="current.file.type.startsWith('audio/')">
-            <div x-data="audioPlayer({url: base + '/cache/' + current.file.name})">
+          <template x-if="current.file_type.startsWith('audio/')">
+            <div x-data="audioPlayer({url: base + '/cache/' + assetFileName(current)})">
               <p x-show="loading">Loading audio...</p>
               <p x-show="error" x-text="error" style="color:red"></p>
               <div x-show="!loading && !error">
@@ -769,7 +747,7 @@ Check out our [Google Sheets](https://docs.google.com/spreadsheets/d/1LVDjtQbFJo
                   </thead>
                   <tbody>
                     <tr>
-                      <td x-text="current.file.name"></td>
+                      <td x-text="assetFileName(current)"></td>
                       <td x-text="duration"></td>
                       <td>
                         <button @click="play()"
@@ -783,8 +761,8 @@ Check out our [Google Sheets](https://docs.google.com/spreadsheets/d/1LVDjtQbFJo
             </div>
           </template>
           <!-- Preview text -->
-          <template x-if="current.file.type.startsWith('TreeNode/') || current.file.type === 'json'">
-            <div x-data="fileLoader({url: base + '/cache/' + current.file.name})">
+          <template x-if="current.file_type.startsWith('TreeNode/') || current.file_type === 'json'">
+            <div x-data="fileLoader({url: base + '/cache/' + assetFileName(current)})">
               <p x-show="loading">Loading file...</p>
               <p x-show="error" x-text="error" style="color:red"></p>
               <div x-show="content && !loading">
@@ -793,13 +771,13 @@ Check out our [Google Sheets](https://docs.google.com/spreadsheets/d/1LVDjtQbFJo
             </div>
           </template>
           <!-- Preview asset bundle -->
-          <template x-if="current.file.type.startsWith('AssetBundle/') || current.file.type.startsWith('Unity/')">
-            <div x-data="zipLoader({url: base + '/unpacked/' + current.file.name + '.zip'})">
+          <template x-if="current.file_type.startsWith('AssetBundle/') || current.file_type.startsWith('Unity/')">
+            <div x-data="zipLoader({url: base + '/cache/' + assetFileName(current) + '.zip'})">
               <p x-show="loading">Loading archive...</p>
               <p x-show="error" x-text="error" style="color:red"></p>
               <div x-show="!loading && !error">
                 <!-- Scene -->
-                <div x-show="content?.bundle.scene.length > 0 && content?.bundle.counts.types.Mesh > 0">
+                <div x-show="content?.bundle?.scene?.length > 0 && (content?.bundle?.counts?.types?.Mesh || 0) > 0">
                   <h3>Scene</h3>
                   <div x-data="threeViewer()" x-effect="if(files && content) load(files, content)"></div>
                   <p style="font-size:1.25rem;">

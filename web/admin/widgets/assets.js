@@ -1,4 +1,4 @@
-import { w2grid, w2utils, query } from '/lib/w2ui.es6.min.js'
+import { w2confirm, w2grid } from '/lib/w2ui.es6.min.js'
 import * as helpers from '/lib/w2ui.helpers.js'
 
 export function createAssetGrid() {
@@ -7,6 +7,7 @@ export function createAssetGrid() {
     url: {
       get: '/api/v1/asset/grid',
       save: '/api/v1/asset/grid',
+      remove: '/api/v1/asset/remove',
     },
     recid: 'id',
     recordHeight: 28,
@@ -15,7 +16,7 @@ export function createAssetGrid() {
       toolbar: true,
       toolbarAdd: false,
       toolbarEdit: false,
-      toolbarDelete: false,
+      toolbarDelete: true,
       toolbarSave: true,
       toolbarSearch: true,
       toolbarReload: true,
@@ -27,18 +28,42 @@ export function createAssetGrid() {
         { type: 'break' },
         {
           type: 'button',
-          id: 'import-json',
-          text: 'Import cache.json',
-          tooltip: 'Import and merge base asset data from cache.json',
-          icon: 'fa fa-code',
+          id: 'import-blob',
+          text: 'Import assets',
+          icon: 'fa fa-file-import',
           onClick: function() {
-            helpers.w2upload({
+            w2confirm({
+              title: 'Import assets from blob.db',
+              msg: `
+                Scan blob.db and add missing assets to core.db.<br>
+                Existing asset records and blob files are not changed.
+              `,
+              btn_yes: { text: 'Import', class: 'w2ui-btn-blue' },
+              btn_no: { text: 'Cancel' },
+            }).yes(async () => {
+              await new Promise(r => setTimeout(r, 300));
+              await helpers.w2fetch({
+                owner: this.owner,
+                reload: false,
+                lock: 'Importing assets...',
+                url: '/api/v1/asset/import',
+                method: 'POST',
+              })
+              this.owner.reload()
+            })
+          },
+        },
+        {
+          type: 'button',
+          id: 'download-index',
+          text: 'Download index file',
+          icon: 'fa fa-download',
+          onClick: async function() {
+            await helpers.w2download({
               owner: this.owner,
-              reload: true,
-              lock: 'Uploading json...',
-              url: '/api/v1/asset/cache.json',
-              method: 'POST',
-              accept: '.json,application/json',
+              lock: 'Generating index file...',
+              url: '/api/v1/asset/index',
+              name: 'index.json',
             })
           },
         },
@@ -83,7 +108,7 @@ export function createAssetGrid() {
       },
       {
         field: 'icon',
-        text: '',
+        text: x => x.field ? '' : 'Icon',
         size: '40px',
         render: 'icon-sm',
       },
@@ -124,10 +149,12 @@ export function createAssetGrid() {
         editable: { type: 'text' },
       },
       {
-        field: 'version',
+        field: 'bundle_version',
         text: 'Bundle Version',
         size: '200px',
         render: 'text',
+        sortable: true,
+        searchable: 'text',
       },
       {
         field: 'hash',
@@ -137,22 +164,6 @@ export function createAssetGrid() {
         hidden: true,
         searchable: 'text',
         clipboardCopy: true,
-      },
-      {
-        field: 'metadata',
-        text: 'Metadata',
-        size: '350px',
-        render: 'text',
-        hidden: true,
-        searchable: 'text',
-      },
-      {
-        field: 'size',
-        text: 'Bytes',
-        size: '80px',
-        render: 'text',
-        sortable: true,
-        searchable: 'int',
       },
       {
         field: 'size_str',
@@ -170,58 +181,6 @@ export function createAssetGrid() {
     ],
     onSave: function(event) { helpers.reloadOnSuccess(event) },
     onSearch: function(event) { helpers.searchAllFilter(event) },
-    onDelete: function(event) { event.preventDefault() },
-    onExpand: function(event) {
-      const row = event.owner.get(event.detail.recid)
-      const box = query('#' + event.detail.box_id)
-      box.html(`
-        <div style="padding: 5px">
-          <div style="height: 300px">
-            Loading...
-          </div>
-        </div>
-      `)
-      if (row.file_type.text.startsWith('image/')) {
-        box.html(`
-          <div style="padding: 5px; height: 150px">
-            <img style="height:100%" src="${row.url}"/>
-          </div>
-        `)
-      } else if (row.file_type.text.startsWith('audio/')) {
-        box.html(`
-          <div style="padding: 5px;">
-            <audio controls type="${row.file_type.text}" src="${row.url}"></audio>
-          </div>
-        `)
-      } else if (
-        row.file_type.text.startsWith('TreeNode/') ||
-        row.file_type.text.includes('json')
-      ) {
-        fetch(row.url).then(async res => {
-          const raw = await res.text()
-          const text = w2utils.encodeTags(raw)
-          box.html(`
-            <div style="padding: 5px;">
-              <textarea style="width: 100%; height: 300px; resize: none; font-family: monospace;" readonly>${text}</textarea>
-            </div>
-          `)
-        })
-      } else if (row.metadata) {
-        const prettyJson = JSON.stringify(JSON.parse(row.metadata), null, 2)
-        const text = w2utils.encodeTags(prettyJson)
-        box.html(`
-          <div style="padding: 5px;">
-            <textarea style="width: 100%; height: 300px; resize: none; font-family: monospace;" readonly>${text}</textarea>
-          </div>
-        `)
-      } else {
-        box.html(`
-          <div style="padding: 5px;">
-            preview not available
-          </div>
-        `)
-      }
-    },
   })
 }
 

@@ -17,17 +17,14 @@ To self-host cache archive:
 1. Use `cache.py` to unpack cache bundles:
 
 ```sh
-# make index cache.json
-python tools/cache.py /path/to/cache/folder --summary-file /path/to/output/cache.json
-
-# make summary.json per cache file, and unpack assets
+# make meta.json per cache file, and unpack assets
 python tools/cache.py /path/to/cache/folder \
-  --parse-scene --ffmpeg-mp3 --zip \
-  --summaries-dir /path/to/output/unpacked \
-  --unpack-dir /path/to/output/unpacked
+  --json --unpack --mp3 --zip
 ```
 
-2. Serve the output directory using npm or bun:
+2. Download `index.json` using the Amazing Core server.
+
+3. Serve the output directory using npm or bun:
 
 ```sh
 make docs-serve-data
@@ -37,4 +34,4 @@ npmx serve -l 8080 --cors
 bunx serve -l 8080 --cors
 ```
 
-3. Update `src/vars/cache-url.md` to point to the served address.
+4. Update `src/vars/cache-url.md` to point to the served address.

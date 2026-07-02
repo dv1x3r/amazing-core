@@ -1,7 +1,6 @@
 package asset
 
 import (
-	"context"
 	"errors"
 	"log/slog"
 
@@ -32,8 +31,4 @@ func NewService(logger *slog.Logger, store db.Store, deliveryURL string) *Servic
 
 func (s *Service) DeliveryURL() string {
 	return s.deliveryURL
-}
-
-func (s *Service) ImportCacheItems(ctx context.Context, items []CacheItem) (*ImportResult, error) {
-	return ImportCacheItems(ctx, s.logger, s.store.DB(), items)
 }

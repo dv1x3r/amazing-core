@@ -128,16 +128,14 @@ func (s *Service) GetContainerAssetGrid(ctx context.Context, req w2.GetGridReque
 			"ca.position",
 			"ca.win_asset_id",
 			"ca.osx_asset_id",
-			"concat_ws(' - ', coalesce(at.name, '[NO TYPE]'), a.gsfoid, coalesce(a.res_name, '[NULL]'), (am.metadata ->> '$.assets[0].target_platform') || ' ' || (am.metadata ->> '$.info.version_engine')) as windows",
-			"iif(ax.id is null, null, concat_ws(' - ', coalesce(axt.name, '[NO TYPE]'), ax.gsfoid, coalesce(ax.res_name, '[NULL]'), (axm.metadata ->> '$.assets[0].target_platform') || ' ' || (axm.metadata ->> '$.info.version_engine'))) as osx",
+			"concat_ws(' - ', coalesce(at.name, '[NO TYPE]'), a.gsfoid, coalesce(a.res_name, '[NULL]'), a.bundle_version) as windows",
+			"iif(ax.id is null, null, concat_ws(' - ', coalesce(axt.name, '[NO TYPE]'), ax.gsfoid, coalesce(ax.res_name, '[NULL]'), ax.bundle_version)) as osx",
 		},
 		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("asset as a", "a.id = ca.win_asset_id")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_type as at", "at.id = a.asset_type_id")
-			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_metadata as am", "am.asset_id = a.id")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset as ax", "ax.id = ca.osx_asset_id")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_type as axt", "axt.id = ax.asset_type_id")
-			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_metadata as axm", "axm.asset_id = ax.id")
 			sb.Where(sb.EQ("ca.container_id", containerID))
 			sb.OrderByAsc("ca.position")
 		},

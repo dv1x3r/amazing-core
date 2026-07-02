@@ -20,12 +20,11 @@ func (s *Service) GetAssetsDropdown(ctx context.Context, req w2.GetDropdownReque
 				coalesce(at.name, '[NO TYPE]'),
 				a.gsfoid,
 				coalesce(a.res_name, '[NULL]'),
-				(am.metadata ->> '$.assets[0].target_platform') || ' ' || (am.metadata ->> '$.info.version_engine')
+				a.bundle_version
 			)`,
 		OrderByField: "at.name, a.gsfoid",
 		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_type as at", "at.id = a.asset_type_id")
-			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_metadata as am", "am.asset_id = a.id")
 		},
 	})
 	return res, wrap.IfErr(op, err)

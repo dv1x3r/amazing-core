@@ -63,7 +63,7 @@ export function createContainerLayout() {
       },
       {
         field: 'icon',
-        text: '',
+        text: x => x.field ? '' : 'Icon',
         size: '40px',
         render: 'icon-sm',
       },

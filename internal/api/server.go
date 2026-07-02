@@ -47,7 +47,10 @@ func NewServer(logger *slog.Logger, handler *Handler, store db.Store) *Server {
 	v1.HandleFunc("GET /asset", errorHandler(handler.GetAsset))
 	v1.HandleFunc("GET /asset/grid", errorHandler(handler.GetAssetGrid))
 	v1.HandleFunc("POST /asset/grid", errorHandler(handler.PostAssetGrid))
-	v1.HandleFunc("POST /asset/cache.json", errorHandler(handler.PostAssetCacheJSON))
+	v1.HandleFunc("POST /asset/remove", errorHandler(handler.PostAssetRemove))
+
+	v1.HandleFunc("GET /asset/index", errorHandler(handler.GetAssetIndex))
+	v1.HandleFunc("POST /asset/import", errorHandler(handler.PostAssetImport))
 
 	v1.HandleFunc("GET /asset/filetype", errorHandler(handler.GetAssetFileType))
 	v1.HandleFunc("GET /asset/assettype", errorHandler(handler.GetAssetType))
@@ -144,8 +147,8 @@ func NewServer(logger *slog.Logger, handler *Handler, store db.Store) *Server {
 	server := &http.Server{
 		Handler:           stack(router),
 		ReadHeaderTimeout: 15 * time.Second,
-		ReadTimeout:       120 * time.Second,
-		WriteTimeout:      120 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      30 * time.Second,
 		IdleTimeout:       120 * time.Second,
 	}
 

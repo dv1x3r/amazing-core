@@ -53,6 +53,15 @@ const dashboardSidebar = new w2sidebar({
           },
         },
         {
+          id: 'asset-files',
+          text: 'Asset Files',
+          icon: 'fa fa-file',
+          onClick: async function() {
+            const module = await import('./widgets/blob_db.js')
+            setDashboardWidget(module.createBlobLayout)
+          },
+        },
+        {
           id: 'asset-containers',
           text: 'Containers',
           icon: 'fa fa-folder-open',
@@ -143,8 +152,8 @@ const dashboardSidebar = new w2sidebar({
       ],
     },
     {
-      id: 'Requests',
-      text: 'Requests',
+      id: 'Tools',
+      text: 'Tools',
       group: true,
       expanded: true,
       nodes: [
@@ -157,14 +166,6 @@ const dashboardSidebar = new w2sidebar({
             setDashboardWidget(module.createLogWatcherGrid)
           },
         },
-      ],
-    },
-    {
-      id: 'core-db',
-      text: 'core.db',
-      group: true,
-      expanded: true,
-      nodes: [
         {
           id: 'sql-explorer',
           text: 'SQL Explorer',
@@ -195,30 +196,13 @@ const dashboardSidebar = new w2sidebar({
         },
       ],
     },
-    {
-      id: 'blob-db',
-      text: 'blob.db',
-      group: true,
-      expanded: true,
-      nodes: [
-        {
-          id: 'asset-files',
-          text: 'Asset Files',
-          icon: 'fa fa-file',
-          onClick: async function() {
-            const module = await import('./widgets/blob_db.js')
-            setDashboardWidget(module.createBlobLayout)
-          },
-        },
-      ],
-    },
   ],
   onRender: async function(event) {
     await event.complete
     document.getElementById('sidebar-host').innerText = '@' + window.location.host
     document.getElementById('sidebar-version').innerText = document.getElementById('app-config').dataset.version
     if (document.getElementById('app-config').dataset.explorer == 'false') {
-      event.owner.hide('core-db')
+      event.owner.hide('sql-explorer')
     }
     new w2toolbar({
       name: 'logoutToolbar',
