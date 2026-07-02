@@ -166,8 +166,10 @@ Check out our [Google Sheets](https://docs.google.com/spreadsheets/d/1LVDjtQbFJo
             {key: 'Asset Type', value: item.asset_type || ''},
             {key: 'Hash', value: item.hash || ''},
             {key: 'File Size', value: this.formatSize(item.size || 0)},
-            {key: 'Bundle Version', value: item.bundle_version || ''},
           ]
+          if (item.bundle_version) {
+            rows.push({key: 'Bundle Version', value: item.bundle_version})
+          }
           if (item.scene) {
             rows.push({key: '3D Scene', value: 'Yes'})
           }
