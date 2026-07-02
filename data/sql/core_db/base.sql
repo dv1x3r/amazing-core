@@ -11593,6 +11593,7 @@ INSERT INTO asset_container_assetmap VALUES(355,177,10773,NULL,1);
 INSERT INTO asset_container_assetmap VALUES(356,178,7353,NULL,1);
 INSERT INTO asset_container_assetmap VALUES(357,179,10774,NULL,1);
 INSERT INTO asset_container_assetmap VALUES(358,180,10775,NULL,1);
+INSERT INTO asset_container_assetmap VALUES(359,181,10776,NULL,1);
 CREATE TABLE asset_container_package (
     [id] integer primary key not null,
     [container_id] integer not null references asset_container(id) on delete cascade,
