@@ -27,7 +27,6 @@ func NewServer(
 	router := gsf.NewRouter()
 
 	router.Use(
-		middleware.Logger(logger),
 		middleware.Recover(),
 	)
 
@@ -69,7 +68,11 @@ func NewServer(
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_PUBLIC_ITEMS_BY_OIDS), handler.GetPublicItemsByOIDs)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_ZONES), handler.GetZones)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.INIT_LOCATION), handler.InitLocation)
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.HEARTBEAT), handler.Heartbeat)
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_OTHER_PLAYER_DETAILS), handler.GetOtherPlayerDetails)
 	router.HandleFunc(int32(serviceclass.SYNC_SERVER), int32(syncmessagetype.LOGIN), handler.SyncLogin)
+	router.HandleFunc(int32(serviceclass.SYNC_SERVER), int32(syncmessagetype.MOVE_PLAYER), handler.MovePlayer)
+	router.HandleFunc(int32(serviceclass.SYNC_SERVER), int32(syncmessagetype.HEARTBEAT_NOTIFY), handler.HeartbeatNotify)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_MAZE_ITEMS), handler.GetMazeItems)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_CHAT_CHANNEL_TYPES), handler.GetChatChannelTypes)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_ANNOUNCEMENTS), handler.GetAnnouncements)
@@ -85,28 +88,24 @@ func NewServer(
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.COMPLETE_QUEST), handler.CompleteQuest)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_PLAYER_QUESTS_BY_QUEST_IDS), handler.GetPlayerQuestsByOIDs)
 
+	gsfLogger := newGSFLogger(logger)
+
 	server := &gsf.Server{
 		Router: router,
 		Codec:  bitprotocol.NewBitCodec(),
 		Hooks: gsf.ServerHooks{
-			OnConnect: func(conn *gsf.Connection) {
-				logger.Info(fmt.Sprintf("tcp %s connected", conn.RemoteIP()))
+			OnConnect: func(session *gsf.Session) {
+				logger.Info(fmt.Sprintf("tcp %s connected", session.RemoteIP()))
 			},
-			OnDisconnect: func(conn *gsf.Connection, reason string) {
-				logger.Info(fmt.Sprintf("tcp %s disconnected: %s", conn.RemoteIP(), reason))
+			OnDisconnect: func(session *gsf.Session, reason string) {
+				if err := handler.syncHub.Leave(session); err != nil {
+					logger.Error(err.Error())
+				}
+				logger.Info(fmt.Sprintf("tcp %s disconnected: %s", session.RemoteIP(), reason))
 			},
-			OnUnhandled: func(conn *gsf.Connection, header *gsf.Header, data []byte) {
-				logger.Info("gsf unhandled request",
-					slog.String("remote_ip", conn.RemoteIP()),
-					slog.Int("svc_class", int(header.SvcClass)),
-					slog.String("svc_class_text", header.ServiceClassText()),
-					slog.Int("msg_type", int(header.MsgType)),
-					slog.String("msg_type_text", header.MessageTypeText()),
-					slog.Int("request_id", int(header.RequestID)),
-					slog.Int("req_flags", int(header.Flags)),
-					slog.String("hex", fmt.Sprintf("%x", data)),
-				)
-			},
+			OnUnhandled: gsfLogger.OnUnhandled,
+			OnRequest:   gsfLogger.OnRequest,
+			OnNotify:    gsfLogger.OnNotify,
 		},
 	}
 

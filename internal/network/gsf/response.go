@@ -1,7 +1,5 @@
 package gsf
 
-import "github.com/dv1x3r/amazing-core/internal/lib/wrap"
-
 type ResponseWriter interface {
 	Header() *Header
 	Body() Serializable
@@ -11,10 +9,9 @@ type ResponseWriter interface {
 type Response struct {
 	header *Header
 	body   Serializable
-	writer ProtocolWriter
 }
 
-func NewResponse(header *Header, writer ProtocolWriter) *Response {
+func NewResponse(header *Header) *Response {
 	return &Response{
 		header: &Header{
 			Flags:         header.Flags | 1,
@@ -23,7 +20,6 @@ func NewResponse(header *Header, writer ProtocolWriter) *Response {
 			RequestID:     header.RequestID,
 			LogCorrelator: header.LogCorrelator,
 		},
-		writer: writer,
 	}
 }
 
@@ -37,10 +33,5 @@ func (res *Response) Body() Serializable {
 
 func (res *Response) Write(body Serializable) error {
 	res.body = body
-	return wrap.Panic(func() error {
-		res.writer.WriteBool(false)
-		res.writer.WriteObject(res.header)
-		res.writer.WriteObject(res.body)
-		return nil
-	})
+	return nil
 }

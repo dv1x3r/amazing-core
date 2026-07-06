@@ -7,19 +7,19 @@ import (
 )
 
 type Request struct {
-	header *Header
-	body   Deserializable
-	reader ProtocolReader
-	ctx    context.Context
-	conn   *Connection
+	header  *Header
+	body    Deserializable
+	reader  ProtocolReader
+	ctx     context.Context
+	session *Session
 }
 
-func NewRequest(ctx context.Context, header *Header, reader ProtocolReader, conn *Connection) *Request {
+func NewRequest(ctx context.Context, header *Header, reader ProtocolReader, session *Session) *Request {
 	return &Request{
-		header: header,
-		reader: reader,
-		ctx:    ctx,
-		conn:   conn,
+		header:  header,
+		reader:  reader,
+		ctx:     ctx,
+		session: session,
 	}
 }
 
@@ -35,16 +35,28 @@ func (req *Request) Context() context.Context {
 	return req.ctx
 }
 
+func (req *Request) Session() *Session {
+	return req.session
+}
+
 func (req *Request) RemoteIP() string {
-	return req.conn.RemoteIP()
+	return req.session.RemoteIP()
 }
 
 func (req *Request) Platform() Platform {
-	return req.conn.Platform()
+	return req.session.Platform()
 }
 
 func (req *Request) SetPlatform(platform Platform) {
-	req.conn.SetPlatform(platform)
+	req.session.SetPlatform(platform)
+}
+
+func (req *Request) PlayerOID() (int64, bool) {
+	return req.session.PlayerOID()
+}
+
+func (req *Request) SetPlayerOID(playerOID int64) {
+	req.session.SetPlayerOID(playerOID)
 }
 
 func (req *Request) Read(body Deserializable) error {

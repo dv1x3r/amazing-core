@@ -80,7 +80,7 @@ func (h *Handler) Handle(ctx context.Context, r slog.Record) error {
 	switch r.Message {
 	case "http request":
 		message = processHTTP(r.Message, attrs)
-	case "gsf request":
+	case "gsf service", "gsf notify", "gsf unhandled":
 		message = processGSF(r.Message, attrs)
 	}
 
@@ -235,16 +235,16 @@ func processGSF(message string, attrs map[string]any) string {
 		delete(attrs, "request_id")
 	}
 
-	reqFlags := "-"
-	if v, ok := attrs["req_flags"].(float64); ok {
-		reqFlags = fmt.Sprint(v)
-		delete(attrs, "req_flags")
+	flags := "-"
+	if v, ok := attrs["flags"].(float64); ok {
+		flags = fmt.Sprint(v)
+		delete(attrs, "flags")
 	}
 
-	resFlags := "-"
-	if v, ok := attrs["res_flags"].(float64); ok {
-		resFlags = fmt.Sprint(v)
-		delete(attrs, "res_flags")
+	responseFlags := "-"
+	if v, ok := attrs["response_flags"].(float64); ok {
+		responseFlags = fmt.Sprint(v)
+		delete(attrs, "response_flags")
 	}
 
 	latency := "-"
@@ -261,7 +261,7 @@ func processGSF(message string, attrs map[string]any) string {
 		Colorize(Green, appCode+" "+appCodeText),
 		svcClass+" "+svcClassText,
 		msgType+" "+msgTypeText,
-		requestID, reqFlags, resFlags,
+		requestID, flags, responseFlags,
 		latency,
 	)
 }

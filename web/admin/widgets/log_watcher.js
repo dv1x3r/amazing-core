@@ -49,8 +49,14 @@ export function createLogWatcherGrid() {
       {
         field: 'time',
         text: 'Time',
-        size: '180px',
+        size: '160px',
         render: 'datetime-local-ms',
+      },
+      {
+        field: 'kind',
+        text: 'Kind',
+        size: '120px',
+        render: 'text',
       },
       {
         field: 'remote_ip',
@@ -59,9 +65,15 @@ export function createLogWatcherGrid() {
         render: 'text',
       },
       {
+        field: 'player_oid',
+        text: 'Player OID',
+        size: '80px',
+        render: 'text',
+      },
+      {
         field: 'service_class',
         text: 'Service Class',
-        size: '150px',
+        size: '120px',
         render: 'text',
       },
       {
@@ -73,13 +85,13 @@ export function createLogWatcherGrid() {
       {
         field: 'result',
         text: 'Result',
-        size: '135px',
+        size: '100px',
         render: 'text',
       },
       {
         field: 'app',
         text: 'App',
-        size: '135px',
+        size: '100px',
         render: 'text',
       },
       {
@@ -141,7 +153,9 @@ export function createLogWatcherGrid() {
       grid.add({
         id: entry.id,
         time: entry.time,
+        kind: entry.kind,
         remote_ip: entry.remote_ip,
+        player_oid: entry.player_oid,
         service_class: entry.service_class,
         message_type: entry.message_type,
         result: entry.result,
@@ -189,7 +203,7 @@ export function createLogWatcherGrid() {
 }
 
 function recordToEntry(record) {
-  if (record.message !== 'gsf request' && record.message !== 'gsf unhandled request') {
+  if (record.message !== 'gsf service' && record.message !== 'gsf notify' && record.message !== 'gsf unhandled') {
     return null
   }
 
@@ -197,14 +211,16 @@ function recordToEntry(record) {
   return {
     id: record.id,
     time: record.time,
+    kind: attrs['kind'],
     remote_ip: attrs['remote_ip'],
+    player_oid: attrs['player_oid'],
     service_class: `${attrs['svc_class'] ?? ''} ${attrs['svc_class_text'] ?? ''}`,
     message_type: `${attrs['msg_type'] ?? ''} ${attrs['msg_type_text'] ?? ''}`,
     result: `${attrs['result_code'] ?? ''} ${attrs['result_code_text'] ?? ''}`,
     app: `${attrs['app_code'] ?? ''} ${attrs['app_code_text'] ?? ''}`,
     request_id: attrs['request_id'],
-    request_flags: attrs['req_flags'],
-    response_flags: attrs['res_flags'],
+    request_flags: attrs['flags'],
+    response_flags: attrs['response_flags'],
     latency: attrs['latency'],
     details: record,
   }

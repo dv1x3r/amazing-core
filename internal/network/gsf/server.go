@@ -2,7 +2,6 @@ package gsf
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -27,9 +26,29 @@ type Server struct {
 }
 
 type ServerHooks struct {
-	OnConnect    func(conn *Connection)
-	OnDisconnect func(conn *Connection, reason string)
-	OnUnhandled  func(conn *Connection, header *Header, data []byte)
+	OnConnect    func(session *Session)
+	OnDisconnect func(session *Session, reason string)
+	OnUnhandled  func(session *Session, header *Header, data []byte)
+	OnRequest    func(event RequestEvent)
+	OnNotify     func(event NotifyEvent)
+}
+
+type RequestEvent struct {
+	Session        *Session
+	RequestHeader  *Header
+	ResponseHeader *Header
+	RequestBody    Deserializable
+	ResponseBody   Serializable
+	Err            error
+	Latency        time.Duration
+}
+
+type NotifyEvent struct {
+	Session *Session
+	Header  *Header
+	Body    Serializable
+	Err     error
+	Latency time.Duration
 }
 
 func (s *Server) ListenAndServe() error {
@@ -101,20 +120,20 @@ func (s *Server) Shutdown(ctx context.Context) error {
 func (s *Server) handleConn(ctx context.Context, conn net.Conn) {
 	stream := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
 	remoteAddr, _, _ := net.SplitHostPort(conn.RemoteAddr().String())
-	connState := &Connection{remoteIP: remoteAddr}
+	session := NewSession(remoteAddr, stream, s.Codec, s.Hooks.OnNotify)
 	if s.Hooks.OnConnect != nil {
-		s.Hooks.OnConnect(connState)
+		s.Hooks.OnConnect(session)
 	}
 
 	for {
-		err := s.processRequest(ctx, stream, connState)
+		err := s.processRequest(ctx, session)
 		if err == nil {
 			continue
 		}
 
 		if errors.Is(err, io.EOF) {
 			if s.Hooks.OnDisconnect != nil {
-				s.Hooks.OnDisconnect(connState, "eof")
+				s.Hooks.OnDisconnect(session, "eof")
 			}
 			break
 		}
@@ -122,26 +141,25 @@ func (s *Server) handleConn(ctx context.Context, conn net.Conn) {
 		var netErr net.Error
 		if errors.As(err, &netErr) && netErr.Timeout() {
 			if s.Hooks.OnDisconnect != nil {
-				s.Hooks.OnDisconnect(connState, "timeout")
+				s.Hooks.OnDisconnect(session, "timeout")
 			}
 			break
 		}
 
 		if s.Hooks.OnDisconnect != nil {
-			s.Hooks.OnDisconnect(connState, err.Error())
+			s.Hooks.OnDisconnect(session, err.Error())
 		}
 		break
 	}
 }
 
-func (s *Server) processRequest(ctx context.Context, stream *bufio.ReadWriter, connState *Connection) error {
-	data, err := s.readMessage(stream)
+func (s *Server) processRequest(ctx context.Context, session *Session) error {
+	data, err := s.readMessage(session.stream)
 	if err != nil {
 		return err
 	}
 
 	reader := s.Codec.NewReader(data)
-	writer := s.Codec.NewWriter()
 
 	header := &Header{}
 	err = wrap.Panic(func() error {
@@ -158,23 +176,34 @@ func (s *Server) processRequest(ctx context.Context, stream *bufio.ReadWriter, c
 	handler, ok := s.Router.Lookup(header.SvcClass, header.MsgType)
 	if !ok {
 		if s.Hooks.OnUnhandled != nil {
-			s.Hooks.OnUnhandled(connState, header, data)
+			s.Hooks.OnUnhandled(session, header, data)
 		}
 		return nil
 	}
 
-	req := NewRequest(ctx, header, reader, connState)
-	res := NewResponse(header, writer)
+	req := NewRequest(ctx, header, reader, session)
+	res := NewResponse(header)
 
-	if err = handler(res, req); err != nil {
-		return err
+	startTime := time.Now()
+	err = handler(res, req)
+
+	if err == nil && res.Body() != nil {
+		err = session.Send(res.Header(), res.Body())
 	}
 
-	if res.Body() != nil {
-		return s.writeMessage(stream, writer)
+	if s.Hooks.OnRequest != nil {
+		s.Hooks.OnRequest(RequestEvent{
+			Session:        session,
+			RequestHeader:  req.Header(),
+			ResponseHeader: res.Header(),
+			RequestBody:    req.Body(),
+			ResponseBody:   res.Body(),
+			Err:            err,
+			Latency:        time.Since(startTime),
+		})
 	}
 
-	return nil
+	return err
 }
 
 func (s *Server) readMessage(stream *bufio.ReadWriter) ([]byte, error) {
@@ -197,17 +226,4 @@ func (s *Server) readMessage(stream *bufio.ReadWriter) ([]byte, error) {
 	}
 
 	return data, nil
-}
-
-func (s *Server) writeMessage(stream *bufio.ReadWriter, message ProtocolWriter) error {
-	memoryStream := &bytes.Buffer{}
-	message.CommitTo(memoryStream)
-
-	if err := s.Codec.WriteLength(stream, memoryStream.Len()+1); err != nil {
-		return err
-	}
-
-	stream.Write(memoryStream.Bytes())
-	stream.WriteByte(0)
-	return stream.Flush()
 }

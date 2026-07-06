@@ -150,7 +150,7 @@ func (s *Service) UpdatePlayerDetails(ctx context.Context, req w2.SaveFormReques
 	return wrap.IfErr(op, err)
 }
 
-func (s *Service) GetGSFPlayer(ctx context.Context, platform gsf.Platform, playerID int) (types.Player, error) {
+func (s *Service) GetGSFPlayer(ctx context.Context, platform gsf.Platform, playerOID types.OID) (types.Player, error) {
 	const op = "player.Service.GetGSFPlayer"
 
 	row := s.store.DB().QueryRowContext(ctx, `
@@ -160,8 +160,8 @@ func (s *Service) GetGSFPlayer(ctx context.Context, platform gsf.Platform, playe
 				pl.is_tutorial_completed,
 				pl.is_qa
 			from player as pl
-			where pl.id = ?;
-		`, playerID)
+			where pl.gsfoid = ?;
+		`, playerOID)
 
 	var player types.Player
 
@@ -174,7 +174,7 @@ func (s *Service) GetGSFPlayer(ctx context.Context, platform gsf.Platform, playe
 		return player, wrap.IfErr(op, err)
 	}
 
-	activeAvatar, err := s.GetGSFActivePlayerAvatar(ctx, platform, playerID)
+	activeAvatar, err := s.GetGSFActivePlayerAvatar(ctx, platform, playerOID)
 	if err != nil {
 		return player, wrap.IfErr(op, err)
 	}

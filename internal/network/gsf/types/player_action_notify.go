@@ -4,7 +4,9 @@ import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
 // PlayerActionNotify describes a player action notification on the SYNC server.
 type PlayerActionNotify struct {
-	POID       OID
+	// POID is the player OID.
+	POID OID
+
 	ActionOID  OID
 	TargetOID  OID
 	SourceOID  OID

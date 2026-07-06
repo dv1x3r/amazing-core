@@ -142,7 +142,7 @@ func (s *Service) DeletePlayerItems(ctx context.Context, req w2.RemoveGridReques
 	return wrap.IfErr(op, err)
 }
 
-func (s *Service) GetGSFInventoryObjects(ctx context.Context, platform gsf.Platform) ([]types.PlayerItem, error) {
+func (s *Service) GetGSFInventoryObjects(ctx context.Context, platform gsf.Platform, playerOID types.OID) ([]types.PlayerItem, error) {
 	const op = "player.Service.GetGSFInventoryObjects"
 
 	rows, err := s.store.DB().QueryContext(ctx, `
@@ -153,8 +153,8 @@ func (s *Service) GetGSFInventoryObjects(ctx context.Context, platform gsf.Platf
 				pi.quantity as quantity
 			from player_item as pi
 			join player as pl on pl.id = pi.player_id
-			where pi.player_avatar_outfit_id is null;
-		`)
+			where pl.gsfoid = ? and pi.player_avatar_outfit_id is null;
+		`, playerOID)
 	if err != nil {
 		return nil, wrap.IfErr(op, err)
 	}

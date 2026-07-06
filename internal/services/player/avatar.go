@@ -103,7 +103,7 @@ func (s *Service) DeletePlayerAvatars(ctx context.Context, req w2.RemoveGridRequ
 	return wrap.IfErr(op, err)
 }
 
-func (s *Service) GetGSFPlayerAvatars(ctx context.Context, platform gsf.Platform, playerID int) ([]types.PlayerAvatar, error) {
+func (s *Service) GetGSFPlayerAvatars(ctx context.Context, platform gsf.Platform, playerOID types.OID) ([]types.PlayerAvatar, error) {
 	const op = "player.Service.GetGSFPlayerAvatars"
 
 	rows, err := s.store.DB().QueryContext(ctx, `
@@ -118,8 +118,8 @@ func (s *Service) GetGSFPlayerAvatars(ctx context.Context, platform gsf.Platform
 			from player_avatar as pa
 			join player as pl on pl.id = pa.player_id
 			left join player_avatar_outfit as pao on pao.player_avatar_id = pa.id and pao.outfit_no = pa.outfit_no
-			where pa.player_id = ?;
-		`, playerID)
+			where pl.gsfoid = ?;
+		`, playerOID)
 	if err != nil {
 		return nil, wrap.IfErr(op, err)
 	}
@@ -153,7 +153,7 @@ func (s *Service) GetGSFPlayerAvatars(ctx context.Context, platform gsf.Platform
 	return playerAvatars, wrap.IfErr(op, rows.Err())
 }
 
-func (s *Service) GetGSFActivePlayerAvatar(ctx context.Context, platform gsf.Platform, playerID int) (types.PlayerAvatar, error) {
+func (s *Service) GetGSFActivePlayerAvatar(ctx context.Context, platform gsf.Platform, playerOID types.OID) (types.PlayerAvatar, error) {
 	const op = "player.Service.GetGSFActivePlayerAvatar"
 
 	row := s.store.DB().QueryRowContext(ctx, `
@@ -167,8 +167,8 @@ func (s *Service) GetGSFActivePlayerAvatar(ctx context.Context, platform gsf.Pla
 			from player_avatar as pa
 			join player as pl on pl.id = pa.player_id
 			left join player_avatar_outfit as pao on pao.player_avatar_id = pa.id and pao.outfit_no = pa.outfit_no
-			where pa.player_id = ? and pa.is_active = 1;
-		`, playerID)
+			where pl.gsfoid = ? and pa.is_active = 1;
+		`, playerOID)
 
 	var playerAvatar types.PlayerAvatar
 	var avatarID int
@@ -203,8 +203,14 @@ func (s *Service) SetGSFPlayerActiveAvatar(ctx context.Context, platform gsf.Pla
 	defer tx.Rollback()
 
 	var playerAvatarID, playerID int
-	row := tx.QueryRowContext(ctx, "select id, player_id from player_avatar where gsfoid = ?;", playerAvatarOID)
-	if err := row.Scan(&playerAvatarID, &playerID); err != nil {
+	var playerOID types.OID
+	row := tx.QueryRowContext(ctx, `
+			select pa.id, pa.player_id, pl.gsfoid
+			from player_avatar as pa
+			join player as pl on pl.id = pa.player_id
+			where pa.gsfoid = ?;
+		`, playerAvatarOID)
+	if err := row.Scan(&playerAvatarID, &playerID, &playerOID); err != nil {
 		return types.PlayerAvatar{}, wrap.IfErr(op, err)
 	}
 
@@ -220,6 +226,6 @@ func (s *Service) SetGSFPlayerActiveAvatar(ctx context.Context, platform gsf.Pla
 		return types.PlayerAvatar{}, wrap.IfErr(op, err)
 	}
 
-	avatar, err := s.GetGSFActivePlayerAvatar(ctx, platform, playerID)
+	avatar, err := s.GetGSFActivePlayerAvatar(ctx, platform, playerOID)
 	return avatar, wrap.IfErr(op, err)
 }

@@ -1,28 +1,32 @@
 package game
 
 import (
+	"errors"
 	"math/rand"
+	"time"
 
 	"github.com/dv1x3r/amazing-core/internal/config"
+	"github.com/dv1x3r/amazing-core/internal/game/worldsync"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/messages"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf/notify"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 	"github.com/dv1x3r/amazing-core/internal/services"
 )
 
 type Handler struct {
-	svc services.Services
+	svc     services.Services
+	syncHub *worldsync.Hub
 }
 
 func NewHandler(svc services.Services) *Handler {
 	return &Handler{
-		svc: svc,
+		svc:     svc,
+		syncHub: worldsync.NewHub(),
 	}
 }
 
 const (
-	PLAYER_ID = 1
-
 	SCENE_HOMELOT_SMALL  = "OTYxMTQ4NDU5NDE5MA"
 	SCENE_HOMELOT_WINTER = "OTQ1MDc3NTY0MjEyNg"
 	SCENE_SPRINGTIME     = "OTYwOTUyODk5OTk1MA"
@@ -67,15 +71,13 @@ func (h *Handler) Login(w gsf.ResponseWriter, r *gsf.Request) error {
 		return err
 	}
 
-	// TODO: this should be stored in the session
-	// Due the disconnect we can lose this state
-	// Could be restored via SessionOID during the Relogin
 	r.SetPlatform(gsf.ParsePlatformFromMachineOS(req.ClientEnvInfo.MachineOS))
 
-	player, err := h.svc.Player.GetGSFPlayer(r.Context(), r.Platform(), PLAYER_ID)
+	player, err := h.svc.Player.CreateGSFGuestPlayer(r.Context(), r.Platform())
 	if err != nil {
 		return err
 	}
+	r.SetPlayerOID(player.OID.Int64())
 
 	res := &messages.LoginResponse{}
 	res.AssetDeliveryURL = h.svc.Asset.DeliveryURL()
@@ -91,6 +93,20 @@ func (h *Handler) Logout(w gsf.ResponseWriter, r *gsf.Request) error {
 		return err
 	}
 	res := &messages.LogoutResponse{}
+	return w.Write(res)
+}
+
+// Heartbeat keeps the USER server session alive and refreshes stats/time payloads.
+func (h *Handler) Heartbeat(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.HeartbeatRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	res := &messages.HeartbeatResponse{
+		PlayerStats:       []types.PlayerStats{},
+		CurrentServerTime: gsf.UnixTime{Time: time.Now().UTC()},
+		QueueNotify:       []types.PlayerNotify{},
+	}
 	return w.Write(res)
 }
 
@@ -208,9 +224,11 @@ func (h *Handler) GetInventoryObjects(w gsf.ResponseWriter, r *gsf.Request) erro
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	// TODO: filter by player, right now returns all the items.
-	// store PlayerOID in the gsf.Request on login/relogin?
-	items, err := h.svc.Player.GetGSFInventoryObjects(r.Context(), r.Platform())
+	playerOID, ok := r.PlayerOID()
+	if !ok {
+		return errors.New("player oid is not set on session")
+	}
+	items, err := h.svc.Player.GetGSFInventoryObjects(r.Context(), r.Platform(), types.OIDFromInt64(playerOID))
 	if err != nil {
 		return err
 	}
@@ -227,7 +245,11 @@ func (h *Handler) GetAvatars(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	avatars, err := h.svc.Player.GetGSFPlayerAvatars(r.Context(), r.Platform(), PLAYER_ID)
+	playerOID, ok := r.PlayerOID()
+	if !ok {
+		return errors.New("player oid is not set on session")
+	}
+	avatars, err := h.svc.Player.GetGSFPlayerAvatars(r.Context(), r.Platform(), types.OIDFromInt64(playerOID))
 	if err != nil {
 		return err
 	}
@@ -258,6 +280,9 @@ func (h *Handler) UpdatePlayerActiveAvatar(w gsf.ResponseWriter, r *gsf.Request)
 	}
 	avatar, err := h.svc.Player.SetGSFPlayerActiveAvatar(r.Context(), r.Platform(), req.PlayerAvatarOID)
 	if err != nil {
+		return err
+	}
+	if err := h.syncHub.AppearanceChanged(avatar.PlayerOID); err != nil {
 		return err
 	}
 	res := &messages.UpdatePlayerActiveAvatarResponse{}
@@ -309,6 +334,11 @@ func (h *Handler) SetCurrentOutfit(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err != nil {
 		return err
 	}
+	if playerOID, ok := r.PlayerOID(); ok {
+		if err := h.syncHub.AppearanceChanged(types.OIDFromInt64(playerOID)); err != nil {
+			return err
+		}
+	}
 	res := &messages.SetCurrentOutfitResponse{}
 	res.IsUpdated = true
 	return w.Write(res)
@@ -340,6 +370,11 @@ func (h *Handler) AddOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err != nil {
 		return err
 	}
+	if playerOID, ok := r.PlayerOID(); ok {
+		if err := h.syncHub.AppearanceChanged(types.OIDFromInt64(playerOID)); err != nil {
+			return err
+		}
+	}
 	res := &messages.AddOutfitItemsResponse{}
 	res.IsUpdated = true
 	return w.Write(res)
@@ -356,6 +391,11 @@ func (h *Handler) RemoveOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error 
 	if err != nil {
 		return err
 	}
+	if playerOID, ok := r.PlayerOID(); ok {
+		if err := h.syncHub.AppearanceChanged(types.OIDFromInt64(playerOID)); err != nil {
+			return err
+		}
+	}
 	res := &messages.RemoveOutfitItemsResponse{}
 	res.IsUpdated = true
 	return w.Write(res)
@@ -371,6 +411,11 @@ func (h *Handler) ReplaceOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error
 	err := h.svc.Player.ReplaceGSFOutfitItems(r.Context(), req.OldInventoryOIDs, req.NewInventoryOIDs)
 	if err != nil {
 		return err
+	}
+	if playerOID, ok := r.PlayerOID(); ok {
+		if err := h.syncHub.AppearanceChanged(types.OIDFromInt64(playerOID)); err != nil {
+			return err
+		}
 	}
 	res := &messages.ReplaceOutfitItemsResponse{}
 	res.IsUpdated = true
@@ -427,6 +472,12 @@ func (h *Handler) InitLocation(w gsf.ResponseWriter, r *gsf.Request) error {
 	res := &messages.InitLocationResponse{}
 	res.SyncServerIP = config.Get().Settings.SyncServerIP
 	res.SyncServerPort = int32(config.Get().Settings.SyncServerPort)
+
+	if playerOID, ok := r.PlayerOID(); ok {
+		if err := h.syncHub.SetLocation(types.OIDFromInt64(playerOID), req.LocOID); err != nil {
+			return err
+		}
+	}
 
 	// The Home.PlayerMaze.HomeTheme.AssetMap["Scene_Unity3D"] asset drives scene loading via
 	// LoadMazeCommand.cs -> LoadMainScene() -> AssetDownloadManager.cs -> LoadMainScene()
@@ -485,7 +536,45 @@ func (h *Handler) SyncLogin(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
+	r.SetPlayerOID(req.UOID.Int64())
+	if err := h.syncHub.Join(r.Session(), req.UOID); err != nil {
+		return err
+	}
 	res := &messages.SyncLoginResponse{}
+	return w.Write(res)
+}
+
+// MovePlayer receives local player movement and relays it to other sync peers.
+func (h *Handler) MovePlayer(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &notify.Move{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	return h.syncHub.Move(r.Session(), req)
+}
+
+// HeartbeatNotify keeps the SYNC server session associated with the active player.
+func (h *Handler) HeartbeatNotify(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &notify.Heartbeat{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	r.SetPlayerOID(req.POID.Int64())
+	return nil
+}
+
+// GetOtherPlayerDetails fetches the profile payload used by the client to spawn a remote player.
+func (h *Handler) GetOtherPlayerDetails(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.GetOtherPlayerDetailsRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	details, err := h.svc.Player.GetGSFOtherPlayerDetails(r.Context(), r.Platform(), req.PlayerOID)
+	if err != nil {
+		return err
+	}
+	res := &messages.GetOtherPlayerDetailsResponse{}
+	res.OtherPlayerDetails = details
 	return w.Write(res)
 }
 
