@@ -8,7 +8,6 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/lib/python"
 
 	"github.com/dv1x3r/amazing-core/internal/services/asset"
-	"github.com/dv1x3r/amazing-core/internal/services/auth"
 	"github.com/dv1x3r/amazing-core/internal/services/avatar"
 	"github.com/dv1x3r/amazing-core/internal/services/blob"
 	"github.com/dv1x3r/amazing-core/internal/services/item"
@@ -19,7 +18,6 @@ import (
 )
 
 type Services struct {
-	Auth      *auth.Service
 	Asset     *asset.Service
 	Avatar    *avatar.Service
 	Blob      *blob.Service
@@ -37,7 +35,6 @@ func New(logger *slog.Logger, store db.Store, cfg config.Config) Services {
 	pythonRunner := python.NewRunner(logger, cfg.Python.Venv)
 	return Services{
 		Asset:     assets,
-		Auth:      auth.NewService(cfg.Secure.Session.Secure, cfg.Secure.Session.Key, cfg.Secure.Auth.Username, cfg.Secure.Auth.Password),
 		Avatar:    avatars,
 		Blob:      blob.NewService(logger, store, pythonRunner),
 		Item:      items,

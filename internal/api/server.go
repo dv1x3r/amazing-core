@@ -133,7 +133,7 @@ func NewServer(logger *slog.Logger, handler *Handler, store db.Store) *Server {
 		v1.HandleFunc("POST /sql", errorHandler(w2widget.SQLExecHandler(store.DB())))
 	}
 
-	protected := middleware.Protected(handler.svc.Auth)
+	protected := middleware.Protected(handler.auth)
 	router.Handle("/api/v1/", http.StripPrefix("/api/v1", protected(v1)))
 
 	stack := middleware.CreateStack(

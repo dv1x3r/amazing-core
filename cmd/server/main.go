@@ -17,6 +17,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/lib/downloader"
 	"github.com/dv1x3r/amazing-core/internal/lib/logger"
 	"github.com/dv1x3r/amazing-core/internal/lib/slogbus"
+	"github.com/dv1x3r/amazing-core/internal/lib/webauth"
 	"github.com/dv1x3r/amazing-core/internal/services"
 
 	"github.com/dv1x3r/w2go/w2db"
@@ -157,9 +158,12 @@ func main() {
 	// ── Services & Servers ──────────────────────────────────────────────────────
 	logBus := slogbus.New()
 	svc := services.New(logger.Get(), store, cfg)
+
 	gameLogger := slog.New(logBus.Handler(logger.Get().Handler()))
 	gameServer := game.NewServer(gameLogger, game.NewHandler(svc))
-	apiServer := api.NewServer(logger.Get(), api.NewHandler(svc, logBus), store)
+
+	apiAuthenticator := webauth.NewAuthenticator(cfg.Secure.Session.Secure, cfg.Secure.Session.Key, cfg.Secure.Auth.Username, cfg.Secure.Auth.Password)
+	apiServer := api.NewServer(logger.Get(), api.NewHandler(svc, apiAuthenticator, logBus), store)
 
 	interruptCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()

@@ -1,29 +1,19 @@
 package auth
 
 import (
-	"net/http"
+	"log/slog"
 
-	"github.com/gorilla/sessions"
+	"github.com/dv1x3r/amazing-core/internal/lib/db"
 )
 
 type Service struct {
-	session  sessions.Store
-	username string
-	password string
+	logger *slog.Logger
+	store  db.Store
 }
 
-func NewService(secure bool, sessionKey string, username string, password string) *Service {
-	session := sessions.NewCookieStore([]byte(sessionKey))
-	session.Options = &sessions.Options{
-		Path:     "/",
-		MaxAge:   86400 * 14,
-		Secure:   secure,
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-	}
+func NewService(logger *slog.Logger, store db.Store) *Service {
 	return &Service{
-		session:  session,
-		username: username,
-		password: password,
+		logger: logger,
+		store:  store,
 	}
 }
