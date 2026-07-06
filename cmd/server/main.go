@@ -11,6 +11,7 @@ import (
 
 	"github.com/dv1x3r/amazing-core/data"
 	"github.com/dv1x3r/amazing-core/internal/api"
+	"github.com/dv1x3r/amazing-core/internal/api/routes"
 	"github.com/dv1x3r/amazing-core/internal/config"
 	"github.com/dv1x3r/amazing-core/internal/game"
 	"github.com/dv1x3r/amazing-core/internal/lib/db"
@@ -163,7 +164,7 @@ func main() {
 	gameServer := game.NewServer(gameLogger, game.NewHandler(svc))
 
 	apiAuthenticator := webauth.NewAuthenticator(cfg.Secure.Session.Secure, cfg.Secure.Session.Key, cfg.Secure.Auth.Username, cfg.Secure.Auth.Password)
-	apiServer := api.NewServer(logger.Get(), api.NewHandler(svc, apiAuthenticator, logBus), store)
+	apiServer := api.NewServer(logger.Get(), routes.NewHandler(svc, apiAuthenticator, logBus), store)
 
 	interruptCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()

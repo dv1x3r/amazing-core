@@ -10,20 +10,25 @@ import (
 
 	"github.com/dv1x3r/amazing-core/data"
 	"github.com/dv1x3r/amazing-core/internal/api/middleware"
+	"github.com/dv1x3r/amazing-core/internal/api/routes"
 	"github.com/dv1x3r/amazing-core/internal/config"
 	"github.com/dv1x3r/amazing-core/internal/lib/db"
+	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/amazing-core/web"
 
+	"github.com/dv1x3r/w2go/w2"
 	"github.com/dv1x3r/w2go/w2lib"
 	"github.com/dv1x3r/w2go/w2widget"
 )
+
+type HandlerFunc func(http.ResponseWriter, *http.Request) error
 
 type Server struct {
 	logger *slog.Logger
 	server *http.Server
 }
 
-func NewServer(logger *slog.Logger, handler *Handler, store db.Store) *Server {
+func NewServer(logger *slog.Logger, handler *routes.Handler, store db.Store) *Server {
 	router := http.NewServeMux()
 
 	router.HandleFunc("GET /{$}", errorHandler(handler.GetDashboard))
@@ -133,7 +138,7 @@ func NewServer(logger *slog.Logger, handler *Handler, store db.Store) *Server {
 		v1.HandleFunc("POST /sql", errorHandler(w2widget.SQLExecHandler(store.DB())))
 	}
 
-	protected := middleware.Protected(handler.auth)
+	protected := middleware.Protected(handler.Authenticator())
 	router.Handle("/api/v1/", http.StripPrefix("/api/v1", protected(v1)))
 
 	stack := middleware.CreateStack(
@@ -187,4 +192,36 @@ func mustSubFS(fsys fs.FS, dir string) fs.FS {
 		panic(err)
 	}
 	return sub
+}
+
+func errorHandler(handler HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		err := handler(w, r)
+		if err == nil {
+			return
+		}
+
+		// client cancelled, do not write anything
+		if r.Context().Err() != nil {
+			if lw, ok := w.(interface{ SetError(error) }); ok {
+				lw.SetError(r.Context().Err())
+			}
+			return
+		}
+
+		if lw, ok := w.(interface{ SetError(error) }); ok {
+			lw.SetError(err)
+		}
+
+		status := wrap.HTTPStatus(err)
+		message := err.Error()
+
+		// do not expose details of 500 errors if not in debug
+		if status >= 500 && config.Get().Logger.Level != "debug" {
+			message = http.StatusText(status)
+		}
+
+		res := w2.NewErrorResponse(message)
+		res.Write(w, status)
+	}
 }
