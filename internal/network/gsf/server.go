@@ -185,10 +185,28 @@ func (s *Server) processRequest(ctx context.Context, session *Session) error {
 	res := NewResponse(header)
 
 	startTime := time.Now()
-	err = handler(res, req)
+	handlerErr := handler(res, req)
+	eventErr := handlerErr
+	returnErr := handlerErr
 
-	if err == nil && res.Body() != nil {
-		err = session.Send(res.Header(), res.Body())
+	if handlerErr == nil {
+		if res.Body() != nil {
+			eventErr = session.Send(res.Header(), res.Body())
+			returnErr = eventErr
+		}
+	} else {
+		var gsfErr wrap.GSFError
+		if errors.As(handlerErr, &gsfErr) {
+			res.Header().ResultCode = gsfErr.ResultCode()
+			res.Header().AppCode = gsfErr.AppCode()
+			res.Header().AppString = gsfErr.Error()
+			if err := session.Send(res.Header(), res.Body()); err != nil {
+				eventErr = err
+				returnErr = err
+			} else {
+				returnErr = nil
+			}
+		}
 	}
 
 	if s.Hooks.OnRequest != nil {
@@ -198,12 +216,12 @@ func (s *Server) processRequest(ctx context.Context, session *Session) error {
 			ResponseHeader: res.Header(),
 			RequestBody:    req.Body(),
 			ResponseBody:   res.Body(),
-			Err:            err,
+			Err:            eventErr,
 			Latency:        time.Since(startTime),
 		})
 	}
 
-	return err
+	return returnErr
 }
 
 func (s *Server) readMessage(stream *bufio.ReadWriter) ([]byte, error) {

@@ -11711,12 +11711,13 @@ INSERT INTO avatar VALUES(95,181,'Fishbone');
 CREATE TABLE player (
     [id] integer primary key,
     [gsfoid] integer not null unique,
+    [username] text not null unique collate nocase,
+    [password] text not null,
     [is_tutorial_completed] integer not null default 0 check ([is_tutorial_completed] in (0, 1)),
     [is_qa] integer not null default 0 check ([is_qa] in (0, 1)),
     [max_outfits] integer not null default 0,
     [created_at] integer not null default (unixepoch())
 ) strict;
-INSERT INTO player VALUES(1,123,1,1,1,1779026665);
 CREATE TABLE player_avatar (
     [id] integer primary key,
     [gsfoid] integer not null unique,
@@ -11727,101 +11728,6 @@ CREATE TABLE player_avatar (
     [is_active] integer not null default 0 check ([is_active] in (0, 1)),
     unique([player_id], [avatar_id])
 ) strict;
-INSERT INTO player_avatar VALUES(1,46,1,46,'Aathe',1,0);
-INSERT INTO player_avatar VALUES(2,38,1,38,'Astra',1,0);
-INSERT INTO player_avatar VALUES(3,61,1,61,'Azzy',1,0);
-INSERT INTO player_avatar VALUES(4,3,1,3,'Bamboo',1,0);
-INSERT INTO player_avatar VALUES(5,53,1,53,'Bananas',1,0);
-INSERT INTO player_avatar VALUES(6,70,1,70,'Swirly',1,0);
-INSERT INTO player_avatar VALUES(7,71,1,71,'Cordy',1,0);
-INSERT INTO player_avatar VALUES(8,72,1,72,'Waffle',1,0);
-INSERT INTO player_avatar VALUES(9,73,1,73,'Jax',1,0);
-INSERT INTO player_avatar VALUES(10,74,1,74,'Rosie',1,0);
-INSERT INTO player_avatar VALUES(11,75,1,75,'bear012',1,0);
-INSERT INTO player_avatar VALUES(12,67,1,67,'Benny',1,0);
-INSERT INTO player_avatar VALUES(13,52,1,52,'Bingo',1,0);
-INSERT INTO player_avatar VALUES(14,16,1,16,'Biscotti',1,0);
-INSERT INTO player_avatar VALUES(15,21,1,21,'Blossom',1,0);
-INSERT INTO player_avatar VALUES(16,15,1,15,'Bowie',1,0);
-INSERT INTO player_avatar VALUES(17,7,1,7,'Brad',1,0);
-INSERT INTO player_avatar VALUES(18,56,1,56,'Camo',1,0);
-INSERT INTO player_avatar VALUES(19,11,1,11,'Charcow',1,0);
-INSERT INTO player_avatar VALUES(20,58,1,58,'Checkers',1,0);
-INSERT INTO player_avatar VALUES(21,36,1,36,'Chilly',1,0);
-INSERT INTO player_avatar VALUES(22,31,1,31,'Cinnamon',1,0);
-INSERT INTO player_avatar VALUES(23,25,1,25,'Cookie',1,0);
-INSERT INTO player_avatar VALUES(24,4,1,4,'Cosmique',1,0);
-INSERT INTO player_avatar VALUES(25,69,1,69,'Savannah',1,0);
-INSERT INTO player_avatar VALUES(26,76,1,76,'Chase',1,0);
-INSERT INTO player_avatar VALUES(27,77,1,77,'Leesha',1,0);
-INSERT INTO player_avatar VALUES(28,23,1,23,'Floppy',1,0);
-INSERT INTO player_avatar VALUES(29,33,1,33,'Flora',1,0);
-INSERT INTO player_avatar VALUES(30,47,1,47,'Gaudy',1,0);
-INSERT INTO player_avatar VALUES(31,6,1,6,'Ginger',1,0);
-INSERT INTO player_avatar VALUES(32,51,1,51,'Goldie',1,0);
-INSERT INTO player_avatar VALUES(33,9,1,9,'Goosebump',1,0);
-INSERT INTO player_avatar VALUES(34,5,1,5,'Gruff',1,0);
-INSERT INTO player_avatar VALUES(35,39,1,39,'Gyle',1,0);
-INSERT INTO player_avatar VALUES(36,78,1,78,'Snowflake',1,0);
-INSERT INTO player_avatar VALUES(37,79,1,79,'Presto',1,0);
-INSERT INTO player_avatar VALUES(38,80,1,80,'Petunia',1,0);
-INSERT INTO player_avatar VALUES(39,81,1,81,'Spooky',1,0);
-INSERT INTO player_avatar VALUES(40,82,1,82,'Shuffles',1,0);
-INSERT INTO player_avatar VALUES(41,62,1,62,'Hawt Dawg',1,0);
-INSERT INTO player_avatar VALUES(42,24,1,24,'Honey',1,0);
-INSERT INTO player_avatar VALUES(43,27,1,27,'Hope',1,0);
-INSERT INTO player_avatar VALUES(44,19,1,19,'Izza',1,0);
-INSERT INTO player_avatar VALUES(45,18,1,18,'Juju',1,0);
-INSERT INTO player_avatar VALUES(46,13,1,13,'Kally',1,0);
-INSERT INTO player_avatar VALUES(47,65,1,65,'King Mut',1,0);
-INSERT INTO player_avatar VALUES(48,83,1,83,'Tango',1,0);
-INSERT INTO player_avatar VALUES(49,44,1,44,'kity009',1,0);
-INSERT INTO player_avatar VALUES(50,84,1,84,'Mia',1,0);
-INSERT INTO player_avatar VALUES(51,85,1,85,'Leona',1,0);
-INSERT INTO player_avatar VALUES(52,2,1,2,'Loki',1,0);
-INSERT INTO player_avatar VALUES(53,42,1,42,'Lumin',1,0);
-INSERT INTO player_avatar VALUES(54,34,1,34,'Meadow',1,0);
-INSERT INTO player_avatar VALUES(55,32,1,32,'Midnight',1,0);
-INSERT INTO player_avatar VALUES(56,86,1,86,'Apro',1,0);
-INSERT INTO player_avatar VALUES(57,87,1,87,'Cera',1,0);
-INSERT INTO player_avatar VALUES(58,88,1,88,'Simona (Blue)',1,0);
-INSERT INTO player_avatar VALUES(59,54,1,54,'Simona (Pink)',1,0);
-INSERT INTO player_avatar VALUES(60,49,1,49,'Moxi',1,0);
-INSERT INTO player_avatar VALUES(61,57,1,57,'Myra',1,0);
-INSERT INTO player_avatar VALUES(62,63,1,63,'Mysterio',1,0);
-INSERT INTO player_avatar VALUES(63,66,1,66,'Nibbles',1,0);
-INSERT INTO player_avatar VALUES(64,30,1,30,'Nick',1,0);
-INSERT INTO player_avatar VALUES(65,35,1,35,'Nimbi',1,0);
-INSERT INTO player_avatar VALUES(66,41,1,41,'Nova',1,0);
-INSERT INTO player_avatar VALUES(67,1,1,1,'Ollie',1,1);
-INSERT INTO player_avatar VALUES(68,10,1,10,'Patches',1,0);
-INSERT INTO player_avatar VALUES(69,50,1,50,'Pearl',1,0);
-INSERT INTO player_avatar VALUES(70,12,1,12,'Petal',1,0);
-INSERT INTO player_avatar VALUES(71,26,1,26,'Pixie',1,0);
-INSERT INTO player_avatar VALUES(72,89,1,89,'Curlique',1,0);
-INSERT INTO player_avatar VALUES(73,90,1,90,'Shuku',1,0);
-INSERT INTO player_avatar VALUES(74,40,1,40,'Rasla',1,0);
-INSERT INTO player_avatar VALUES(75,37,1,37,'Romeo',1,0);
-INSERT INTO player_avatar VALUES(76,59,1,59,'Ruckus',1,0);
-INSERT INTO player_avatar VALUES(77,43,1,43,'Rusty',1,0);
-INSERT INTO player_avatar VALUES(78,17,1,17,'Seedling',1,0);
-INSERT INTO player_avatar VALUES(79,20,1,20,'Senna',1,0);
-INSERT INTO player_avatar VALUES(80,48,1,48,'Shortcat',1,0);
-INSERT INTO player_avatar VALUES(81,22,1,22,'Sky',1,0);
-INSERT INTO player_avatar VALUES(82,28,1,28,'Sparkle',1,0);
-INSERT INTO player_avatar VALUES(83,45,1,45,'Stardrop',1,0);
-INSERT INTO player_avatar VALUES(84,14,1,14,'Stella',1,0);
-INSERT INTO player_avatar VALUES(85,29,1,29,'Sunshine',1,0);
-INSERT INTO player_avatar VALUES(86,60,1,60,'Toonya',1,0);
-INSERT INTO player_avatar VALUES(87,8,1,8,'Toppins',1,0);
-INSERT INTO player_avatar VALUES(88,68,1,68,'Trops',1,0);
-INSERT INTO player_avatar VALUES(89,55,1,55,'Valentino',1,0);
-INSERT INTO player_avatar VALUES(90,64,1,64,'Zucchini',1,0);
-INSERT INTO player_avatar VALUES(91,91,1,91,'Chloe',1,0);
-INSERT INTO player_avatar VALUES(92,92,1,92,'Cherish',1,0);
-INSERT INTO player_avatar VALUES(93,93,1,93,'hams001',1,0);
-INSERT INTO player_avatar VALUES(94,94,1,94,'kity004',1,0);
-INSERT INTO player_avatar VALUES(95,95,1,95,'Fishbone',1,0);
 CREATE TABLE player_avatar_outfit (
     [id] integer primary key,
     [gsfoid] integer not null unique,
@@ -11829,101 +11735,6 @@ CREATE TABLE player_avatar_outfit (
     [outfit_no] integer not null default 1,
     unique([player_avatar_id], [outfit_no])
 ) strict;
-INSERT INTO player_avatar_outfit VALUES(1,67,67,1);
-INSERT INTO player_avatar_outfit VALUES(2,52,52,1);
-INSERT INTO player_avatar_outfit VALUES(3,4,4,1);
-INSERT INTO player_avatar_outfit VALUES(4,24,24,1);
-INSERT INTO player_avatar_outfit VALUES(5,34,34,1);
-INSERT INTO player_avatar_outfit VALUES(6,31,31,1);
-INSERT INTO player_avatar_outfit VALUES(7,17,17,1);
-INSERT INTO player_avatar_outfit VALUES(8,87,87,1);
-INSERT INTO player_avatar_outfit VALUES(9,33,33,1);
-INSERT INTO player_avatar_outfit VALUES(10,68,68,1);
-INSERT INTO player_avatar_outfit VALUES(11,19,19,1);
-INSERT INTO player_avatar_outfit VALUES(12,70,70,1);
-INSERT INTO player_avatar_outfit VALUES(13,46,46,1);
-INSERT INTO player_avatar_outfit VALUES(14,84,84,1);
-INSERT INTO player_avatar_outfit VALUES(15,16,16,1);
-INSERT INTO player_avatar_outfit VALUES(16,14,14,1);
-INSERT INTO player_avatar_outfit VALUES(17,78,78,1);
-INSERT INTO player_avatar_outfit VALUES(18,45,45,1);
-INSERT INTO player_avatar_outfit VALUES(19,44,44,1);
-INSERT INTO player_avatar_outfit VALUES(20,79,79,1);
-INSERT INTO player_avatar_outfit VALUES(21,15,15,1);
-INSERT INTO player_avatar_outfit VALUES(22,81,81,1);
-INSERT INTO player_avatar_outfit VALUES(23,28,28,1);
-INSERT INTO player_avatar_outfit VALUES(24,42,42,1);
-INSERT INTO player_avatar_outfit VALUES(25,23,23,1);
-INSERT INTO player_avatar_outfit VALUES(26,71,71,1);
-INSERT INTO player_avatar_outfit VALUES(27,43,43,1);
-INSERT INTO player_avatar_outfit VALUES(28,82,82,1);
-INSERT INTO player_avatar_outfit VALUES(29,85,85,1);
-INSERT INTO player_avatar_outfit VALUES(30,64,64,1);
-INSERT INTO player_avatar_outfit VALUES(31,22,22,1);
-INSERT INTO player_avatar_outfit VALUES(32,55,55,1);
-INSERT INTO player_avatar_outfit VALUES(33,29,29,1);
-INSERT INTO player_avatar_outfit VALUES(34,54,54,1);
-INSERT INTO player_avatar_outfit VALUES(35,65,65,1);
-INSERT INTO player_avatar_outfit VALUES(36,21,21,1);
-INSERT INTO player_avatar_outfit VALUES(37,75,75,1);
-INSERT INTO player_avatar_outfit VALUES(38,2,2,1);
-INSERT INTO player_avatar_outfit VALUES(39,35,35,1);
-INSERT INTO player_avatar_outfit VALUES(40,74,74,1);
-INSERT INTO player_avatar_outfit VALUES(41,66,66,1);
-INSERT INTO player_avatar_outfit VALUES(42,53,53,1);
-INSERT INTO player_avatar_outfit VALUES(43,77,77,1);
-INSERT INTO player_avatar_outfit VALUES(44,49,49,1);
-INSERT INTO player_avatar_outfit VALUES(45,83,83,1);
-INSERT INTO player_avatar_outfit VALUES(46,1,1,1);
-INSERT INTO player_avatar_outfit VALUES(47,30,30,1);
-INSERT INTO player_avatar_outfit VALUES(48,80,80,1);
-INSERT INTO player_avatar_outfit VALUES(49,60,60,1);
-INSERT INTO player_avatar_outfit VALUES(50,69,69,1);
-INSERT INTO player_avatar_outfit VALUES(51,32,32,1);
-INSERT INTO player_avatar_outfit VALUES(52,13,13,1);
-INSERT INTO player_avatar_outfit VALUES(53,5,5,1);
-INSERT INTO player_avatar_outfit VALUES(54,59,59,1);
-INSERT INTO player_avatar_outfit VALUES(55,89,89,1);
-INSERT INTO player_avatar_outfit VALUES(56,18,18,1);
-INSERT INTO player_avatar_outfit VALUES(57,61,61,1);
-INSERT INTO player_avatar_outfit VALUES(58,20,20,1);
-INSERT INTO player_avatar_outfit VALUES(59,76,76,1);
-INSERT INTO player_avatar_outfit VALUES(60,86,86,1);
-INSERT INTO player_avatar_outfit VALUES(61,3,3,1);
-INSERT INTO player_avatar_outfit VALUES(62,41,41,1);
-INSERT INTO player_avatar_outfit VALUES(63,62,62,1);
-INSERT INTO player_avatar_outfit VALUES(64,90,90,1);
-INSERT INTO player_avatar_outfit VALUES(65,47,47,1);
-INSERT INTO player_avatar_outfit VALUES(66,63,63,1);
-INSERT INTO player_avatar_outfit VALUES(67,12,12,1);
-INSERT INTO player_avatar_outfit VALUES(68,88,88,1);
-INSERT INTO player_avatar_outfit VALUES(69,25,25,1);
-INSERT INTO player_avatar_outfit VALUES(70,6,6,1);
-INSERT INTO player_avatar_outfit VALUES(71,7,7,1);
-INSERT INTO player_avatar_outfit VALUES(72,8,8,1);
-INSERT INTO player_avatar_outfit VALUES(73,9,9,1);
-INSERT INTO player_avatar_outfit VALUES(74,10,10,1);
-INSERT INTO player_avatar_outfit VALUES(75,11,11,1);
-INSERT INTO player_avatar_outfit VALUES(76,26,26,1);
-INSERT INTO player_avatar_outfit VALUES(77,27,27,1);
-INSERT INTO player_avatar_outfit VALUES(78,36,36,1);
-INSERT INTO player_avatar_outfit VALUES(79,37,37,1);
-INSERT INTO player_avatar_outfit VALUES(80,38,38,1);
-INSERT INTO player_avatar_outfit VALUES(81,39,39,1);
-INSERT INTO player_avatar_outfit VALUES(82,40,40,1);
-INSERT INTO player_avatar_outfit VALUES(83,48,48,1);
-INSERT INTO player_avatar_outfit VALUES(84,50,50,1);
-INSERT INTO player_avatar_outfit VALUES(85,51,51,1);
-INSERT INTO player_avatar_outfit VALUES(86,56,56,1);
-INSERT INTO player_avatar_outfit VALUES(87,57,57,1);
-INSERT INTO player_avatar_outfit VALUES(88,58,58,1);
-INSERT INTO player_avatar_outfit VALUES(89,72,72,1);
-INSERT INTO player_avatar_outfit VALUES(90,73,73,1);
-INSERT INTO player_avatar_outfit VALUES(91,91,91,1);
-INSERT INTO player_avatar_outfit VALUES(92,92,92,1);
-INSERT INTO player_avatar_outfit VALUES(93,93,93,1);
-INSERT INTO player_avatar_outfit VALUES(94,94,94,1);
-INSERT INTO player_avatar_outfit VALUES(95,95,95,1);
 CREATE TABLE item_category (
     [id] integer primary key,
     [gsfoid] integer not null unique,
@@ -12250,74 +12061,6 @@ CREATE TABLE player_item (
     [avatar_slot_id] integer references avatar_slot(id) on delete set null,
     [quantity] integer not null default 1
 ) strict;
-INSERT INTO player_item VALUES(1,1,1,1,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(2,2,1,2,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(3,3,1,3,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(4,4,1,4,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(5,5,1,5,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(6,6,1,6,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(7,7,1,7,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(8,8,1,8,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(9,9,1,9,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(10,10,1,10,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(11,11,1,11,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(12,12,1,12,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(13,13,1,13,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(14,14,1,14,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(15,15,1,15,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(16,16,1,16,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(17,17,1,17,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(18,18,1,18,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(19,19,1,19,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(20,20,1,20,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(21,21,1,21,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(22,22,1,22,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(23,23,1,23,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(24,24,1,24,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(25,25,1,26,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(26,26,1,27,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(27,27,1,28,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(28,28,1,29,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(29,29,1,30,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(30,30,1,31,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(31,31,1,32,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(32,32,1,33,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(33,33,1,34,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(34,34,1,35,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(35,35,1,36,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(36,36,1,37,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(37,37,1,38,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(38,38,1,40,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(39,39,1,41,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(40,40,1,42,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(41,41,1,43,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(42,42,1,47,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(43,43,1,49,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(44,44,1,50,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(45,45,1,51,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(46,46,1,52,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(47,47,1,53,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(48,48,1,54,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(49,49,1,55,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(50,50,1,56,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(51,51,1,57,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(52,52,1,58,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(53,53,1,59,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(54,54,1,60,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(55,55,1,61,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(56,56,1,62,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(57,57,1,63,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(58,58,1,64,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(59,59,1,67,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(60,60,1,68,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(61,61,1,71,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(62,62,1,73,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(63,63,1,74,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(64,64,1,75,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(65,65,1,76,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(66,66,1,77,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(67,67,1,78,NULL,NULL,NULL,1);
-INSERT INTO player_item VALUES(68,68,1,83,NULL,NULL,NULL,1);
 CREATE TABLE zone (
     [id] integer primary key,
     [container_id] integer not null unique references asset_container(id) on delete restrict

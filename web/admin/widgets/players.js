@@ -46,8 +46,8 @@ export function createPlayerLayout() {
         hidden: true,
       },
       {
-        field: 'active_name',
-        text: 'Active Avatar Name',
+        field: 'username',
+        text: 'Username',
         render: 'text',
         size: '135px',
         searchable: 'text',
@@ -160,6 +160,16 @@ function createPlayerDetailsForm() {
         disabled: selectedPlayerID == null,
         html: {
           label: 'Player OID',
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'username',
+        type: 'text',
+        disabled: selectedPlayerID == null,
+        html: {
+          label: 'Username',
           span: 6,
           column: 0,
         },

@@ -7,11 +7,15 @@ import (
 
 	"github.com/dv1x3r/amazing-core/internal/config"
 	"github.com/dv1x3r/amazing-core/internal/game/worldsync"
+	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/messages"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/notify"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/appcode"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/resultcode"
 	"github.com/dv1x3r/amazing-core/internal/services"
+	"github.com/dv1x3r/amazing-core/internal/services/auth"
 )
 
 type Handler struct {
@@ -73,17 +77,33 @@ func (h *Handler) Login(w gsf.ResponseWriter, r *gsf.Request) error {
 
 	r.SetPlatform(gsf.ParsePlatformFromMachineOS(req.ClientEnvInfo.MachineOS))
 
-	player, err := h.svc.Player.CreateGSFGuestPlayer(r.Context(), r.Platform())
+	playerOID, err := h.svc.Auth.LoginOrCreatePlayer(r.Context(), req.LoginID, req.Password)
 	if err != nil {
-		return err
+		return wrap.WithGSFError(err, int32(resultcode.ERR), int32(loginAppCode(err)))
 	}
-	r.SetPlayerOID(player.OID.Int64())
+	r.SetPlayerOID(playerOID.Int64())
+
+	player, err := h.svc.Player.GetGSFPlayer(r.Context(), r.Platform(), playerOID)
+	if err != nil {
+		return wrap.WithGSFError(err, int32(resultcode.ERR), int32(appcode.INTERNAL_ERROR))
+	}
 
 	res := &messages.LoginResponse{}
 	res.AssetDeliveryURL = h.svc.Asset.DeliveryURL()
 	res.Player = player
 
 	return w.Write(res)
+}
+
+func loginAppCode(err error) appcode.AppCode {
+	switch {
+	case errors.Is(err, auth.ErrBlankCredentials), errors.Is(err, auth.ErrInvalidCredentials):
+		return appcode.AUTH
+	case errors.Is(err, auth.ErrCreatePlayerAccountFailed):
+		return appcode.CREATE_PLAYER_ACCOUNT_FAILED
+	default:
+		return appcode.INTERNAL_ERROR
+	}
 }
 
 // Logout acknowledges the client logout request.

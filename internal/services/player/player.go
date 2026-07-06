@@ -15,15 +15,16 @@ import (
 )
 
 type PlayerList struct {
-	ID         int    `json:"id"`
-	OID        string `json:"oid"`
-	OIDStr     string `json:"oid_str"`
-	ActiveName string `json:"active_name"`
+	ID       int    `json:"id"`
+	OID      string `json:"oid"`
+	OIDStr   string `json:"oid_str"`
+	Username string `json:"username"`
 }
 
 type PlayerDetails struct {
 	ID                  int         `json:"id"`
 	OID                 string      `json:"oid"`
+	Username            string      `json:"username"`
 	CreatedAt           w2.UnixTime `json:"created_at"`
 	IsTutorialCompleted bool        `json:"is_tutorial_completed"`
 	IsQA                bool        `json:"is_qa"`
@@ -38,32 +39,21 @@ func (s *Service) GetPlayerListGrid(ctx context.Context, req w2.GetGridRequest) 
 		Select: []string{
 			"p.id",
 			"p.gsfoid",
-			"coalesce(pa.name, '[None]') as active_name",
+			"p.username",
 		},
 		WhereMapping: map[string]string{
-			"id":          "p.id",
-			"oid":         "p.gsfoid",
-			"active_name": "pa.name",
+			"id":       "p.id",
+			"oid":      "p.gsfoid",
+			"username": "p.username",
 		},
 		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
-			sb.JoinWithOption(sqlbuilder.LeftJoin, `(
-					select
-						id,
-						player_id,
-						(gsfoid || ' - ' || name) as name,
-						row_number() over (partition by player_id order by id) as rn
-					from player_avatar
-					where is_active = 1
-				) as pa`,
-				"pa.player_id = p.id and pa.rn = 1",
-			)
 			sb.OrderByAsc("p.id")
 		},
 		Scan: func(rows *sql.Rows, record *PlayerList) error {
 			if err := rows.Scan(
 				&record.ID,
 				&record.OID,
-				&record.ActiveName,
+				&record.Username,
 			); err != nil {
 				return err
 			}
@@ -82,6 +72,7 @@ func (s *Service) GetPlayerDetailsForm(ctx context.Context, req w2.GetFormReques
 		Select: []string{
 			"p.id",
 			"p.gsfoid",
+			"p.username",
 			"p.created_at",
 			"p.is_tutorial_completed",
 			"p.is_qa",
@@ -106,6 +97,7 @@ func (s *Service) GetPlayerDetailsForm(ctx context.Context, req w2.GetFormReques
 			return row.Scan(
 				&record.ID,
 				&record.OID,
+				&record.Username,
 				&record.CreatedAt,
 				&record.IsTutorialCompleted,
 				&record.IsQA,
@@ -128,8 +120,8 @@ func (s *Service) UpdatePlayerDetails(ctx context.Context, req w2.SaveFormReques
 	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
 		affected, err := w2db.UpdateContext(ctx, tx, w2db.UpdateOptions{
 			Update:  "player",
-			Cols:    []string{"gsfoid", "is_tutorial_completed", "is_qa", "max_outfits"},
-			Values:  []any{req.Record.OID, req.Record.IsTutorialCompleted, req.Record.IsQA, req.Record.MaxOutfits},
+			Cols:    []string{"gsfoid", "username", "is_tutorial_completed", "is_qa", "max_outfits"},
+			Values:  []any{req.Record.OID, req.Record.Username, req.Record.IsTutorialCompleted, req.Record.IsQA, req.Record.MaxOutfits},
 			IDField: "id",
 			IDValue: playerID,
 		})
