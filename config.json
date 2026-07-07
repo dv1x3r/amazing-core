@@ -10,7 +10,8 @@
   "settings": {
     "assetDeliveryURL": "http://localhost:3000/cdn/",
     "syncServerIP": "localhost",
-    "syncServerPort": 8182
+    "syncServerPort": 8182,
+    "brochat": false
   },
   "storage": {
     "blob": {

@@ -24,6 +24,7 @@ type Config struct {
 		AssetDeliveryURL string `json:"assetDeliveryURL"`
 		SyncServerIP     string `json:"syncServerIP"`
 		SyncServerPort   int    `json:"syncServerPort"`
+		BroChat          bool   `json:"brochat"`
 	} `json:"settings"`
 	Storage struct {
 		Blob struct {

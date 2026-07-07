@@ -131,6 +131,7 @@ You can customize server settings using the `config.json` file.
 | `settings.assetDeliveryURL` | Base CDN URL sent to game clients                            |
 | `settings.syncServerIP`     | Sync server IP sent in `InitLocation` responses              |
 | `settings.syncServerPort`   | Sync server port sent in `InitLocation` responses            |
+| `settings.brochat`          | Replace all outgoing chat messages with `bro`                |
 | `storage.blob.download`     | Auto-download `blob.db` on first start if missing            |
 | `storage.blob.url`          | URL to fetch `blob.db` from                                  |
 | `storage.databases.core`    | Path to `core.db` - main SQLite database                     |

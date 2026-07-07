@@ -644,8 +644,13 @@ func (h *Handler) SendMessage(w gsf.ResponseWriter, r *gsf.Request) error {
 		return err
 	}
 
+	message := req.Message
+	if config.Get().Settings.BroChat {
+		message = "bro"
+	}
+
 	res := &messages.SendMessageResponse{
-		FilteredMessage: req.Message,
+		FilteredMessage: message,
 		Categories:      []string{},
 		OffenceGroup:    0,
 		RecipientID:     req.RecipientID,
