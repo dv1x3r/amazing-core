@@ -13,6 +13,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/notify"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/appcode"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/chatchanneltypevalue"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/resultcode"
 	"github.com/dv1x3r/amazing-core/internal/services"
 	"github.com/dv1x3r/amazing-core/internal/services/auth"
@@ -88,9 +89,15 @@ func (h *Handler) Login(w gsf.ResponseWriter, r *gsf.Request) error {
 		return wrap.WithGSFError(err, int32(resultcode.ERR), int32(appcode.INTERNAL_ERROR))
 	}
 
+	playerInfo, err := h.svc.Player.GetGSFPlayerInfoTO(r.Context(), playerOID)
+	if err != nil {
+		return wrap.WithGSFError(err, int32(resultcode.ERR), int32(appcode.INTERNAL_ERROR))
+	}
+
 	res := &messages.LoginResponse{}
 	res.AssetDeliveryURL = h.svc.Asset.DeliveryURL()
 	res.Player = player
+	res.PlayerInfoTO = playerInfo
 
 	return w.Write(res)
 }
@@ -616,7 +623,11 @@ func (h *Handler) GetChatChannelTypes(w gsf.ResponseWriter, r *gsf.Request) erro
 		return err
 	}
 	res := &messages.GetChatChannelTypesResponse{}
-	res.ChatChannelTypes = []types.ChatChannelType{}
+	res.ChatChannelTypes = []types.ChatChannelType{
+		{OID: types.OIDFromInt64(1), Value: chatchanneltypevalue.PRIVATE},
+		{OID: types.OIDFromInt64(2), Value: chatchanneltypevalue.PRIVATE_GROUP},
+		{OID: types.OIDFromInt64(3), Value: chatchanneltypevalue.LOCAL},
+	}
 	return w.Write(res)
 }
 

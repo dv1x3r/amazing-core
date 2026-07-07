@@ -11713,6 +11713,7 @@ CREATE TABLE player (
     [gsfoid] integer not null unique,
     [username] text not null unique collate nocase,
     [password] text not null,
+    [is_chat_allowed] integer default 1 check ([is_chat_allowed] in (0, 1)),
     [is_tutorial_completed] integer not null default 0 check ([is_tutorial_completed] in (0, 1)),
     [is_qa] integer not null default 0 check ([is_qa] in (0, 1)),
     [max_outfits] integer not null default 0,

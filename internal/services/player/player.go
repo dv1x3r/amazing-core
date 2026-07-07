@@ -27,6 +27,7 @@ type PlayerDetails struct {
 	Username            string      `json:"username"`
 	CreatedAt           w2.UnixTime `json:"created_at"`
 	IsTutorialCompleted bool        `json:"is_tutorial_completed"`
+	IsChatAllowed       bool        `json:"is_chat_allowed"`
 	IsQA                bool        `json:"is_qa"`
 	MaxOutfits          int         `json:"max_outfits"`
 	ActiveAvatar        w2.Dropdown `json:"active_avatar"`
@@ -75,6 +76,7 @@ func (s *Service) GetPlayerDetailsForm(ctx context.Context, req w2.GetFormReques
 			"p.username",
 			"p.created_at",
 			"p.is_tutorial_completed",
+			"p.is_chat_allowed",
 			"p.is_qa",
 			"p.max_outfits",
 			"pa.id as active_avatar_id",
@@ -100,6 +102,7 @@ func (s *Service) GetPlayerDetailsForm(ctx context.Context, req w2.GetFormReques
 				&record.Username,
 				&record.CreatedAt,
 				&record.IsTutorialCompleted,
+				&record.IsChatAllowed,
 				&record.IsQA,
 				&record.MaxOutfits,
 				&record.ActiveAvatar.ID,
@@ -119,9 +122,23 @@ func (s *Service) UpdatePlayerDetails(ctx context.Context, req w2.SaveFormReques
 	playerID := req.RecID
 	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
 		affected, err := w2db.UpdateContext(ctx, tx, w2db.UpdateOptions{
-			Update:  "player",
-			Cols:    []string{"gsfoid", "username", "is_tutorial_completed", "is_qa", "max_outfits"},
-			Values:  []any{req.Record.OID, req.Record.Username, req.Record.IsTutorialCompleted, req.Record.IsQA, req.Record.MaxOutfits},
+			Update: "player",
+			Cols: []string{
+				"gsfoid",
+				"username",
+				"is_tutorial_completed",
+				"is_chat_allowed",
+				"is_qa",
+				"max_outfits",
+			},
+			Values: []any{
+				req.Record.OID,
+				req.Record.Username,
+				req.Record.IsTutorialCompleted,
+				req.Record.IsChatAllowed,
+				req.Record.IsQA,
+				req.Record.MaxOutfits,
+			},
 			IDField: "id",
 			IDValue: playerID,
 		})
@@ -173,4 +190,28 @@ func (s *Service) GetGSFPlayer(ctx context.Context, platform gsf.Platform, playe
 	player.ActivePlayerAvatar = activeAvatar
 
 	return player, nil
+}
+
+func (s *Service) GetGSFPlayerInfoTO(ctx context.Context, playerOID types.OID) (types.PlayerInfoTO, error) {
+	const op = "player.Service.GetGSFPlayerInfoTO"
+
+	row := s.store.DB().QueryRowContext(ctx, `
+			select
+				pl.username,
+				coalesce(pl.is_chat_allowed, 1),
+				pl.is_qa
+			from player as pl
+			where pl.gsfoid = ?;
+		`, playerOID)
+
+	var playerInfo types.PlayerInfoTO
+	if err := row.Scan(
+		&playerInfo.PlayerName,
+		&playerInfo.ChatAllowed,
+		&playerInfo.QA,
+	); err != nil {
+		return playerInfo, wrap.IfErr(op, err)
+	}
+
+	return playerInfo, nil
 }

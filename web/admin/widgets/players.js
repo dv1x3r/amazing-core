@@ -191,7 +191,17 @@ function createPlayerDetailsForm() {
         type: 'checkbox',
         disabled: selectedPlayerID == null,
         html: {
-          label: 'Is Tutorial Completed',
+          label: 'Tutorial Completed',
+          span: 2,
+          column: 0,
+        },
+      },
+      {
+        field: 'is_chat_allowed',
+        type: 'checkbox',
+        disabled: selectedPlayerID == null,
+        html: {
+          label: 'Chat Allowed',
           span: 2,
           column: 0,
         },
@@ -723,4 +733,3 @@ function openPlayerItemPopup(event) {
     .then(() => form.render('#player-item-form'))
     .close(() => form.destroy())
 }
-
