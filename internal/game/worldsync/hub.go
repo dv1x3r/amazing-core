@@ -167,6 +167,27 @@ func (h *Hub) move(session *gsf.Session, move *notify.Move) []OutboundNotify {
 	return outbound
 }
 
+// Chat relays a chat notify to connected players in the sender's current location.
+func (h *Hub) Chat(senderOID types.OID, chat *notify.Chat) error {
+	return SendAll(h.chat(senderOID, chat))
+}
+
+func (h *Hub) chat(senderOID types.OID, chat *notify.Chat) []OutboundNotify {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	player := h.playersByOID[senderOID.Int64()]
+	if player == nil || player.Session == nil {
+		return nil
+	}
+
+	outbound := make([]OutboundNotify, 0)
+	for _, recipient := range h.playersInLocation(player.Location, nil) {
+		outbound = append(outbound, NewOutboundNotify(recipient.Session, clientmessagetype.CHAT, chat))
+	}
+	return outbound
+}
+
 // Leave removes a sync session and tells nearby players to remove that player.
 func (h *Hub) Leave(session *gsf.Session) error {
 	return SendAll(h.leave(session))

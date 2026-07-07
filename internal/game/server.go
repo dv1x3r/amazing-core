@@ -75,6 +75,7 @@ func NewServer(
 	router.HandleFunc(int32(serviceclass.SYNC_SERVER), int32(syncmessagetype.HEARTBEAT_NOTIFY), handler.HeartbeatNotify)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_MAZE_ITEMS), handler.GetMazeItems)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_CHAT_CHANNEL_TYPES), handler.GetChatChannelTypes)
+	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.SEND_MESSAGE), handler.SendMessage)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_ANNOUNCEMENTS), handler.GetAnnouncements)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.ENTER_BUILDING), handler.EnterBuilding)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_ONLINE_STATUSES), handler.GetOnlineStatuses)

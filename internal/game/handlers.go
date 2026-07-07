@@ -37,6 +37,12 @@ const (
 	SCENE_SPRINGTIME     = "OTYwOTUyODk5OTk1MA"
 )
 
+const (
+	CHAT_PRIVATE_OID       = 1
+	CHAT_PRIVATE_GROUP_OID = 2
+	CHAT_LOCAL_OID         = 3
+)
+
 // ── General ──────────────────────────────────────────────────────────────────
 
 // GetClientVersionInfo validates the client name and version. Requested on game start.
@@ -624,10 +630,46 @@ func (h *Handler) GetChatChannelTypes(w gsf.ResponseWriter, r *gsf.Request) erro
 	}
 	res := &messages.GetChatChannelTypesResponse{}
 	res.ChatChannelTypes = []types.ChatChannelType{
-		{OID: types.OIDFromInt64(1), Value: chatchanneltypevalue.PRIVATE},
-		{OID: types.OIDFromInt64(2), Value: chatchanneltypevalue.PRIVATE_GROUP},
-		{OID: types.OIDFromInt64(3), Value: chatchanneltypevalue.LOCAL},
+		{OID: types.OIDFromInt64(CHAT_PRIVATE_OID), Value: chatchanneltypevalue.PRIVATE},
+		{OID: types.OIDFromInt64(CHAT_PRIVATE_GROUP_OID), Value: chatchanneltypevalue.PRIVATE_GROUP},
+		{OID: types.OIDFromInt64(CHAT_LOCAL_OID), Value: chatchanneltypevalue.LOCAL},
 	}
+	return w.Write(res)
+}
+
+// SendMessage accepts a chat message and broadcasts local chat to players in same location.
+func (h *Handler) SendMessage(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.SendMessageRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+
+	res := &messages.SendMessageResponse{
+		FilteredMessage: req.Message,
+		Categories:      []string{},
+		OffenceGroup:    0,
+		RecipientID:     req.RecipientID,
+	}
+
+	localChatTypeOID := types.OIDFromInt64(CHAT_LOCAL_OID)
+	if req.Message != "" && req.TypeID == localChatTypeOID {
+		playerOID, ok := r.PlayerOID()
+		if !ok {
+			return errors.New("player oid is not set on session")
+		}
+		senderOID := types.OIDFromInt64(playerOID)
+		if err := h.syncHub.Chat(senderOID, &notify.Chat{
+			Msg:          res.FilteredMessage,
+			TypeID:       localChatTypeOID,
+			GroupID:      types.OID{},
+			SenderID:     senderOID,
+			Categories:   res.Categories,
+			OffenceGroup: res.OffenceGroup,
+		}); err != nil {
+			return err
+		}
+	}
+
 	return w.Write(res)
 }
 
