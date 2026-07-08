@@ -242,10 +242,10 @@ const dashboardSidebar = new w2sidebar({
         { type: 'spacer' },
         {
           type: 'button',
-          id: 'locale',
-          icon: 'fa fa-language',
-          tooltip: 'Locale Settings',
-          onClick: () => widgets.openLocalePopup(),
+          id: 'donate',
+          icon: 'fa fa-heart',
+          tooltip: 'Donate',
+          onClick: () => window.open('https://ko-fi.com/dv1x3r', '_blank'),
         },
         {
           id: 'dark',
