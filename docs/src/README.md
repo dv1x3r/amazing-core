@@ -145,7 +145,7 @@ You can customize server settings using the `config.json` file.
 
 ## Running the game on macOS
 
-The Steam version of the game is not compatible with modern macOS (Apple Silicon), but I created a patcher that fixes it.
+The Steam version of the game is not compatible with Apple Silicon, but here is a patch.
 
 1. Download the game [using Steam](#download-the-game).
 

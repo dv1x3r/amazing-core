@@ -2,9 +2,8 @@
 
 The game contains a hidden QA tools menu that can be enabled through `ServerConfig.xml`.
 
-## Enabling it
-
-Add a `Version` attribute to the config:
+1. Navigate to the game folder and open the `ServerConfig.xml` file in a text editor.
+2. Add a `Version` attribute to the config:
 
 ```
 Version = '1.8'

@@ -22,4 +22,6 @@
 
 ---
 
+[♥ Ko-fi support](https://ko-fi.com/dv1x3r)
+
 [This website and its contents are intended strictly to be used for non-commercial, personal, and educational purposes only.]()
