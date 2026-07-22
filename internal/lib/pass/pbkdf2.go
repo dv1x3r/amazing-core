@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func getRandomSalt(size int) []byte {
+func GetRandomSalt(size int) []byte {
 	const allowedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	salt := make([]byte, size)
 	l := len(allowedChars)
@@ -22,7 +22,7 @@ func getRandomSalt(size int) []byte {
 }
 
 func MakePbkdf2(password string) (string, error) {
-	salt := getRandomSalt(22)
+	salt := GetRandomSalt(22)
 	iter := 720000 // https://docs.djangoproject.com/en/5.0/releases/5.0/#django-contrib-auth
 	dk, err := pbkdf2.Key(sha256.New, password, salt, iter, sha256.Size)
 	if err != nil {
