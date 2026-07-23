@@ -9,6 +9,12 @@ build:
 run:
 	go run ./cmd/server/main.go
 
+.PHONY: rebuild
+rebuild: generate build
+
+.PHONY: run-rebuild
+run-rebuild: generate run
+
 .PHONY: test
 test:
 	go test -v ./...
@@ -20,10 +26,6 @@ test-race:
 .PHONY: vet
 vet:
 	go vet ./...
-
-.PHONY: generate
-generate:
-	go generate ./...
 
 .PHONY: fmt
 fmt:
@@ -37,6 +39,10 @@ tidy:
 update:
 	go get -u ./...
 	go mod tidy
+
+.PHONY: generate
+generate:
+	go generate ./...
 
 .PHONY: clean
 clean:
