@@ -1,7 +1,7 @@
 # <img src="web/images/logo.png" height="75"> Amazing Core
 
 Amazing Core is an open-source server emulator for **Amazing World**, an MMO originally developed by Ganz and shut down in 2018.
-This project provides a modular, configurable framework with tools for server management, asset handling, and game services, accessible via a web-based dashboard.
+This project provides a modular, configurable framework with a web-based admin dashboard, API-side asset tooling, and a TCP game server.
 
 👉 Feel free to join our [Discord server!](https://discord.com/invite/TWfTBbfdA9)
 
@@ -94,9 +94,10 @@ cmd/           - entry point
 data/          - sql migrations
 internal/      
 ├── api/       - http server for admin dashboard and asset streaming
-├── game/      - game server and gsf messages handling
+│   └── services/ - admin/API service logic and asset/blob tooling
+├── game/      - game server and gsf message handling
+│   └── services/ - client-facing game logic and database access
 ├── network/   - tcp server protocol implementation
-├── services/  - business logic and database interaction
 ├── config/    - configuration variables
 ├── lib/       - shared libraries (e.g. logging, helpers)
 tools/         - development tools (e.g. asset importers)

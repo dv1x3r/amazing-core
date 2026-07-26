@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/dv1x3r/amazing-core/internal/api/services"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
-	"github.com/dv1x3r/amazing-core/internal/services/player"
 	"github.com/dv1x3r/w2go/w2"
 )
 
@@ -19,7 +19,7 @@ func (h *Handler) GetPlayerAvatar(w http.ResponseWriter, r *http.Request) error 
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.svc.Player.GetPlayerAvatarsDropdown(r.Context(), req, id)
+	res, err := h.svc.GetPlayerAvatarsDropdown(r.Context(), req, id)
 	if err != nil {
 		return err
 	}
@@ -35,7 +35,7 @@ func (h *Handler) GetPlayerAvatarGrid(w http.ResponseWriter, r *http.Request) er
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.svc.Player.GetPlayerAvatarGrid(r.Context(), req, id)
+	res, err := h.svc.GetPlayerAvatarGrid(r.Context(), req, id)
 	if err != nil {
 		return err
 	}
@@ -47,16 +47,16 @@ func (h *Handler) PostPlayerAvatarForm(w http.ResponseWriter, r *http.Request) e
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	req, err := w2.ParseSaveFormRequest[player.PlayerAvatar](r.Body)
+	req, err := w2.ParseSaveFormRequest[services.PlayerAvatar](r.Body)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
 	if req.Record.ID == 0 {
-		req.Record.ID, err = h.svc.Player.CreatePlayerAvatar(r.Context(), req, id)
+		req.Record.ID, err = h.svc.CreatePlayerAvatar(r.Context(), req, id)
 	} else {
-		err = h.svc.Player.UpdatePlayerAvatar(r.Context(), req)
+		err = h.svc.UpdatePlayerAvatar(r.Context(), req)
 	}
-	if errors.Is(err, player.ErrPlayerAvatarExists) {
+	if errors.Is(err, services.ErrPlayerAvatarExists) {
 		return wrap.WithHTTPStatus(err, http.StatusConflict)
 	} else if err != nil {
 		return err
@@ -69,7 +69,7 @@ func (h *Handler) PostPlayerAvatarRemove(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	if err := h.svc.Player.DeletePlayerAvatars(r.Context(), req); err != nil {
+	if err := h.svc.DeletePlayerAvatars(r.Context(), req); err != nil {
 		return err
 	}
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)

@@ -17,9 +17,12 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/lib/db"
 	"github.com/dv1x3r/amazing-core/internal/lib/downloader"
 	"github.com/dv1x3r/amazing-core/internal/lib/logger"
+	"github.com/dv1x3r/amazing-core/internal/lib/python"
 	"github.com/dv1x3r/amazing-core/internal/lib/slogbus"
 	"github.com/dv1x3r/amazing-core/internal/lib/webauth"
-	"github.com/dv1x3r/amazing-core/internal/services"
+
+	apiservices "github.com/dv1x3r/amazing-core/internal/api/services"
+	gameservices "github.com/dv1x3r/amazing-core/internal/game/services"
 
 	"github.com/dv1x3r/w2go/w2db"
 	"github.com/huandu/go-sqlbuilder"
@@ -158,13 +161,15 @@ func main() {
 
 	// ── Services & Servers ──────────────────────────────────────────────────────
 	logBus := slogbus.New()
-	svc := services.New(logger.Get(), store, cfg)
-
-	gameLogger := slog.New(logBus.Handler(logger.Get().Handler()))
-	gameServer := game.NewServer(gameLogger, game.NewHandler(svc))
+	pythonRunner := python.NewRunner(logger.Get(), cfg.Python.Venv)
 
 	apiAuthenticator := webauth.NewAuthenticator(cfg.Secure.Session.Secure, cfg.Secure.Session.Key, cfg.Secure.Auth.Username, cfg.Secure.Auth.Password)
-	apiServer := api.NewServer(logger.Get(), routes.NewHandler(svc, apiAuthenticator, logBus), store)
+	apiSvc := apiservices.NewService(logger.Get(), store, cfg, pythonRunner)
+	apiServer := api.NewServer(logger.Get(), routes.NewHandler(apiSvc, apiAuthenticator, logBus), store)
+
+	gameLogger := slog.New(logBus.Handler(logger.Get().Handler()))
+	gameSvc := gameservices.NewService(logger.Get(), store, cfg)
+	gameServer := game.NewServer(gameLogger, game.NewHandler(gameSvc))
 
 	interruptCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()

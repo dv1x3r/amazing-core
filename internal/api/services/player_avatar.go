@@ -1,0 +1,106 @@
+package services
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+
+	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
+	"github.com/dv1x3r/w2go/w2"
+	"github.com/dv1x3r/w2go/w2db"
+
+	"github.com/huandu/go-sqlbuilder"
+)
+
+var ErrPlayerAvatarExists = errors.New("player avatar with the same name or zing already exists")
+
+type PlayerAvatar struct {
+	ID       int              `json:"id"`
+	OID      w2.Field[string] `json:"oid"`
+	OIDStr   string           `json:"oid_str"`
+	Name     w2.Field[string] `json:"name"`
+	Avatar   w2.Dropdown      `json:"avatar"`
+	OutfitNo w2.Field[int]    `json:"outfit_no"`
+	IsActive bool             `json:"is_active"`
+}
+
+func (s *Service) GetPlayerAvatarGrid(ctx context.Context, req w2.GetGridRequest, playerID int) (w2.GetGridResponse[PlayerAvatar], error) {
+	const op = "api.Service.GetPlayerAvatarGrid"
+	res, err := w2db.GetGridContext(ctx, s.store.DB(), req, w2db.GetGridOptions[PlayerAvatar]{
+		From: "player_avatar as pa",
+		Select: []string{
+			"pa.id",
+			"pa.gsfoid",
+			"pa.name",
+			"pa.outfit_no",
+			"pa.is_active",
+			"pa.avatar_id",
+			"av.name as avatar_name",
+		},
+		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
+			sb.Join("avatar as av", "av.id = pa.avatar_id")
+			sb.Where(sb.EQ("pa.player_id", playerID))
+			sb.OrderByAsc("pa.id")
+		},
+		Scan: func(rows *sql.Rows, record *PlayerAvatar) error {
+			if err := rows.Scan(
+				&record.ID,
+				&record.OID,
+				&record.Name,
+				&record.OutfitNo,
+				&record.IsActive,
+				&record.Avatar.ID,
+				&record.Avatar.Text,
+			); err != nil {
+				return err
+			}
+			record.OIDStr = types.OIDFromString(record.OID.V).String()
+			return nil
+		},
+	})
+	return res, wrap.IfErr(op, err)
+}
+
+func (s *Service) CreatePlayerAvatar(ctx context.Context, req w2.SaveFormRequest[PlayerAvatar], playerID int) (int, error) {
+	const op = "api.Service.CreatePlayerAvatar"
+	id, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{
+		Into: "player_avatar",
+		Cols: []string{"player_id", "gsfoid", "avatar_id", "name", "outfit_no"},
+		Values: []any{
+			playerID,
+			sqlbuilder.Buildf("(select coalesce(max(gsfoid) + 1, 1) from player_avatar)"),
+			req.Record.Avatar.ID,
+			req.Record.Name,
+			req.Record.OutfitNo,
+		},
+	})
+	if s.store.IsErrConstraintUnique(err) {
+		return 0, wrap.IfErr(op, ErrPlayerAvatarExists)
+	}
+	return id, wrap.IfErr(op, err)
+}
+
+func (s *Service) UpdatePlayerAvatar(ctx context.Context, req w2.SaveFormRequest[PlayerAvatar]) error {
+	const op = "api.Service.UpdatePlayerAvatar"
+	_, err := w2db.UpdateContext(ctx, s.store.DB(), w2db.UpdateOptions{
+		Update:  "player_avatar",
+		Cols:    []string{"gsfoid", "avatar_id", "name", "outfit_no"},
+		Values:  []any{req.Record.OID, req.Record.Avatar.ID, req.Record.Name, req.Record.OutfitNo},
+		IDField: "id",
+		IDValue: req.Record.ID,
+	})
+	if s.store.IsErrConstraintUnique(err) {
+		return wrap.IfErr(op, ErrPlayerAvatarExists)
+	}
+	return wrap.IfErr(op, err)
+}
+
+func (s *Service) DeletePlayerAvatars(ctx context.Context, req w2.RemoveGridRequest) error {
+	const op = "api.Service.DeletePlayerAvatars"
+	_, err := w2db.RemoveGridContext(ctx, s.store.DB(), req, w2db.RemoveGridOptions{
+		From:    "player_avatar",
+		IDField: "id",
+	})
+	return wrap.IfErr(op, err)
+}

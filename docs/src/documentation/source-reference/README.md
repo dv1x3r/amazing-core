@@ -7,6 +7,12 @@ Amazing Core keeps its detailed handler, message, and GSF object reference in Go
 [**Message handlers**](https://pkg.go.dev/github.com/dv1x3r/amazing-core/internal/game#Handler)
 document the `internal/game` handler methods. Use this page to understand when the client calls a handler and what server workflow the handler coordinates.
 
+[**Game services**](https://pkg.go.dev/github.com/dv1x3r/amazing-core/internal/game/services#Service)
+document the `internal/game/services` methods used by handlers for client-facing database reads, writes, and DTO assembly.
+
+[**Admin API services**](https://pkg.go.dev/github.com/dv1x3r/amazing-core/internal/api/services#Service)
+document the `internal/api/services` methods used by the dashboard routes for grid/form data, asset imports, blob tools, and other admin workflows.
+
 [**Message payloads**](https://pkg.go.dev/github.com/dv1x3r/amazing-core/internal/network/gsf/messages#pkg-types)
 document `internal/network/gsf/messages`. Use this page for request, response, and notification payload structs. These comments should focus on the wire message and confirmed client behavior.
 

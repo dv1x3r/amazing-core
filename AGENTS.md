@@ -70,11 +70,19 @@ SQL schemas and migrations:
 
 HTTP API & admin dashboard backend:
 
-- **Keep API handlers thin**; delegate logic to services
+- API handlers live under `internal/api/routes/`
+- API/admin service logic lives in `internal/api/services/`
+- `internal/api/services` may use dashboard-facing helpers such as `w2go`
+- **Keep API handlers thin**; delegate logic to `internal/api/services`
 
 ### internal/game/
 
-Game server message routing.
+TCP game server and game-facing runtime logic:
+
+- Message handlers and routing live directly under `internal/game/`
+- Game/client service logic lives in `internal/game/services/`
+- `internal/game/services` is a single package with one `Service` type
+- Keep game handlers focused on protocol workflow; delegate database and DTO assembly to `internal/game/services`
 
 ### internal/network/
 
@@ -91,10 +99,6 @@ TCP game server protocol handling:
 - Use `ReadSlice`/`WriteSlice`, `ReadMap`/`WriteMap`, `ReadObject`/`WriteObject` helpers
 - **Do not break wire compatibility**
 - **Do not modify existing message structures** unless verified in client code or explicitly instructed.
-
-### internal/services/
-
-Business logic, database access, reusable domain operations.
 
 ### internal/config/
 

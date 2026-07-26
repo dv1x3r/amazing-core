@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/dv1x3r/amazing-core/internal/api/services"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
-	"github.com/dv1x3r/amazing-core/internal/services/asset"
 	"github.com/dv1x3r/w2go/w2"
 )
 
@@ -14,7 +14,7 @@ func (h *Handler) GetAsset(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.svc.Asset.GetAssetsDropdown(r.Context(), req)
+	res, err := h.svc.GetAssetsDropdown(r.Context(), req)
 	if err != nil {
 		return err
 	}
@@ -26,7 +26,7 @@ func (h *Handler) GetAssetGrid(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.svc.Asset.GetAssetGrid(r.Context(), req)
+	res, err := h.svc.GetAssetGrid(r.Context(), req)
 	if err != nil {
 		return err
 	}
@@ -34,11 +34,11 @@ func (h *Handler) GetAssetGrid(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (h *Handler) PostAssetGrid(w http.ResponseWriter, r *http.Request) error {
-	req, err := w2.ParseSaveGridRequest[asset.Asset](r.Body)
+	req, err := w2.ParseSaveGridRequest[services.Asset](r.Body)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	if err := h.svc.Asset.UpdateAssets(r.Context(), req); err != nil {
+	if err := h.svc.UpdateAssets(r.Context(), req); err != nil {
 		return err
 	}
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)
@@ -49,7 +49,7 @@ func (h *Handler) PostAssetRemove(w http.ResponseWriter, r *http.Request) error 
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	if err := h.svc.Asset.DeleteAssets(r.Context(), req); err != nil {
+	if err := h.svc.DeleteAssets(r.Context(), req); err != nil {
 		return err
 	}
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)
@@ -60,7 +60,7 @@ func (h *Handler) GetAssetFileType(w http.ResponseWriter, r *http.Request) error
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.svc.Asset.GetFileTypesDropdown(r.Context(), req)
+	res, err := h.svc.GetFileTypesDropdown(r.Context(), req)
 	if err != nil {
 		return err
 	}
@@ -72,7 +72,7 @@ func (h *Handler) GetAssetType(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.svc.Asset.GetAssetTypesDropdown(r.Context(), req)
+	res, err := h.svc.GetAssetTypesDropdown(r.Context(), req)
 	if err != nil {
 		return err
 	}
@@ -84,7 +84,7 @@ func (h *Handler) GetAssetGroup(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.svc.Asset.GetAssetGroupsDropdown(r.Context(), req)
+	res, err := h.svc.GetAssetGroupsDropdown(r.Context(), req)
 	if err != nil {
 		return err
 	}
@@ -92,7 +92,7 @@ func (h *Handler) GetAssetGroup(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (h *Handler) GetAssetIndex(w http.ResponseWriter, r *http.Request) error {
-	res, err := h.svc.Asset.GetAssetIndex(r.Context())
+	res, err := h.svc.GetAssetIndex(r.Context())
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func (h *Handler) GetAssetIndex(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (h *Handler) PostAssetImport(w http.ResponseWriter, r *http.Request) error {
-	err := h.svc.Asset.ImportAssets(r.Context())
+	err := h.svc.ImportAssets(r.Context())
 	if err != nil {
 		return err
 	}

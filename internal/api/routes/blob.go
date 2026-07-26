@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/dv1x3r/amazing-core/internal/api/services"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
-	"github.com/dv1x3r/amazing-core/internal/services/blob"
 	"github.com/dv1x3r/w2go/w2"
 )
 
 func (h *Handler) GetBlob(w http.ResponseWriter, r *http.Request) error {
-	data, err := h.svc.Blob.GetBlobData(r.Context(), r.PathValue("cdnid"))
-	if errors.Is(err, blob.ErrFileNotFound) {
+	data, err := h.svc.GetBlobData(r.Context(), r.PathValue("cdnid"))
+	if errors.Is(err, services.ErrBlobFileNotFound) {
 		return wrap.WithHTTPStatus(err, http.StatusNotFound)
 	} else if err != nil {
 		return err
@@ -27,7 +27,7 @@ func (h *Handler) GetBlobGrid(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.svc.Blob.GetBlobGrid(r.Context(), req)
+	res, err := h.svc.GetBlobGrid(r.Context(), req)
 	if err != nil {
 		return err
 	}
@@ -39,18 +39,18 @@ func (h *Handler) PostBlobRemove(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	if err := h.svc.Blob.DeleteFiles(r.Context(), req); err != nil {
+	if err := h.svc.DeleteFiles(r.Context(), req); err != nil {
 		return err
 	}
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)
 }
 
 func (h *Handler) PostBlobImport(w http.ResponseWriter, r *http.Request) error {
-	req, err := w2.ParseSaveFormRequest[blob.ImportOptions](r.Body)
+	req, err := w2.ParseSaveFormRequest[services.ImportOptions](r.Body)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	result, err := h.svc.Blob.ImportFromFolder(r.Context(), req.Record)
+	result, err := h.svc.ImportFromFolder(r.Context(), req.Record)
 	if err != nil {
 		return err
 	}
@@ -63,11 +63,11 @@ func (h *Handler) PostBlobImport(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (h *Handler) PostBlobExtract(w http.ResponseWriter, r *http.Request) error {
-	req, err := w2.ParseSaveFormRequest[blob.ExtractOptions](r.Body)
+	req, err := w2.ParseSaveFormRequest[services.ExtractOptions](r.Body)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	result, err := h.svc.Blob.ExtractFiles(r.Context(), req.Record)
+	result, err := h.svc.ExtractFiles(r.Context(), req.Record)
 	if err != nil {
 		return err
 	}

@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/dv1x3r/amazing-core/internal/api/services"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
-	"github.com/dv1x3r/amazing-core/internal/services/avatar"
 	"github.com/dv1x3r/w2go/w2"
 )
 
@@ -14,7 +14,7 @@ func (h *Handler) GetAvatar(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.svc.Avatar.GetAvatarsDropdown(r.Context(), req)
+	res, err := h.svc.GetAvatarsDropdown(r.Context(), req)
 	if err != nil {
 		return err
 	}
@@ -26,7 +26,7 @@ func (h *Handler) GetAvatarGrid(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.svc.Avatar.GetAvatarGrid(r.Context(), req)
+	res, err := h.svc.GetAvatarGrid(r.Context(), req)
 	if err != nil {
 		return err
 	}
@@ -34,16 +34,16 @@ func (h *Handler) GetAvatarGrid(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (h *Handler) PostAvatarForm(w http.ResponseWriter, r *http.Request) error {
-	req, err := w2.ParseSaveFormRequest[avatar.Avatar](r.Body)
+	req, err := w2.ParseSaveFormRequest[services.Avatar](r.Body)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
 	if req.Record.ID == 0 {
-		req.Record.ID, err = h.svc.Avatar.CreateAvatar(r.Context(), req)
+		req.Record.ID, err = h.svc.CreateAvatar(r.Context(), req)
 	} else {
-		err = h.svc.Avatar.UpdateAvatar(r.Context(), req)
+		err = h.svc.UpdateAvatar(r.Context(), req)
 	}
-	if errors.Is(err, avatar.ErrAvatarExists) {
+	if errors.Is(err, services.ErrAvatarExists) {
 		return wrap.WithHTTPStatus(err, http.StatusConflict)
 	} else if err != nil {
 		return err
@@ -56,7 +56,7 @@ func (h *Handler) PostAvatarRemove(w http.ResponseWriter, r *http.Request) error
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	if err := h.svc.Avatar.DeleteAvatars(r.Context(), req); err != nil {
+	if err := h.svc.DeleteAvatars(r.Context(), req); err != nil {
 		return err
 	}
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)
@@ -67,7 +67,7 @@ func (h *Handler) GetAvatarSlot(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.svc.Avatar.GetAvatarSlotsDropdown(r.Context(), req)
+	res, err := h.svc.GetAvatarSlotsDropdown(r.Context(), req)
 	if err != nil {
 		return err
 	}

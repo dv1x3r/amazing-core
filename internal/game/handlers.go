@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/dv1x3r/amazing-core/internal/config"
+	"github.com/dv1x3r/amazing-core/internal/game/services"
 	"github.com/dv1x3r/amazing-core/internal/game/worldsync"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
@@ -15,16 +16,14 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/appcode"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/chatchanneltypevalue"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/resultcode"
-	"github.com/dv1x3r/amazing-core/internal/services"
-	"github.com/dv1x3r/amazing-core/internal/services/auth"
 )
 
 type Handler struct {
-	svc     services.Services
+	svc     *services.Service
 	syncHub *worldsync.Hub
 }
 
-func NewHandler(svc services.Services) *Handler {
+func NewHandler(svc *services.Service) *Handler {
 	return &Handler{
 		svc:     svc,
 		syncHub: worldsync.NewHub(),
@@ -64,12 +63,12 @@ func (h *Handler) GetSiteFrame(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	siteFrame, err := h.svc.SiteFrame.GetGSFSiteFrame(r.Context(), r.Platform(), req.TypeValue)
+	siteFrame, err := h.svc.GetSiteFrame(r.Context(), r.Platform(), req.TypeValue)
 	if err != nil {
 		return err
 	}
 	res := &messages.GetSiteFrameResponse{}
-	res.AssetDeliveryURL = h.svc.Asset.DeliveryURL()
+	res.AssetDeliveryURL = h.svc.DeliveryURL()
 	res.SiteFrame = siteFrame
 	return w.Write(res)
 }
@@ -84,24 +83,24 @@ func (h *Handler) Login(w gsf.ResponseWriter, r *gsf.Request) error {
 
 	r.SetPlatform(gsf.ParsePlatformFromMachineOS(req.ClientEnvInfo.MachineOS))
 
-	playerOID, err := h.svc.Auth.LoginOrCreatePlayer(r.Context(), req.LoginID, req.Password)
+	playerOID, err := h.svc.LoginOrCreatePlayer(r.Context(), req.LoginID, req.Password)
 	if err != nil {
 		return wrap.WithGSFError(err, int32(resultcode.ERR), int32(loginAppCode(err)))
 	}
 	r.SetPlayerOID(playerOID.Int64())
 
-	player, err := h.svc.Player.GetGSFPlayer(r.Context(), r.Platform(), playerOID)
+	player, err := h.svc.GetPlayer(r.Context(), r.Platform(), playerOID)
 	if err != nil {
 		return wrap.WithGSFError(err, int32(resultcode.ERR), int32(appcode.INTERNAL_ERROR))
 	}
 
-	playerInfo, err := h.svc.Player.GetGSFPlayerInfoTO(r.Context(), playerOID)
+	playerInfo, err := h.svc.GetPlayerInfoTO(r.Context(), playerOID)
 	if err != nil {
 		return wrap.WithGSFError(err, int32(resultcode.ERR), int32(appcode.INTERNAL_ERROR))
 	}
 
 	res := &messages.LoginResponse{}
-	res.AssetDeliveryURL = h.svc.Asset.DeliveryURL()
+	res.AssetDeliveryURL = h.svc.DeliveryURL()
 	res.Player = player
 	res.PlayerInfoTO = playerInfo
 
@@ -110,9 +109,9 @@ func (h *Handler) Login(w gsf.ResponseWriter, r *gsf.Request) error {
 
 func loginAppCode(err error) appcode.AppCode {
 	switch {
-	case errors.Is(err, auth.ErrBlankCredentials), errors.Is(err, auth.ErrInvalidCredentials):
+	case errors.Is(err, services.ErrBlankCredentials), errors.Is(err, services.ErrInvalidCredentials):
 		return appcode.AUTH
-	case errors.Is(err, auth.ErrCreatePlayerAccountFailed):
+	case errors.Is(err, services.ErrCreatePlayerAccountFailed):
 		return appcode.CREATE_PLAYER_ACCOUNT_FAILED
 	default:
 		return appcode.INTERNAL_ERROR
@@ -152,7 +151,7 @@ func (h *Handler) GetRandomNames(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	names, err := h.svc.RandName.GetNStringsByType(r.Context(), req.NamePartType, int(req.Amount))
+	names, err := h.svc.GetNStringsByType(r.Context(), req.NamePartType, int(req.Amount))
 	if err != nil {
 		return err
 	}
@@ -215,7 +214,7 @@ func (h *Handler) GetPublicItemCategories(w gsf.ResponseWriter, r *gsf.Request) 
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	categories, err := h.svc.Item.GetGSFItemCategories(r.Context(), true)
+	categories, err := h.svc.GetItemCategories(r.Context(), true)
 	if err != nil {
 		return err
 	}
@@ -231,7 +230,7 @@ func (h *Handler) GetCMSItemCategories(w gsf.ResponseWriter, r *gsf.Request) err
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	categories, err := h.svc.Item.GetGSFItemCategories(r.Context(), false)
+	categories, err := h.svc.GetItemCategories(r.Context(), false)
 	if err != nil {
 		return err
 	}
@@ -261,7 +260,7 @@ func (h *Handler) GetInventoryObjects(w gsf.ResponseWriter, r *gsf.Request) erro
 	if !ok {
 		return errors.New("player oid is not set on session")
 	}
-	items, err := h.svc.Player.GetGSFInventoryObjects(r.Context(), r.Platform(), types.OIDFromInt64(playerOID))
+	items, err := h.svc.GetInventoryObjects(r.Context(), r.Platform(), types.OIDFromInt64(playerOID))
 	if err != nil {
 		return err
 	}
@@ -282,7 +281,7 @@ func (h *Handler) GetAvatars(w gsf.ResponseWriter, r *gsf.Request) error {
 	if !ok {
 		return errors.New("player oid is not set on session")
 	}
-	avatars, err := h.svc.Player.GetGSFPlayerAvatars(r.Context(), r.Platform(), types.OIDFromInt64(playerOID))
+	avatars, err := h.svc.GetPlayerAvatars(r.Context(), r.Platform(), types.OIDFromInt64(playerOID))
 	if err != nil {
 		return err
 	}
@@ -311,7 +310,7 @@ func (h *Handler) UpdatePlayerActiveAvatar(w gsf.ResponseWriter, r *gsf.Request)
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	avatar, err := h.svc.Player.SetGSFPlayerActiveAvatar(r.Context(), r.Platform(), req.PlayerAvatarOID)
+	avatar, err := h.svc.SetPlayerActiveAvatar(r.Context(), r.Platform(), req.PlayerAvatarOID)
 	if err != nil {
 		return err
 	}
@@ -332,7 +331,7 @@ func (h *Handler) GetOutfits(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	outfits, err := h.svc.Player.GetGSFOutfits(r.Context(), req.PlayerAvatarOID, req.PlayerOID)
+	outfits, err := h.svc.GetOutfits(r.Context(), req.PlayerAvatarOID, req.PlayerOID)
 	if err != nil {
 		return err
 	}
@@ -347,7 +346,7 @@ func (h *Handler) AddOutfit(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	outfitOID, err := h.svc.Player.CreateGSFOutfit(r.Context(), req.PlayerAvatarOID, req.OutfitNo)
+	outfitOID, err := h.svc.CreateOutfit(r.Context(), req.PlayerAvatarOID, req.OutfitNo)
 	if err != nil {
 		return err
 	}
@@ -363,7 +362,7 @@ func (h *Handler) SetCurrentOutfit(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	err := h.svc.Player.SetGSFPlayerActiveOutfit(r.Context(), req.PlayerAvatarOID, req.PlayerAvatarOutfitOID, req.OutfitNo)
+	err := h.svc.SetPlayerActiveOutfit(r.Context(), req.PlayerAvatarOID, req.PlayerAvatarOutfitOID, req.OutfitNo)
 	if err != nil {
 		return err
 	}
@@ -383,7 +382,7 @@ func (h *Handler) GetOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	items, err := h.svc.Player.GetGSFOutfitItems(r.Context(), r.Platform(), req.PlayerAvatarOutfitOID, req.PlayerOID)
+	items, err := h.svc.GetOutfitItems(r.Context(), r.Platform(), req.PlayerAvatarOutfitOID, req.PlayerOID)
 	if err != nil {
 		return err
 	}
@@ -399,7 +398,7 @@ func (h *Handler) AddOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error {
 		return err
 	}
 	// TODO: ownership check, acceptable slot sheck, outfit oid check
-	err := h.svc.Player.AddGSFOutfitItems(r.Context(), req.PlayerAvatarOutfitOID, req.InventoryOIDs, req.SlotOIDs)
+	err := h.svc.AddOutfitItems(r.Context(), req.PlayerAvatarOutfitOID, req.InventoryOIDs, req.SlotOIDs)
 	if err != nil {
 		return err
 	}
@@ -420,7 +419,7 @@ func (h *Handler) RemoveOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error 
 		return err
 	}
 	// TODO: ownership check, outfit oid check
-	err := h.svc.Player.RemoveGSFOutfitItems(r.Context(), req.PlayerAvatarOutfitOID, req.InventoryOIDs)
+	err := h.svc.RemoveOutfitItems(r.Context(), req.PlayerAvatarOutfitOID, req.InventoryOIDs)
 	if err != nil {
 		return err
 	}
@@ -441,7 +440,7 @@ func (h *Handler) ReplaceOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error
 		return err
 	}
 	// TODO: ownership check, acceptable slot sheck, outfit oid check
-	err := h.svc.Player.ReplaceGSFOutfitItems(r.Context(), req.OldInventoryOIDs, req.NewInventoryOIDs)
+	err := h.svc.ReplaceOutfitItems(r.Context(), req.OldInventoryOIDs, req.NewInventoryOIDs)
 	if err != nil {
 		return err
 	}
@@ -486,7 +485,7 @@ func (h *Handler) GetZones(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	zones, err := h.svc.Zone.GetGSFZones(r.Context(), r.Platform())
+	zones, err := h.svc.GetZones(r.Context(), r.Platform())
 	if err != nil {
 		return err
 	}
@@ -516,7 +515,7 @@ func (h *Handler) InitLocation(w gsf.ResponseWriter, r *gsf.Request) error {
 	// LoadMazeCommand.cs -> LoadMainScene() -> AssetDownloadManager.cs -> LoadMainScene()
 
 	if req.LocOID.Int64() == 292733975781503755 {
-		scene, err := h.svc.Asset.GetGSFAssetByCDNID(r.Context(), SCENE_SPRINGTIME)
+		scene, err := h.svc.GetAssetByCDNID(r.Context(), SCENE_SPRINGTIME)
 		if err != nil {
 			return err
 		}
@@ -537,7 +536,7 @@ func (h *Handler) InitLocation(w gsf.ResponseWriter, r *gsf.Request) error {
 			cdnid = SCENE_HOMELOT_WINTER
 		}
 
-		scene, err := h.svc.Asset.GetGSFAssetByCDNID(r.Context(), cdnid)
+		scene, err := h.svc.GetAssetByCDNID(r.Context(), cdnid)
 		if err != nil {
 			return err
 		}
@@ -602,7 +601,7 @@ func (h *Handler) GetOtherPlayerDetails(w gsf.ResponseWriter, r *gsf.Request) er
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	details, err := h.svc.Player.GetGSFOtherPlayerDetails(r.Context(), r.Platform(), req.PlayerOID)
+	details, err := h.svc.GetOtherPlayerDetails(r.Context(), r.Platform(), req.PlayerOID)
 	if err != nil {
 		return err
 	}

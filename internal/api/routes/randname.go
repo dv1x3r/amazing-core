@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/dv1x3r/amazing-core/internal/api/services"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
-	"github.com/dv1x3r/amazing-core/internal/services/randname"
 	"github.com/dv1x3r/w2go/w2"
 )
 
@@ -14,7 +14,7 @@ func (h *Handler) GetRandnameGrid(w http.ResponseWriter, r *http.Request) error 
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.svc.RandName.GetRandomNameGrid(r.Context(), req)
+	res, err := h.svc.GetRandomNameGrid(r.Context(), req)
 	if err != nil {
 		return err
 	}
@@ -22,16 +22,16 @@ func (h *Handler) GetRandnameGrid(w http.ResponseWriter, r *http.Request) error 
 }
 
 func (h *Handler) PostRandnameForm(w http.ResponseWriter, r *http.Request) error {
-	req, err := w2.ParseSaveFormRequest[randname.RandomName](r.Body)
+	req, err := w2.ParseSaveFormRequest[services.RandomName](r.Body)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
 	if req.Record.ID == 0 {
-		req.Record.ID, err = h.svc.RandName.CreateRandomName(r.Context(), req)
+		req.Record.ID, err = h.svc.CreateRandomName(r.Context(), req)
 	} else {
-		err = h.svc.RandName.UpdateRandomName(r.Context(), req)
+		err = h.svc.UpdateRandomName(r.Context(), req)
 	}
-	if errors.Is(err, randname.ErrNameExists) {
+	if errors.Is(err, services.ErrNameExists) {
 		return wrap.WithHTTPStatus(err, http.StatusConflict)
 	} else if err != nil {
 		return err
@@ -44,7 +44,7 @@ func (h *Handler) PostRandnameRemove(w http.ResponseWriter, r *http.Request) err
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	if err := h.svc.RandName.DeleteRandomNames(r.Context(), req); err != nil {
+	if err := h.svc.DeleteRandomNames(r.Context(), req); err != nil {
 		return err
 	}
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)

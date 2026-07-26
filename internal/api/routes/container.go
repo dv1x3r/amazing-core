@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/dv1x3r/amazing-core/internal/api/services"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
-	"github.com/dv1x3r/amazing-core/internal/services/asset"
 	"github.com/dv1x3r/w2go/w2"
 )
 
@@ -15,7 +15,7 @@ func (h *Handler) GetContainer(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.svc.Asset.GetContainersDropdown(r.Context(), req)
+	res, err := h.svc.GetContainersDropdown(r.Context(), req)
 	if err != nil {
 		return err
 	}
@@ -27,7 +27,7 @@ func (h *Handler) GetContainerGrid(w http.ResponseWriter, r *http.Request) error
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.svc.Asset.GetContainerGrid(r.Context(), req)
+	res, err := h.svc.GetContainerGrid(r.Context(), req)
 	if err != nil {
 		return err
 	}
@@ -35,16 +35,16 @@ func (h *Handler) GetContainerGrid(w http.ResponseWriter, r *http.Request) error
 }
 
 func (h *Handler) PostContainerForm(w http.ResponseWriter, r *http.Request) error {
-	req, err := w2.ParseSaveFormRequest[asset.Container](r.Body)
+	req, err := w2.ParseSaveFormRequest[services.Container](r.Body)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
 	if req.Record.ID == 0 {
-		req.Record.ID, err = h.svc.Asset.CreateContainer(r.Context(), req)
+		req.Record.ID, err = h.svc.CreateContainer(r.Context(), req)
 	} else {
-		err = h.svc.Asset.UpdateContainer(r.Context(), req)
+		err = h.svc.UpdateContainer(r.Context(), req)
 	}
-	if errors.Is(err, asset.ErrContainerExists) {
+	if errors.Is(err, services.ErrContainerExists) {
 		return wrap.WithHTTPStatus(err, http.StatusConflict)
 	} else if err != nil {
 		return err
@@ -57,8 +57,8 @@ func (h *Handler) PostContainerRemove(w http.ResponseWriter, r *http.Request) er
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	err = h.svc.Asset.DeleteContainers(r.Context(), req)
-	if errors.Is(err, asset.ErrContainerInUse) {
+	err = h.svc.DeleteContainers(r.Context(), req)
+	if errors.Is(err, services.ErrContainerInUse) {
 		return wrap.WithHTTPStatus(err, http.StatusConflict)
 	} else if err != nil {
 		return err
@@ -75,7 +75,7 @@ func (h *Handler) GetContainerAssetGrid(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.svc.Asset.GetContainerAssetGrid(r.Context(), req, id)
+	res, err := h.svc.GetContainerAssetGrid(r.Context(), req, id)
 	if err != nil {
 		return err
 	}
@@ -87,12 +87,12 @@ func (h *Handler) PostContainerAssetForm(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	req, err := w2.ParseSaveFormRequest[asset.ContainerAsset](r.Body)
+	req, err := w2.ParseSaveFormRequest[services.ContainerAsset](r.Body)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	req.Record.ID, err = h.svc.Asset.AddContainerAsset(r.Context(), req, id)
-	if errors.Is(err, asset.ErrContainerAssetExists) {
+	req.Record.ID, err = h.svc.AddContainerAsset(r.Context(), req, id)
+	if errors.Is(err, services.ErrContainerAssetExists) {
 		return wrap.WithHTTPStatus(err, http.StatusConflict)
 	} else if err != nil {
 		return err
@@ -101,12 +101,12 @@ func (h *Handler) PostContainerAssetForm(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *Handler) PostContainerAssetGrid(w http.ResponseWriter, r *http.Request) error {
-	req, err := w2.ParseSaveGridRequest[asset.ContainerAsset](r.Body)
+	req, err := w2.ParseSaveGridRequest[services.ContainerAsset](r.Body)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	err = h.svc.Asset.UpdateContainerAssets(r.Context(), req)
-	if errors.Is(err, asset.ErrContainerAssetExists) {
+	err = h.svc.UpdateContainerAssets(r.Context(), req)
+	if errors.Is(err, services.ErrContainerAssetExists) {
 		return wrap.WithHTTPStatus(err, http.StatusConflict)
 	} else if err != nil {
 		return err
@@ -119,7 +119,7 @@ func (h *Handler) PostContainerAssetRemove(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	if err = h.svc.Asset.DeleteContainerAssets(r.Context(), req); err != nil {
+	if err = h.svc.DeleteContainerAssets(r.Context(), req); err != nil {
 		return err
 	}
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)
@@ -130,7 +130,7 @@ func (h *Handler) PostContainerAssetReorder(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	if err = h.svc.Asset.ReorderContainerAssets(r.Context(), req); err != nil {
+	if err = h.svc.ReorderContainerAssets(r.Context(), req); err != nil {
 		return err
 	}
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)
@@ -145,7 +145,7 @@ func (h *Handler) GetContainerPackageGrid(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	res, err := h.svc.Asset.GetContainerPackageGrid(r.Context(), req, id)
+	res, err := h.svc.GetContainerPackageGrid(r.Context(), req, id)
 	if err != nil {
 		return err
 	}
@@ -157,14 +157,14 @@ func (h *Handler) PostContainerPackageForm(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	req, err := w2.ParseSaveFormRequest[asset.ContainerPackage](r.Body)
+	req, err := w2.ParseSaveFormRequest[services.ContainerPackage](r.Body)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	req.Record.ID, err = h.svc.Asset.AddContainerPackage(r.Context(), req, id)
-	if errors.Is(err, asset.ErrContainerPackageExists) {
+	req.Record.ID, err = h.svc.AddContainerPackage(r.Context(), req, id)
+	if errors.Is(err, services.ErrContainerPackageExists) {
 		return wrap.WithHTTPStatus(err, http.StatusConflict)
-	} else if errors.Is(err, asset.ErrPackageCyclicDependency) {
+	} else if errors.Is(err, services.ErrPackageCyclicDependency) {
 		return wrap.WithHTTPStatus(err, http.StatusConflict)
 	} else if err != nil {
 		return err
@@ -173,14 +173,14 @@ func (h *Handler) PostContainerPackageForm(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *Handler) PostContainerPackageGrid(w http.ResponseWriter, r *http.Request) error {
-	req, err := w2.ParseSaveGridRequest[asset.ContainerPackage](r.Body)
+	req, err := w2.ParseSaveGridRequest[services.ContainerPackage](r.Body)
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	err = h.svc.Asset.UpdateContainerPackages(r.Context(), req)
-	if errors.Is(err, asset.ErrContainerPackageExists) {
+	err = h.svc.UpdateContainerPackages(r.Context(), req)
+	if errors.Is(err, services.ErrContainerPackageExists) {
 		return wrap.WithHTTPStatus(err, http.StatusConflict)
-	} else if errors.Is(err, asset.ErrPackageCyclicDependency) {
+	} else if errors.Is(err, services.ErrPackageCyclicDependency) {
 		return wrap.WithHTTPStatus(err, http.StatusConflict)
 	} else if err != nil {
 		return err
@@ -193,7 +193,7 @@ func (h *Handler) PostContainerPackageRemove(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	if err = h.svc.Asset.DeleteContainerPackages(r.Context(), req); err != nil {
+	if err = h.svc.DeleteContainerPackages(r.Context(), req); err != nil {
 		return err
 	}
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)
@@ -204,7 +204,7 @@ func (h *Handler) PostContainerPackageReorder(w http.ResponseWriter, r *http.Req
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	if err = h.svc.Asset.ReorderContainerPackages(r.Context(), req); err != nil {
+	if err = h.svc.ReorderContainerPackages(r.Context(), req); err != nil {
 		return err
 	}
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)

@@ -41,9 +41,10 @@ amazing-core/
 │       └── queries/          - sql queries for admin dashboard explorer
 ├── internal/
 │   ├── api/                  - http server for admin dashboard and asset streaming
-│   ├── game/                 - game server and gsf messages handling
+│   │   └── services/         - admin/API service logic and asset/blob tooling
+│   ├── game/                 - game server and gsf message handling
+│   │   └── services/         - client-facing game logic and database access
 │   ├── network/              - tcp server protocol implementation
-│   ├── services/             - business logic and database interaction
 │   ├── config/               - configuration variables
 │   └── lib/                  - shared libraries (e.g. logging, helpers)
 ├── tools/                    - development tools (e.g. asset importers)
