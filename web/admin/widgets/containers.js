@@ -311,10 +311,10 @@ function openContainerPopup(event) {
   })
   w2popup.open({
     title: isEditMode ? 'Edit Container' : 'New Container',
-    body: '<div id="container-form" style="width: 100%; height: 100%;"></div>',
+    body: '<div id="popup-form" style="width: 100%; height: 100%;"></div>',
     width: 600, height: 300, showMax: false, resizable: false,
   })
-    .then(() => form.render('#container-form'))
+    .then(() => form.render('#popup-form'))
     .close(() => form.destroy())
 }
 
@@ -362,10 +362,10 @@ function openContainerAssetPopup(event) {
   })
   w2popup.open({
     title: 'Add Asset',
-    body: '<div id="container-asset-form" style="width: 100%; height: 100%;"></div>',
+    body: '<div id="popup-form" style="width: 100%; height: 100%;"></div>',
     width: 600, height: 220, showMax: false, resizable: false,
   })
-    .then(() => form.render('#container-asset-form'))
+    .then(() => form.render('#popup-form'))
     .close(() => form.destroy())
 }
 
@@ -402,10 +402,10 @@ function openContainerPackagePopup(event) {
   })
   w2popup.open({
     title: 'Add Package',
-    body: '<div id="container-package-form" style="width: 100%; height: 100%;"></div>',
+    body: '<div id="popup-form" style="width: 100%; height: 100%;"></div>',
     width: 600, height: 170, showMax: false, resizable: false,
   })
-    .then(() => form.render('#container-package-form'))
+    .then(() => form.render('#popup-form'))
     .close(() => form.destroy())
 }
 

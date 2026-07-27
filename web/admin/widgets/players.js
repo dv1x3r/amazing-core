@@ -399,10 +399,10 @@ function openPlayerAvatarPopup(event) {
   })
   w2popup.open({
     title: isEditMode ? 'Edit Player Avatar' : 'New Player Avatar',
-    body: '<div id="player-avatar-form" style="width: 100%; height: 100%;"></div>',
+    body: '<div id="popup-form" style="width: 100%; height: 100%;"></div>',
     width: 600, height: 340, showMax: false, resizable: false,
   })
-    .then(() => form.render('#player-avatar-form'))
+    .then(() => form.render('#popup-form'))
     .close(() => form.destroy())
 }
 
@@ -537,10 +537,10 @@ function openPlayerOutfitPopup(event) {
   })
   w2popup.open({
     title: isEditMode ? 'Edit Player Outfit' : 'New Player Outfit',
-    body: '<div id="player-outfit-form" style="width: 100%; height: 100%;"></div>',
+    body: '<div id="popup-form" style="width: 100%; height: 100%;"></div>',
     width: 600, height: 300, showMax: false, resizable: false,
   })
-    .then(() => form.render('#player-outfit-form'))
+    .then(() => form.render('#popup-form'))
     .close(() => form.destroy())
 }
 
@@ -727,9 +727,9 @@ function openPlayerItemPopup(event) {
   })
   w2popup.open({
     title: isEditMode ? 'Edit Player Item' : 'New Player Item',
-    body: '<div id="player-item-form" style="width: 100%; height: 100%;"></div>',
+    body: '<div id="popup-form" style="width: 100%; height: 100%;"></div>',
     width: 600, height: 420, showMax: false, resizable: false,
   })
-    .then(() => form.render('#player-item-form'))
+    .then(() => form.render('#popup-form'))
     .close(() => form.destroy())
 }

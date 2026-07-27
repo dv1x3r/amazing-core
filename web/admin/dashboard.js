@@ -216,14 +216,14 @@ const dashboardSidebar = new w2sidebar({
           onClick: async () => {
             await fetch('/logout', { method: 'POST' })
             window.location = '/'
-          }
+          },
         },
         {
           type: 'button',
           id: 'website',
           icon: 'fa fa-globe',
           tooltip: 'Website',
-          onClick: () => window.open('https://amazingcore.org', '_blank')
+          onClick: () => window.open('https://amazingcore.org', '_blank'),
         },
         {
           type: 'button',

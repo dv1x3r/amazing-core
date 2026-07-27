@@ -127,10 +127,10 @@ function openRandomNamePopup(event) {
   })
   w2popup.open({
     title: isEditMode ? 'Edit Random Name' : 'New Random Name',
-    body: '<div id="random-name-form" style="width: 100%; height: 100%;"></div>',
+    body: '<div id="popup-form" style="width: 100%; height: 100%;"></div>',
     width: 600, height: 270, showMax: false, resizable: false,
   })
-    .then(() => form.render('#random-name-form'))
+    .then(() => form.render('#popup-form'))
     .close(() => form.destroy())
 }
 

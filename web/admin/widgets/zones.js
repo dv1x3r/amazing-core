@@ -109,10 +109,10 @@ function openZonePopup(event) {
   })
   w2popup.open({
     title: isEditMode ? 'Edit Zone' : 'New Zone',
-    body: '<div id="zone-form" style="width: 100%; height: 100%;"></div>',
+    body: '<div id="popup-form" style="width: 100%; height: 100%;"></div>',
     width: 600, height: 220, showMax: false, resizable: false,
   })
-    .then(() => form.render('#zone-form'))
+    .then(() => form.render('#popup-form'))
     .close(() => form.destroy())
 }
 

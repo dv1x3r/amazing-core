@@ -162,10 +162,10 @@ function openItemPopup(event) {
   })
   w2popup.open({
     title: isEditMode ? 'Edit Item' : 'New Item',
-    body: '<div id="item-form" style="width: 100%; height: 100%;"></div>',
+    body: '<div id="popup-form" style="width: 100%; height: 100%;"></div>',
     width: 600, height: 340, showMax: false, resizable: false,
   })
-    .then(() => form.render('#item-form'))
+    .then(() => form.render('#popup-form'))
     .close(() => form.destroy())
 }
 
@@ -379,10 +379,10 @@ function openCategoryPopup(event) {
   })
   w2popup.open({
     title: isEditMode ? 'Edit Item Category' : 'New Item Category',
-    body: '<div id="item-category-form" style="width: 100%; height: 100%;"></div>',
+    body: '<div id="popup-form" style="width: 100%; height: 100%;"></div>',
     width: 600, height: 420, showMax: false, resizable: false,
   })
-    .then(() => form.render('#item-category-form'))
+    .then(() => form.render('#popup-form'))
     .close(() => form.destroy())
 }
 

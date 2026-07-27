@@ -174,10 +174,10 @@ function openImportFilesPopup() {
   })
   w2popup.open({
     title: 'Import files',
-    body: '<div id="import-files-form" style="width: 100%; height: 100%;"></div>',
+    body: '<div id="popup-form" style="width: 100%; height: 100%;"></div>',
     width: 600, height: 220, showMax: false, resizable: false,
   })
-    .then(() => form.render('#import-files-form'))
+    .then(() => form.render('#popup-form'))
     .close(() => form.destroy())
 }
 
@@ -228,10 +228,10 @@ function openExtractFilesPopup() {
   })
   w2popup.open({
     title: 'Extract files',
-    body: '<div id="extract-files-form" style="width: 100%; height: 100%;"></div>',
+    body: '<div id="popup-form" style="width: 100%; height: 100%;"></div>',
     width: 600, height: 220, showMax: false, resizable: false,
   })
-    .then(() => form.render('#extract-files-form'))
+    .then(() => form.render('#popup-form'))
     .close(() => form.destroy())
 }
 

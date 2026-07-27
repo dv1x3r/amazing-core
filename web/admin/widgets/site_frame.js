@@ -128,10 +128,10 @@ function openSiteFramePopup(event) {
   })
   w2popup.open({
     title: isEditMode ? 'Edit Site Frame' : 'New Site Frame',
-    body: '<div id="site-frame-form" style="width: 100%; height: 100%;"></div>',
+    body: '<div id="popup-form" style="width: 100%; height: 100%;"></div>',
     width: 600, height: 270, showMax: false, resizable: false,
   })
-    .then(() => form.render('#site-frame-form'))
+    .then(() => form.render('#popup-form'))
     .close(() => form.destroy())
 }
 
