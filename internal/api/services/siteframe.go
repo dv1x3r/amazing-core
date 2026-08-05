@@ -60,9 +60,11 @@ func (s *Service) GetSiteFrameGrid(ctx context.Context, req w2.GetGridRequest) (
 func (s *Service) CreateSiteFrame(ctx context.Context, req w2.SaveFormRequest[SiteFrame]) (int, error) {
 	const op = "api.Service.CreateSiteFrame"
 	id, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{
-		Into:   "site_frame",
-		Cols:   []string{"container_id", "type_value"},
-		Values: []any{req.Record.Container.ID, req.Record.TypeValue},
+		Into: "site_frame",
+		Values: map[string]any{
+			"container_id": req.Record.Container.ID,
+			"type_value":   req.Record.TypeValue,
+		},
 	})
 	if s.store.IsErrConstraintUnique(err) {
 		return 0, wrap.IfErr(op, ErrSiteFrameExists)
@@ -73,11 +75,14 @@ func (s *Service) CreateSiteFrame(ctx context.Context, req w2.SaveFormRequest[Si
 func (s *Service) UpdateSiteFrame(ctx context.Context, req w2.SaveFormRequest[SiteFrame]) error {
 	const op = "api.Service.UpdateSiteFrame"
 	_, err := w2db.UpdateContext(ctx, s.store.DB(), w2db.UpdateOptions{
-		Update:  "site_frame",
-		Cols:    []string{"container_id", "type_value"},
-		Values:  []any{req.Record.Container.ID, req.Record.TypeValue},
-		IDField: "id",
-		IDValue: req.Record.ID,
+		Update: "site_frame",
+		Values: map[string]any{
+			"container_id": req.Record.Container.ID,
+			"type_value":   req.Record.TypeValue,
+		},
+		Where: map[string]any{
+			"id": req.Record.ID,
+		},
 	})
 	if s.store.IsErrConstraintUnique(err) {
 		return ErrSiteFrameExists

@@ -79,23 +79,14 @@ func (s *Service) CreatePlayerItem(ctx context.Context, req w2.SaveFormRequest[P
 	const op = "api.Service.CreatePlayerItem"
 	id, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{
 		Into: "player_item",
-		Cols: []string{
-			"player_id",
-			"gsfoid",
-			"item_id",
-			"player_avatar_id",
-			"player_avatar_outfit_id",
-			"avatar_slot_id",
-			"quantity",
-		},
-		Values: []any{
-			playerID,
-			sqlbuilder.Buildf("(select coalesce(max(gsfoid) + 1, 1) from player_item)"),
-			req.Record.Item.ID,
-			req.Record.PlayerAvatar.ID,
-			req.Record.PlayerOutfit.ID,
-			req.Record.AvatarSlot.ID,
-			req.Record.Quantity,
+		Values: map[string]any{
+			"player_id":               playerID,
+			"gsfoid":                  sqlbuilder.Buildf("(select coalesce(max(gsfoid) + 1, 1) from player_item)"),
+			"item_id":                 req.Record.Item.ID,
+			"player_avatar_id":        req.Record.PlayerAvatar.ID,
+			"player_avatar_outfit_id": req.Record.PlayerOutfit.ID,
+			"avatar_slot_id":          req.Record.AvatarSlot.ID,
+			"quantity":                req.Record.Quantity,
 		},
 	})
 	if s.store.IsErrConstraintUnique(err) {
@@ -108,24 +99,17 @@ func (s *Service) UpdatePlayerItem(ctx context.Context, req w2.SaveFormRequest[P
 	const op = "api.Service.UpdatePlayerItem"
 	_, err := w2db.UpdateContext(ctx, s.store.DB(), w2db.UpdateOptions{
 		Update: "player_item",
-		Cols: []string{
-			"gsfoid",
-			"item_id",
-			"player_avatar_id",
-			"player_avatar_outfit_id",
-			"avatar_slot_id",
-			"quantity",
+		Values: map[string]any{
+			"gsfoid":                  req.Record.OID,
+			"item_id":                 req.Record.Item.ID,
+			"player_avatar_id":        req.Record.PlayerAvatar.ID,
+			"player_avatar_outfit_id": req.Record.PlayerOutfit.ID,
+			"avatar_slot_id":          req.Record.AvatarSlot.ID,
+			"quantity":                req.Record.Quantity,
 		},
-		Values: []any{
-			req.Record.OID,
-			req.Record.Item.ID,
-			req.Record.PlayerAvatar.ID,
-			req.Record.PlayerOutfit.ID,
-			req.Record.AvatarSlot.ID,
-			req.Record.Quantity,
+		Where: map[string]any{
+			"id": req.Record.ID,
 		},
-		IDField: "id",
-		IDValue: req.Record.ID,
 	})
 	if s.store.IsErrConstraintUnique(err) {
 		return wrap.IfErr(op, ErrPlayerItemExists)

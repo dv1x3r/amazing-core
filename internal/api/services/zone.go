@@ -53,9 +53,10 @@ func (s *Service) GetZoneGrid(ctx context.Context, req w2.GetGridRequest) (w2.Ge
 func (s *Service) CreateZone(ctx context.Context, req w2.SaveFormRequest[Zone]) (int, error) {
 	const op = "api.Service.CreateZone"
 	id, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{
-		Into:   "zone",
-		Cols:   []string{"container_id"},
-		Values: []any{req.Record.Container.ID},
+		Into: "zone",
+		Values: map[string]any{
+			"container_id": req.Record.Container.ID,
+		},
 	})
 	if s.store.IsErrConstraintUnique(err) {
 		return 0, wrap.IfErr(op, ErrZoneExists)
@@ -66,11 +67,13 @@ func (s *Service) CreateZone(ctx context.Context, req w2.SaveFormRequest[Zone]) 
 func (s *Service) UpdateZone(ctx context.Context, req w2.SaveFormRequest[Zone]) error {
 	const op = "api.Service.UpdateZone"
 	_, err := w2db.UpdateContext(ctx, s.store.DB(), w2db.UpdateOptions{
-		Update:  "zone",
-		Cols:    []string{"container_id"},
-		Values:  []any{req.Record.Container.ID},
-		IDField: "id",
-		IDValue: req.Record.ID,
+		Update: "zone",
+		Values: map[string]any{
+			"container_id": req.Record.Container.ID,
+		},
+		Where: map[string]any{
+			"id": req.Record.ID,
+		},
 	})
 	if s.store.IsErrConstraintUnique(err) {
 		return ErrZoneExists

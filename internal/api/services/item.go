@@ -105,9 +105,11 @@ func (s *Service) CreateItem(ctx context.Context, req w2.SaveFormRequest[Item]) 
 	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
 		var err error
 		itemID, err = w2db.InsertContext(ctx, tx, w2db.InsertOptions{
-			Into:   "item",
-			Cols:   []string{"container_id", "name"},
-			Values: []any{req.Record.Container.ID, req.Record.Name},
+			Into: "item",
+			Values: map[string]any{
+				"container_id": req.Record.Container.ID,
+				"name":         req.Record.Name,
+			},
 		})
 		if s.store.IsErrConstraintUnique(err) {
 			return ErrItemExists
@@ -127,11 +129,14 @@ func (s *Service) UpdateItem(ctx context.Context, req w2.SaveFormRequest[Item]) 
 	const op = "api.Service.UpdateItem"
 	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
 		_, err := w2db.UpdateContext(ctx, tx, w2db.UpdateOptions{
-			Update:  "item",
-			Cols:    []string{"container_id", "name"},
-			Values:  []any{req.Record.Container.ID, req.Record.Name},
-			IDField: "id",
-			IDValue: req.Record.ID,
+			Update: "item",
+			Values: map[string]any{
+				"container_id": req.Record.Container.ID,
+				"name":         req.Record.Name,
+			},
+			Where: map[string]any{
+				"id": req.Record.ID,
+			},
 		})
 		if s.store.IsErrConstraintUnique(err) {
 			return ErrItemExists

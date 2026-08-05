@@ -111,11 +111,15 @@ func (s *Service) UpdateAssets(ctx context.Context, req w2.SaveGridRequest[Asset
 	_, err := w2db.SaveGridContext(ctx, s.store.DB(), req, w2db.SaveGridOptions[Asset]{
 		BuildOptions: func(change Asset) w2db.UpdateOptions {
 			return w2db.UpdateOptions{
-				Update:  "asset",
-				Cols:    []string{"asset_type_id", "asset_group_id", "res_name"},
-				Values:  []any{change.AssetType.ID, change.AssetGroup.ID, change.ResName},
-				IDField: "id",
-				IDValue: change.ID,
+				Update: "asset",
+				Values: map[string]any{
+					"asset_type_id":  change.AssetType.ID,
+					"asset_group_id": change.AssetGroup.ID,
+					"res_name":       change.ResName,
+				},
+				Where: map[string]any{
+					"id": change.ID,
+				},
 			}
 		},
 	})

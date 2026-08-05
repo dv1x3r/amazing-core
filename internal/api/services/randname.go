@@ -43,9 +43,11 @@ func (s *Service) GetRandomNameGrid(ctx context.Context, req w2.GetGridRequest) 
 func (s *Service) CreateRandomName(ctx context.Context, req w2.SaveFormRequest[RandomName]) (int, error) {
 	const op = "api.Service.CreateRandomName"
 	id, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{
-		Into:   "random_name",
-		Cols:   []string{"part_type", "name"},
-		Values: []any{req.Record.PartType, req.Record.Name},
+		Into: "random_name",
+		Values: map[string]any{
+			"part_type": req.Record.PartType,
+			"name":      req.Record.Name,
+		},
 	})
 	if s.store.IsErrConstraintUnique(err) {
 		return 0, wrap.IfErr(op, ErrNameExists)
@@ -56,11 +58,14 @@ func (s *Service) CreateRandomName(ctx context.Context, req w2.SaveFormRequest[R
 func (s *Service) UpdateRandomName(ctx context.Context, req w2.SaveFormRequest[RandomName]) error {
 	const op = "api.Service.UpdateRandomName"
 	_, err := w2db.UpdateContext(ctx, s.store.DB(), w2db.UpdateOptions{
-		Update:  "random_name",
-		Cols:    []string{"part_type", "name"},
-		Values:  []any{req.Record.PartType, req.Record.Name},
-		IDField: "id",
-		IDValue: req.Record.ID,
+		Update: "random_name",
+		Values: map[string]any{
+			"part_type": req.Record.PartType,
+			"name":      req.Record.Name,
+		},
+		Where: map[string]any{
+			"id": req.Record.ID,
+		},
 	})
 	if s.store.IsErrConstraintUnique(err) {
 		return wrap.IfErr(op, ErrNameExists)

@@ -87,15 +87,14 @@ func (s *Service) CreateCategory(ctx context.Context, req w2.SaveFormRequest[Cat
 	const op = "api.Service.CreateCategory"
 	id, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{
 		Into: "item_category",
-		Cols: []string{"gsfoid", "name", "parent_id", "is_public", "is_outdoor", "is_walkover", "show_in_dock"},
-		Values: []any{
-			sqlbuilder.Raw("(select coalesce(max(gsfoid) + 1, 1) from item_category)"),
-			req.Record.Name,
-			req.Record.Parent.ID,
-			req.Record.IsPublic,
-			req.Record.IsOutdoor,
-			req.Record.IsWalkover,
-			req.Record.ShowInDock,
+		Values: map[string]any{
+			"gsfoid":       sqlbuilder.Raw("(select coalesce(max(gsfoid) + 1, 1) from item_category)"),
+			"name":         req.Record.Name,
+			"parent_id":    req.Record.Parent.ID,
+			"is_public":    req.Record.IsPublic,
+			"is_outdoor":   req.Record.IsOutdoor,
+			"is_walkover":  req.Record.IsWalkover,
+			"show_in_dock": req.Record.ShowInDock,
 		},
 	})
 	if s.store.IsErrConstraintUnique(err) {
@@ -109,18 +108,18 @@ func (s *Service) UpdateCategory(ctx context.Context, req w2.SaveFormRequest[Cat
 	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
 		_, err := w2db.UpdateContext(ctx, tx, w2db.UpdateOptions{
 			Update: "item_category",
-			Cols:   []string{"gsfoid", "name", "parent_id", "is_public", "is_outdoor", "is_walkover", "show_in_dock"},
-			Values: []any{
-				req.Record.OID,
-				req.Record.Name,
-				req.Record.Parent.ID,
-				req.Record.IsPublic,
-				req.Record.IsOutdoor,
-				req.Record.IsWalkover,
-				req.Record.ShowInDock,
+			Values: map[string]any{
+				"gsfoid":       req.Record.OID,
+				"name":         req.Record.Name,
+				"parent_id":    req.Record.Parent.ID,
+				"is_public":    req.Record.IsPublic,
+				"is_outdoor":   req.Record.IsOutdoor,
+				"is_walkover":  req.Record.IsWalkover,
+				"show_in_dock": req.Record.ShowInDock,
 			},
-			IDField: "id",
-			IDValue: req.Record.ID,
+			Where: map[string]any{
+				"id": req.Record.ID,
+			},
 		})
 		if s.store.IsErrConstraintUnique(err) {
 			return ErrCategoryExists

@@ -66,13 +66,12 @@ func (s *Service) CreatePlayerAvatar(ctx context.Context, req w2.SaveFormRequest
 	const op = "api.Service.CreatePlayerAvatar"
 	id, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{
 		Into: "player_avatar",
-		Cols: []string{"player_id", "gsfoid", "avatar_id", "name", "outfit_no"},
-		Values: []any{
-			playerID,
-			sqlbuilder.Buildf("(select coalesce(max(gsfoid) + 1, 1) from player_avatar)"),
-			req.Record.Avatar.ID,
-			req.Record.Name,
-			req.Record.OutfitNo,
+		Values: map[string]any{
+			"player_id": playerID,
+			"gsfoid":    sqlbuilder.Buildf("(select coalesce(max(gsfoid) + 1, 1) from player_avatar)"),
+			"avatar_id": req.Record.Avatar.ID,
+			"name":      req.Record.Name,
+			"outfit_no": req.Record.OutfitNo,
 		},
 	})
 	if s.store.IsErrConstraintUnique(err) {
@@ -84,11 +83,16 @@ func (s *Service) CreatePlayerAvatar(ctx context.Context, req w2.SaveFormRequest
 func (s *Service) UpdatePlayerAvatar(ctx context.Context, req w2.SaveFormRequest[PlayerAvatar]) error {
 	const op = "api.Service.UpdatePlayerAvatar"
 	_, err := w2db.UpdateContext(ctx, s.store.DB(), w2db.UpdateOptions{
-		Update:  "player_avatar",
-		Cols:    []string{"gsfoid", "avatar_id", "name", "outfit_no"},
-		Values:  []any{req.Record.OID, req.Record.Avatar.ID, req.Record.Name, req.Record.OutfitNo},
-		IDField: "id",
-		IDValue: req.Record.ID,
+		Update: "player_avatar",
+		Values: map[string]any{
+			"gsfoid":    req.Record.OID,
+			"avatar_id": req.Record.Avatar.ID,
+			"name":      req.Record.Name,
+			"outfit_no": req.Record.OutfitNo,
+		},
+		Where: map[string]any{
+			"id": req.Record.ID,
+		},
 	})
 	if s.store.IsErrConstraintUnique(err) {
 		return wrap.IfErr(op, ErrPlayerAvatarExists)

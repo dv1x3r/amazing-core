@@ -127,24 +127,17 @@ func (s *Service) UpdatePlayerDetails(ctx context.Context, req w2.SaveFormReques
 	err := w2db.WithinTransactionContext(ctx, s.store.DB(), func(ctx context.Context, tx *sql.Tx) error {
 		affected, err := w2db.UpdateContext(ctx, tx, w2db.UpdateOptions{
 			Update: "player",
-			Cols: []string{
-				"gsfoid",
-				"username",
-				"is_tutorial_completed",
-				"is_chat_allowed",
-				"is_qa",
-				"max_outfits",
+			Values: map[string]any{
+				"gsfoid":                req.Record.OID,
+				"username":              req.Record.Username,
+				"is_tutorial_completed": req.Record.IsTutorialCompleted,
+				"is_chat_allowed":       req.Record.IsChatAllowed,
+				"is_qa":                 req.Record.IsQA,
+				"max_outfits":           req.Record.MaxOutfits,
 			},
-			Values: []any{
-				req.Record.OID,
-				req.Record.Username,
-				req.Record.IsTutorialCompleted,
-				req.Record.IsChatAllowed,
-				req.Record.IsQA,
-				req.Record.MaxOutfits,
+			Where: map[string]any{
+				"id": playerID,
 			},
-			IDField: "id",
-			IDValue: playerID,
 		})
 		if s.store.IsErrConstraintUnique(err) {
 			return ErrPlayerExists

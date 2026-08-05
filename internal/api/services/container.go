@@ -190,9 +190,12 @@ func (s *Service) GetContainerPackageGrid(ctx context.Context, req w2.GetGridReq
 func (s *Service) CreateContainer(ctx context.Context, req w2.SaveFormRequest[Container]) (int, error) {
 	const op = "api.Service.CreateContainer"
 	id, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{
-		Into:   "asset_container",
-		Cols:   []string{"gsfoid", "name", "ptag"},
-		Values: []any{req.Record.OID, req.Record.Name, req.Record.PTag},
+		Into: "asset_container",
+		Values: map[string]any{
+			"gsfoid": req.Record.OID,
+			"name":   req.Record.Name,
+			"ptag":   req.Record.PTag,
+		},
 	})
 	if s.store.IsErrConstraintUnique(err) {
 		return 0, wrap.IfErr(op, ErrContainerExists)
@@ -203,11 +206,15 @@ func (s *Service) CreateContainer(ctx context.Context, req w2.SaveFormRequest[Co
 func (s *Service) UpdateContainer(ctx context.Context, req w2.SaveFormRequest[Container]) error {
 	const op = "api.Service.UpdateContainer"
 	_, err := w2db.UpdateContext(ctx, s.store.DB(), w2db.UpdateOptions{
-		Update:  "asset_container",
-		Cols:    []string{"gsfoid", "name", "ptag"},
-		Values:  []any{req.Record.OID, req.Record.Name, req.Record.PTag},
-		IDField: "id",
-		IDValue: req.Record.ID,
+		Update: "asset_container",
+		Values: map[string]any{
+			"gsfoid": req.Record.OID,
+			"name":   req.Record.Name,
+			"ptag":   req.Record.PTag,
+		},
+		Where: map[string]any{
+			"id": req.Record.ID,
+		},
 	})
 	if s.store.IsErrConstraintUnique(err) {
 		return wrap.IfErr(op, ErrContainerExists)
@@ -219,12 +226,11 @@ func (s *Service) AddContainerAsset(ctx context.Context, req w2.SaveFormRequest[
 	const op = "api.Service.AddContainerAsset"
 	id, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{
 		Into: "asset_container_assetmap",
-		Cols: []string{"container_id", "win_asset_id", "osx_asset_id", "position"},
-		Values: []any{
-			containerID,
-			req.Record.WINAsset.ID,
-			req.Record.OSXAsset.ID,
-			sqlbuilder.Buildf("(select coalesce(max(position) + 1, 1) from asset_container_assetmap where container_id = %v)", containerID),
+		Values: map[string]any{
+			"container_id": containerID,
+			"win_asset_id": req.Record.WINAsset.ID,
+			"osx_asset_id": req.Record.OSXAsset.ID,
+			"position":     sqlbuilder.Buildf("(select coalesce(max(position) + 1, 1) from asset_container_assetmap where container_id = %v)", containerID),
 		},
 	})
 	if s.store.IsErrConstraintUnique(err) {
@@ -238,11 +244,14 @@ func (s *Service) UpdateContainerAssets(ctx context.Context, req w2.SaveGridRequ
 	_, err := w2db.SaveGridContext(ctx, s.store.DB(), req, w2db.SaveGridOptions[ContainerAsset]{
 		BuildOptions: func(change ContainerAsset) w2db.UpdateOptions {
 			return w2db.UpdateOptions{
-				Update:  "asset_container_assetmap",
-				Cols:    []string{"win_asset_id", "osx_asset_id"},
-				Values:  []any{change.WINAsset.ID, change.OSXAsset.ID},
-				IDField: "id",
-				IDValue: change.ID,
+				Update: "asset_container_assetmap",
+				Values: map[string]any{
+					"win_asset_id": change.WINAsset.ID,
+					"osx_asset_id": change.OSXAsset.ID,
+				},
+				Where: map[string]any{
+					"id": change.ID,
+				},
 			}
 		},
 	})
@@ -259,11 +268,10 @@ func (s *Service) AddContainerPackage(ctx context.Context, req w2.SaveFormReques
 		var err error
 		id, err = w2db.InsertContext(ctx, tx, w2db.InsertOptions{
 			Into: "asset_container_package",
-			Cols: []string{"container_id", "pkg_container_id", "position"},
-			Values: []any{
-				containerID,
-				req.Record.PkgContainer.ID,
-				sqlbuilder.Buildf("(select coalesce(max(position) + 1, 1) from asset_container_package where container_id = %v)", containerID),
+			Values: map[string]any{
+				"container_id":     containerID,
+				"pkg_container_id": req.Record.PkgContainer.ID,
+				"position":         sqlbuilder.Buildf("(select coalesce(max(position) + 1, 1) from asset_container_package where container_id = %v)", containerID),
 			},
 		})
 		if s.store.IsErrConstraintUnique(err) {
@@ -286,11 +294,13 @@ func (s *Service) UpdateContainerPackages(ctx context.Context, req w2.SaveGridRe
 		_, err := w2db.SaveGridContext(ctx, tx, req, w2db.SaveGridOptions[ContainerPackage]{
 			BuildOptions: func(change ContainerPackage) w2db.UpdateOptions {
 				return w2db.UpdateOptions{
-					Update:  "asset_container_package",
-					Cols:    []string{"pkg_container_id"},
-					Values:  []any{change.PkgContainer.ID},
-					IDField: "id",
-					IDValue: change.ID,
+					Update: "asset_container_package",
+					Values: map[string]any{
+						"pkg_container_id": change.PkgContainer.ID,
+					},
+					Where: map[string]any{
+						"id": change.ID,
+					},
 				}
 			},
 		})

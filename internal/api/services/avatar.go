@@ -58,9 +58,11 @@ func (s *Service) GetAvatarGrid(ctx context.Context, req w2.GetGridRequest) (w2.
 func (s *Service) CreateAvatar(ctx context.Context, req w2.SaveFormRequest[Avatar]) (int, error) {
 	const op = "api.Service.CreateAvatar"
 	id, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{
-		Into:   "avatar",
-		Cols:   []string{"container_id", "name"},
-		Values: []any{req.Record.Container.ID, req.Record.Name},
+		Into: "avatar",
+		Values: map[string]any{
+			"container_id": req.Record.Container.ID,
+			"name":         req.Record.Name,
+		},
 	})
 	if s.store.IsErrConstraintUnique(err) {
 		return 0, wrap.IfErr(op, ErrAvatarExists)
@@ -71,11 +73,14 @@ func (s *Service) CreateAvatar(ctx context.Context, req w2.SaveFormRequest[Avata
 func (s *Service) UpdateAvatar(ctx context.Context, req w2.SaveFormRequest[Avatar]) error {
 	const op = "api.Service.UpdateAvatar"
 	_, err := w2db.UpdateContext(ctx, s.store.DB(), w2db.UpdateOptions{
-		Update:  "avatar",
-		Cols:    []string{"container_id", "name"},
-		Values:  []any{req.Record.Container.ID, req.Record.Name},
-		IDField: "id",
-		IDValue: req.Record.ID,
+		Update: "avatar",
+		Values: map[string]any{
+			"container_id": req.Record.Container.ID,
+			"name":         req.Record.Name,
+		},
+		Where: map[string]any{
+			"id": req.Record.ID,
+		},
 	})
 	if s.store.IsErrConstraintUnique(err) {
 		return ErrAvatarExists
