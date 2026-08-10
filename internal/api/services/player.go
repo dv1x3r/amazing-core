@@ -46,7 +46,7 @@ func (s *Service) GetPlayerListGrid(ctx context.Context, req w2.GetGridRequest) 
 			"p.gsfoid",
 			"p.username",
 		},
-		WhereMapping: map[string]string{
+		Where: map[string]string{
 			"id":       "p.id",
 			"oid":      "p.gsfoid",
 			"username": "p.username",

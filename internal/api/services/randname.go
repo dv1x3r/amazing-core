@@ -23,12 +23,12 @@ func (s *Service) GetRandomNameGrid(ctx context.Context, req w2.GetGridRequest) 
 	res, err := w2db.GetGridContext(ctx, s.store.DB(), req, w2db.GetGridOptions[RandomName]{
 		From:   "random_name",
 		Select: []string{"id", "part_type", "name"},
-		WhereMapping: map[string]string{
+		Where: map[string]string{
 			"id":        "id",
 			"part_type": "part_type",
 			"name":      "name",
 		},
-		OrderByMapping: map[string]string{
+		OrderBy: map[string]string{
 			"id":        "id",
 			"part_type": "part_type",
 			"name":      "name",

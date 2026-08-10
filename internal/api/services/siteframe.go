@@ -32,12 +32,12 @@ func (s *Service) GetSiteFrameGrid(ctx context.Context, req w2.GetGridRequest) (
 			"(ac.gsfoid || ' - ' || ac.name) as container",
 			"sf.type_value",
 		},
-		WhereMapping: map[string]string{
+		Where: map[string]string{
 			"id":         "sf.id",
 			"container":  "ac.gsfoid || ' - ' || ac.name",
 			"type_value": "sf.type_value",
 		},
-		OrderByMapping: map[string]string{
+		OrderBy: map[string]string{
 			"id":         "sf.id",
 			"container":  "ac.gsfoid",
 			"type_value": "sf.type_value",

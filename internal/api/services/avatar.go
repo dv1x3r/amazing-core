@@ -30,12 +30,12 @@ func (s *Service) GetAvatarGrid(ctx context.Context, req w2.GetGridRequest) (w2.
 			"(ac.gsfoid || ' - ' || ac.name) as container",
 			"av.name",
 		},
-		WhereMapping: map[string]string{
+		Where: map[string]string{
 			"id":        "av.id",
 			"container": "ac.gsfoid || ' - ' || ac.name",
 			"name":      "av.name",
 		},
-		OrderByMapping: map[string]string{
+		OrderBy: map[string]string{
 			"id":        "av.id",
 			"container": "ac.gsfoid",
 			"name":      "av.name",

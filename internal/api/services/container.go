@@ -64,13 +64,13 @@ func (s *Service) GetContainerGrid(ctx context.Context, req w2.GetGridRequest) (
 			"c.created_at",
 			"icon.cdnid",
 		},
-		WhereMapping: map[string]string{
+		Where: map[string]string{
 			"id":   "c.id",
 			"oid":  "c.gsfoid",
 			"name": "c.name",
 			"ptag": "c.ptag",
 		},
-		OrderByMapping: map[string]string{
+		OrderBy: map[string]string{
 			"id":         "c.id",
 			"oid":        "c.gsfoid",
 			"oid_str":    "c.gsfoid",

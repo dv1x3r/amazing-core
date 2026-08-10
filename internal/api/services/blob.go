@@ -50,12 +50,12 @@ func (s *Service) GetBlobGrid(ctx context.Context, req w2.GetGridRequest) (w2.Ge
 			"length(blob) as size",
 			"json_pretty(metadata) as metadata",
 		},
-		WhereMapping: map[string]string{
+		Where: map[string]string{
 			"id":    "id",
 			"cdnid": "cdnid",
 			"hash":  "hash",
 		},
-		OrderByMapping: map[string]string{
+		OrderBy: map[string]string{
 			"id":       "id",
 			"cdnid":    "cdnid COLLATE BINARY",
 			"size_str": "length(blob)",

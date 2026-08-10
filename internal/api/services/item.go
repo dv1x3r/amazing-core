@@ -36,12 +36,12 @@ func (s *Service) GetItemGrid(ctx context.Context, req w2.GetGridRequest) (w2.Ge
 			"cat.categories",
 			"slt.slots",
 		},
-		WhereMapping: map[string]string{
+		Where: map[string]string{
 			"id":        "it.id",
 			"container": "ac.gsfoid || ' - ' || ac.name",
 			"name":      "it.name",
 		},
-		OrderByMapping: map[string]string{
+		OrderBy: map[string]string{
 			"id":        "it.id",
 			"container": "ac.gsfoid",
 			"name":      "it.name",

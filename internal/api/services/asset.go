@@ -49,7 +49,7 @@ func (s *Service) GetAssetGrid(ctx context.Context, req w2.GetGridRequest) (w2.G
 			"a.size",
 			"a.bundle_version",
 		},
-		WhereMapping: map[string]string{
+		Where: map[string]string{
 			"id":             "a.id",
 			"oid":            "a.gsfoid",
 			"cdnid":          "a.cdnid",
@@ -60,7 +60,7 @@ func (s *Service) GetAssetGrid(ctx context.Context, req w2.GetGridRequest) (w2.G
 			"hash":           "a.hash",
 			"bundle_version": "a.bundle_version",
 		},
-		OrderByMapping: map[string]string{
+		OrderBy: map[string]string{
 			"id":             "a.id",
 			"oid":            "a.gsfoid",
 			"oid_str":        "a.gsfoid",

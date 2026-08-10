@@ -47,13 +47,13 @@ func (s *Service) GetCategoryGrid(ctx context.Context, req w2.GetGridRequest) (w
 			"ic.parent_id",
 			"icp.name as parent_name",
 		},
-		WhereMapping: map[string]string{
+		Where: map[string]string{
 			"id":        "ic.id",
 			"oid":       "ic.gsfoid",
 			"name":      "ic.name",
 			"container": "ac.gsfoid || ' - ' || ac.name",
 		},
-		OrderByMapping: map[string]string{
+		OrderBy: map[string]string{
 			"id":        "ic.id",
 			"oid":       "ic.gsfoid",
 			"name":      "ic.name",

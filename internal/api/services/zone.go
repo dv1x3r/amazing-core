@@ -28,11 +28,11 @@ func (s *Service) GetZoneGrid(ctx context.Context, req w2.GetGridRequest) (w2.Ge
 			"z.container_id",
 			"(ac.gsfoid || ' - ' || ac.name) as container",
 		},
-		WhereMapping: map[string]string{
+		Where: map[string]string{
 			"id":        "z.id",
 			"container": "ac.gsfoid || ' - ' || ac.name",
 		},
-		OrderByMapping: map[string]string{
+		OrderBy: map[string]string{
 			"id":        "z.id",
 			"container": "ac.gsfoid",
 		},
