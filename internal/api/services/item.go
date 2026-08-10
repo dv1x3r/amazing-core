@@ -46,7 +46,7 @@ func (s *Service) GetItemGrid(ctx context.Context, req w2.GetGridRequest) (w2.Ge
 			"container": "ac.gsfoid",
 			"name":      "it.name",
 		},
-		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
+		Build: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("asset_container as ac", "ac.id = it.container_id")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, `(
 					select

@@ -34,7 +34,7 @@ func (s *Service) GetPlayerOutfitGrid(ctx context.Context, req w2.GetGridRequest
 			"(pa.gsfoid || ' - ' || pa.name) as player_avatar_name",
 			"po.outfit_no",
 		},
-		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
+		Build: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("player_avatar as pa", "pa.id = po.player_avatar_id")
 			sb.Where(sb.EQ("pa.player_id", playerID))
 			sb.OrderByAsc("po.id")

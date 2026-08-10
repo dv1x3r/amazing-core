@@ -43,7 +43,7 @@ func (s *Service) GetPlayerItemGrid(ctx context.Context, req w2.GetGridRequest, 
 			"avs.slot as avatar_slot_name",
 			"pi.quantity",
 		},
-		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
+		Build: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("item as it", "it.id = pi.item_id")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "player_avatar as pa", "pa.id = pi.player_avatar_id")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "player_avatar_outfit as po", "po.id = pi.player_avatar_outfit_id")

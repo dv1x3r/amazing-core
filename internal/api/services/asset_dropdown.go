@@ -23,7 +23,7 @@ func (s *Service) GetAssetsDropdown(ctx context.Context, req w2.GetDropdownReque
 				a.bundle_version
 			)`,
 		OrderByField: "at.name, a.gsfoid",
-		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
+		Build: func(sb *sqlbuilder.SelectBuilder) {
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_type as at", "at.id = a.asset_type_id")
 		},
 	})

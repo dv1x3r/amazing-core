@@ -40,7 +40,7 @@ func (s *Service) GetAvatarGrid(ctx context.Context, req w2.GetGridRequest) (w2.
 			"container": "ac.gsfoid",
 			"name":      "av.name",
 		},
-		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
+		Build: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("asset_container as ac", "ac.id = av.container_id")
 		},
 		Scan: func(rows *sql.Rows, record *Avatar) error {

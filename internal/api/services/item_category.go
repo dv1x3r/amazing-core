@@ -59,7 +59,7 @@ func (s *Service) GetCategoryGrid(ctx context.Context, req w2.GetGridRequest) (w
 			"name":      "ic.name",
 			"container": "ac.gsfoid",
 		},
-		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
+		Build: func(sb *sqlbuilder.SelectBuilder) {
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "item_category as icp", "icp.id = ic.parent_id")
 		},
 		Scan: func(rows *sql.Rows, record *Category) error {

@@ -72,7 +72,7 @@ func (s *Service) GetAssetGrid(ctx context.Context, req w2.GetGridRequest) (w2.G
 			"size_str":       "a.size",
 			"bundle_version": "a.bundle_version",
 		},
-		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
+		Build: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("file_type as ft", "ft.id = a.file_type_id")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_type as at", "at.id = a.asset_type_id")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_group as ag", "ag.id = a.asset_group_id")

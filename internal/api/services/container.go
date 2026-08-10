@@ -80,7 +80,7 @@ func (s *Service) GetContainerGrid(ctx context.Context, req w2.GetGridRequest) (
 			"packages":   "p.packages",
 			"created_at": "c.created_at",
 		},
-		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
+		Build: func(sb *sqlbuilder.SelectBuilder) {
 			sb.JoinWithOption(sqlbuilder.LeftJoin, `(
 					select
 						am.container_id,
@@ -138,7 +138,7 @@ func (s *Service) GetContainerAssetGrid(ctx context.Context, req w2.GetGridReque
 			"concat_ws(' - ', coalesce(at.name, '[NO TYPE]'), a.gsfoid, coalesce(a.res_name, '[NULL]'), a.bundle_version) as windows",
 			"iif(ax.id is null, null, concat_ws(' - ', coalesce(axt.name, '[NO TYPE]'), ax.gsfoid, coalesce(ax.res_name, '[NULL]'), ax.bundle_version)) as osx",
 		},
-		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
+		Build: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("asset as a", "a.id = ca.win_asset_id")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_type as at", "at.id = a.asset_type_id")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset as ax", "ax.id = ca.osx_asset_id")
@@ -170,7 +170,7 @@ func (s *Service) GetContainerPackageGrid(ctx context.Context, req w2.GetGridReq
 			"cp.pkg_container_id",
 			"concat(pc.gsfoid, ' - ', pc.name, ' (' || pc.ptag || ')') as package",
 		},
-		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
+		Build: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("asset_container as pc", "pc.id = cp.pkg_container_id")
 			sb.Where(sb.EQ("cp.container_id", containerID))
 			sb.OrderByAsc("cp.position")

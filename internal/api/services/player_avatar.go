@@ -38,7 +38,7 @@ func (s *Service) GetPlayerAvatarGrid(ctx context.Context, req w2.GetGridRequest
 			"pa.avatar_id",
 			"av.name as avatar_name",
 		},
-		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
+		Build: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("avatar as av", "av.id = pa.avatar_id")
 			sb.Where(sb.EQ("pa.player_id", playerID))
 			sb.OrderByAsc("pa.id")

@@ -51,7 +51,7 @@ func (s *Service) GetPlayerListGrid(ctx context.Context, req w2.GetGridRequest) 
 			"oid":      "p.gsfoid",
 			"username": "p.username",
 		},
-		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
+		Build: func(sb *sqlbuilder.SelectBuilder) {
 			sb.OrderByAsc("p.id")
 		},
 		Scan: func(rows *sql.Rows, record *PlayerList) error {
@@ -86,7 +86,7 @@ func (s *Service) GetPlayerDetailsForm(ctx context.Context, req w2.GetFormReques
 			"pa.id as active_avatar_id",
 			"pa.name as active_avatar_name",
 		},
-		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
+		Build: func(sb *sqlbuilder.SelectBuilder) {
 			sb.JoinWithOption(sqlbuilder.LeftJoin, `(
 					select
 						id,

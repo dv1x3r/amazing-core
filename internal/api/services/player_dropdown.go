@@ -17,7 +17,7 @@ func (s *Service) GetPlayerAvatarsDropdown(ctx context.Context, req w2.GetDropdo
 		IDField:      "pa.id",
 		TextField:    "(pa.gsfoid || ' - ' || pa.name)",
 		OrderByField: "pa.gsfoid",
-		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
+		Build: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Where(sb.EQ("pa.player_id", playerID))
 		},
 	})
@@ -31,7 +31,7 @@ func (s *Service) GetPlayerItemsDropdown(ctx context.Context, req w2.GetDropdown
 		IDField:      "pi.id",
 		TextField:    "(pi.gsfoid || ' - ' || it.name || ' x' || pi.quantity)",
 		OrderByField: "pi.gsfoid",
-		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
+		Build: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("item as it", "it.id = pi.item_id")
 			sb.Where(sb.EQ("pi.player_id", playerID))
 		},
@@ -46,7 +46,7 @@ func (s *Service) GetPlayerOutfitsDropdown(ctx context.Context, req w2.GetDropdo
 		IDField:      "po.id",
 		TextField:    "(pa.name || ' / Outfit #' || po.outfit_no)",
 		OrderByField: "pa.name, po.outfit_no",
-		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
+		Build: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("player_avatar as pa", "pa.id = po.player_avatar_id")
 			sb.Where(sb.EQ("pa.player_id", playerID))
 		},

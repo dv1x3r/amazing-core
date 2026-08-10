@@ -36,7 +36,7 @@ func (s *Service) GetZoneGrid(ctx context.Context, req w2.GetGridRequest) (w2.Ge
 			"id":        "z.id",
 			"container": "ac.gsfoid",
 		},
-		BuildSelect: func(sb *sqlbuilder.SelectBuilder) {
+		Build: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("asset_container as ac", "ac.id = z.container_id")
 		},
 		Scan: func(rows *sql.Rows, record *Zone) error {
