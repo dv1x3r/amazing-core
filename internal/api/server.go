@@ -17,8 +17,8 @@ import (
 	"github.com/dv1x3r/amazing-core/web"
 
 	"github.com/dv1x3r/w2go/w2"
+	"github.com/dv1x3r/w2go/w2explorer"
 	"github.com/dv1x3r/w2go/w2lib"
-	"github.com/dv1x3r/w2go/w2widget"
 )
 
 type HandlerFunc func(http.ResponseWriter, *http.Request) error
@@ -134,8 +134,8 @@ func NewServer(logger *slog.Logger, handler *routes.Handler, store db.Store) *Se
 	v1.HandleFunc("GET /logs/watch", errorHandler(handler.GetLogsWatch))
 
 	if config.Get().Storage.Explorer {
-		v1.HandleFunc("GET /sql", errorHandler(w2widget.SQLiteSchemaHandler(store.DB())))
-		v1.HandleFunc("POST /sql", errorHandler(w2widget.SQLExecHandler(store.DB())))
+		v1.HandleFunc("GET /sql", errorHandler(w2explorer.SQLiteSchemaHandler(store.DB())))
+		v1.HandleFunc("POST /sql", errorHandler(w2explorer.SQLExecHandler(store.DB())))
 	}
 
 	protected := middleware.Protected(handler.Authenticator())
