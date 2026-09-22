@@ -171,6 +171,7 @@ const dashboardSidebar = new w2sidebar({
           text: 'SQL Explorer',
           icon: 'fa fa-database',
           expanded: false,
+          hidden: true,
           onClick: async function() {
             const module = await import('/lib/w2ui.widgets.js')
             const createWidget = () => module.createSqlExplorerLayout({ url: '/api/v1/sql' })
@@ -201,8 +202,8 @@ const dashboardSidebar = new w2sidebar({
     await event.complete
     document.getElementById('sidebar-host').innerText = '@' + window.location.host
     document.getElementById('sidebar-version').innerText = document.getElementById('app-config').dataset.version
-    if (document.getElementById('app-config').dataset.explorer == 'false') {
-      event.owner.hide('sql-explorer')
+    if (document.getElementById('app-config').dataset.explorer == 'true') {
+      event.owner.show('sql-explorer')
     }
     new w2toolbar({
       name: 'logoutToolbar',
