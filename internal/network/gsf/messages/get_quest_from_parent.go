@@ -20,9 +20,9 @@ func (req *GetQuestFromParentRequest) Deserialize(reader gsf.ProtocolReader) {
 
 // GetQuestFromParentResponse contains quest record for parent.
 type GetQuestFromParentResponse struct {
-	Quest types.Quest
+	Quest *types.Quest
 }
 
 func (res *GetQuestFromParentResponse) Serialize(writer gsf.ProtocolWriter) {
-	writer.WriteObject(&res.Quest)
+	writer.WriteObject(res.Quest)
 }
