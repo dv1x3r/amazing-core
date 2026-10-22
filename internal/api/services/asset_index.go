@@ -2,8 +2,10 @@ package services
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
+	"github.com/dv1x3r/w2go/w2db"
 )
 
 type AssetIndex struct {
@@ -27,60 +29,50 @@ type AssetIndexEntry struct {
 func (s *Service) GetAssetIndex(ctx context.Context) (AssetIndex, error) {
 	const op = "api.Service.GetAssetIndex"
 
-	const query = `
-		select
-			a.id,
-			a.cdnid,
-			a.gsfoid,
-			ft.name,
-			coalesce(at.name, ''),
-			coalesce(ag.name, ''),
-			coalesce(a.res_name, ''),
-			a.hash,
-			a.size,
-			coalesce(a.bundle_version, ''),
-			iif(
-				json_array_length(af.metadata, '$.bundle.scene') > 0 and
-				af.metadata ->> '$.bundle.counts.types.Mesh' > 0,
-				1, 0)
-		from asset as a
-		join file_type as ft on ft.id = a.file_type_id
-		left join asset_type as at on at.id = a.asset_type_id
-		left join asset_group as ag on ag.id = a.asset_group_id
-		left join asset_file as af on af.cdnid = a.cdnid
-		order by a.id;
-	`
+	entries, err := w2db.SelectContext(ctx, s.store.DB(), w2db.SelectOptions[AssetIndexEntry]{
+		Query: `
+			select
+				a.id,
+				a.cdnid,
+				a.gsfoid,
+				ft.name,
+				coalesce(at.name, ''),
+				coalesce(ag.name, ''),
+				coalesce(a.res_name, ''),
+				a.hash,
+				a.size,
+				coalesce(a.bundle_version, ''),
+				iif(
+					json_array_length(af.metadata, '$.bundle.scene') > 0 and
+					af.metadata ->> '$.bundle.counts.types.Mesh' > 0,
+					1, 0)
+			from asset as a
+			join file_type as ft on ft.id = a.file_type_id
+			left join asset_type as at on at.id = a.asset_type_id
+			left join asset_group as ag on ag.id = a.asset_group_id
+			left join asset_file as af on af.cdnid = a.cdnid
+			order by a.id;
+		`,
+		Scan: func(rows *sql.Rows, record *AssetIndexEntry) error {
+			return rows.Scan(
+				&record.ID,
+				&record.CDNID,
+				&record.OID,
+				&record.FileType,
+				&record.AssetType,
+				&record.AssetGroup,
+				&record.ResName,
+				&record.Hash,
+				&record.Size,
+				&record.BundleVersion,
+				&record.Scene,
+			)
+		},
+	})
 
-	rows, err := s.store.DB().QueryContext(ctx, query)
 	if err != nil {
 		return AssetIndex{}, wrap.IfErr(op, err)
 	}
-	defer rows.Close()
 
-	index := AssetIndex{Assets: []AssetIndexEntry{}}
-	for rows.Next() {
-		entry := AssetIndexEntry{}
-		if err := rows.Scan(
-			&entry.ID,
-			&entry.CDNID,
-			&entry.OID,
-			&entry.FileType,
-			&entry.AssetType,
-			&entry.AssetGroup,
-			&entry.ResName,
-			&entry.Hash,
-			&entry.Size,
-			&entry.BundleVersion,
-			&entry.Scene,
-		); err != nil {
-			return AssetIndex{}, wrap.IfErr(op, err)
-		}
-		index.Assets = append(index.Assets, entry)
-	}
-
-	if err := rows.Err(); err != nil {
-		return AssetIndex{}, wrap.IfErr(op, err)
-	}
-
-	return index, nil
+	return AssetIndex{Assets: entries}, nil
 }
