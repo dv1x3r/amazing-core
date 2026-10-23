@@ -9,24 +9,24 @@ import (
 	"github.com/dv1x3r/w2go/w2"
 )
 
-func (h *Handler) GetAsset(w http.ResponseWriter, r *http.Request) error {
-	req, err := w2.ParseGetDropdownRequest(r.URL.Query().Get("request"))
-	if err != nil {
-		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
-	}
-	res, err := h.svc.GetAssetsDropdown(r.Context(), req)
-	if err != nil {
-		return err
-	}
-	return res.Write(w)
-}
-
 func (h *Handler) GetAssetGrid(w http.ResponseWriter, r *http.Request) error {
 	req, err := w2.ParseGetGridRequest(r.URL.Query().Get("request"))
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
 	res, err := h.svc.GetAssetGrid(r.Context(), req)
+	if err != nil {
+		return err
+	}
+	return res.Write(w)
+}
+
+func (h *Handler) GetAssetDropdown(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseGetDropdownRequest(r.URL.Query().Get("request"))
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	res, err := h.svc.GetAssetsDropdown(r.Context(), req)
 	if err != nil {
 		return err
 	}
@@ -55,7 +55,7 @@ func (h *Handler) PostAssetRemove(w http.ResponseWriter, r *http.Request) error 
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)
 }
 
-func (h *Handler) GetAssetFileType(w http.ResponseWriter, r *http.Request) error {
+func (h *Handler) GetAssetFileTypeDropdown(w http.ResponseWriter, r *http.Request) error {
 	req, err := w2.ParseGetDropdownRequest(r.URL.Query().Get("request"))
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
@@ -67,7 +67,7 @@ func (h *Handler) GetAssetFileType(w http.ResponseWriter, r *http.Request) error
 	return res.Write(w)
 }
 
-func (h *Handler) GetAssetType(w http.ResponseWriter, r *http.Request) error {
+func (h *Handler) GetAssetTypeDropdown(w http.ResponseWriter, r *http.Request) error {
 	req, err := w2.ParseGetDropdownRequest(r.URL.Query().Get("request"))
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
@@ -79,7 +79,7 @@ func (h *Handler) GetAssetType(w http.ResponseWriter, r *http.Request) error {
 	return res.Write(w)
 }
 
-func (h *Handler) GetAssetGroup(w http.ResponseWriter, r *http.Request) error {
+func (h *Handler) GetAssetGroupDropdown(w http.ResponseWriter, r *http.Request) error {
 	req, err := w2.ParseGetDropdownRequest(r.URL.Query().Get("request"))
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)

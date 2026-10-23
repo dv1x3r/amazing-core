@@ -22,6 +22,13 @@ type Item struct {
 	Name       w2.Field[string] `json:"name"`
 	Categories []w2.Dropdown    `json:"categories"`
 	Slots      []w2.Dropdown    `json:"slots"`
+
+	Icon             string `json:"icon"`
+	HasWin3D         bool   `json:"has_win_3d"`
+	HasOSX3D         bool   `json:"has_osx_3d"`
+	HasText          bool   `json:"has_text"`
+	HasInventoryIcon bool   `json:"has_inventory_icon"`
+	HasShopIcon      bool   `json:"has_shop_icon"`
 }
 
 func (s *Service) GetItemGrid(ctx context.Context, req w2.GetGridRequest) (w2.GetGridResponse[Item], error) {
@@ -35,6 +42,12 @@ func (s *Service) GetItemGrid(ctx context.Context, req w2.GetGridRequest) (w2.Ge
 			"it.name",
 			"cat.categories",
 			"slt.slots",
+			"icon.cdnid",
+			"coalesce(flags.has_win_3d, 0)",
+			"coalesce(flags.has_osx_3d, 0)",
+			"coalesce(flags.has_text, 0)",
+			"coalesce(flags.has_inventory_icon, 0)",
+			"coalesce(flags.has_shop_icon, 0)",
 		},
 		Where: map[string]string{
 			"id":        "it.id",
@@ -70,9 +83,25 @@ func (s *Service) GetItemGrid(ctx context.Context, req w2.GetGridRequest) (w2.Ge
 					join avatar_slot as avs on avs.id = ias.avatar_slot_id
 					group by ias.item_id
 				) as slt`, "slt.item_id = it.id")
+			sb.JoinWithOption(sqlbuilder.LeftJoin, containerIconJoin, "icon.container_id = it.container_id and icon.rn = 1")
+			sb.JoinWithOption(sqlbuilder.LeftJoin, `(
+					select
+						am.container_id,
+						max(iif(at.name = 'Prefab_Unity3D' and a.asset_group_id is null, 1, 0)) as has_win_3d,
+						max(iif(at.name = 'Prefab_Unity3D' and a.asset_group_id is null and am.osx_asset_id is not null, 1, 0)) as has_osx_3d,
+						max(iif(at.name = 'Text', 1, 0)) as has_text,
+						max(iif(at.name = 'Images' and ag.name = 'Inventory Icon', 1, 0)) as has_inventory_icon,
+						max(iif(at.name = 'Images' and (a.asset_group_id is null or (ag.name in ('Exterior Icon', 'Interior Icon') and a.res_name like '%tier1%')), 1, 0)) as has_shop_icon
+					from asset_container_assetmap as am
+					join asset as a on a.id = am.win_asset_id
+					left join asset_type as at on at.id = a.asset_type_id
+					left join asset_group as ag on ag.id = a.asset_group_id
+					group by am.container_id
+				) as flags`, "flags.container_id = it.container_id")
 		},
 		Scan: func(rows *sql.Rows, record *Item) error {
 			var categories, slots sql.Null[string]
+			var icon *string
 			if err := rows.Scan(
 				&record.ID,
 				&record.Container.ID,
@@ -80,9 +109,16 @@ func (s *Service) GetItemGrid(ctx context.Context, req w2.GetGridRequest) (w2.Ge
 				&record.Name,
 				&categories,
 				&slots,
+				&icon,
+				&record.HasWin3D,
+				&record.HasOSX3D,
+				&record.HasText,
+				&record.HasInventoryIcon,
+				&record.HasShopIcon,
 			); err != nil {
 				return fmt.Errorf("scan: %w", err)
 			}
+			record.Icon = s.iconURL(icon)
 			if categories.Valid {
 				if err := json.Unmarshal([]byte(categories.V), &record.Categories); err != nil {
 					return fmt.Errorf("categories unmarshal: %w", err)

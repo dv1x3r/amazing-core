@@ -9,24 +9,24 @@ import (
 	"github.com/dv1x3r/w2go/w2"
 )
 
-func (h *Handler) GetItem(w http.ResponseWriter, r *http.Request) error {
-	req, err := w2.ParseGetDropdownRequest(r.URL.Query().Get("request"))
-	if err != nil {
-		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
-	}
-	res, err := h.svc.GetItemsDropdown(r.Context(), req)
-	if err != nil {
-		return err
-	}
-	return res.Write(w)
-}
-
 func (h *Handler) GetItemGrid(w http.ResponseWriter, r *http.Request) error {
 	req, err := w2.ParseGetGridRequest(r.URL.Query().Get("request"))
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
 	res, err := h.svc.GetItemGrid(r.Context(), req)
+	if err != nil {
+		return err
+	}
+	return res.Write(w)
+}
+
+func (h *Handler) GetItemDropdown(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseGetDropdownRequest(r.URL.Query().Get("request"))
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	res, err := h.svc.GetItemsDropdown(r.Context(), req)
 	if err != nil {
 		return err
 	}

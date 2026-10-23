@@ -30,6 +30,12 @@ export function createItemLayout() {
         searchable: 'int',
       },
       {
+        field: 'icon',
+        text: x => x.field ? '' : 'Icon',
+        size: '40px',
+        render: 'icon-sm',
+      },
+      {
         field: 'container',
         text: 'Asset Container',
         size: '200px',
@@ -56,6 +62,36 @@ export function createItemLayout() {
         text: 'Acceptable Slots',
         size: '200px',
         render: 'dropdown-multi',
+      },
+      {
+        field: 'has_win_3d',
+        text: 'Win 3D',
+        size: '60px',
+        render: 'toggle',
+      },
+      {
+        field: 'has_osx_3d',
+        text: 'OSX 3D',
+        size: '60px',
+        render: 'toggle',
+      },
+      {
+        field: 'has_text',
+        text: 'Text',
+        size: '60px',
+        render: 'toggle',
+      },
+      {
+        field: 'has_inventory_icon',
+        text: 'Inv. Ico',
+        size: '70px',
+        render: 'toggle',
+      },
+      {
+        field: 'has_shop_icon',
+        text: 'Shop Ico',
+        size: '70px',
+        render: 'toggle',
       },
     ],
     defaultOperator: {
@@ -107,7 +143,7 @@ function openItemPopup(event) {
         field: 'container',
         type: 'list',
         required: true,
-        options: helpers.remoteListOptions('/api/v1/container'),
+        options: helpers.remoteListOptions('/api/v1/container/dropdown'),
         html: {
           label: 'Asset Container',
           attr: 'style="width:100%;" placeholder="Type to search..."',
@@ -129,7 +165,7 @@ function openItemPopup(event) {
       {
         field: 'categories',
         type: 'enum',
-        options: helpers.remoteListOptions('/api/v1/item/category'),
+        options: helpers.remoteListOptions('/api/v1/item/category/dropdown'),
         html: {
           label: 'Categories',
           attr: 'style="width:100%;" placeholder="Type to search..."',
@@ -140,7 +176,7 @@ function openItemPopup(event) {
       {
         field: 'slots',
         type: 'enum',
-        options: helpers.remoteListOptions('/api/v1/avatar/slot'),
+        options: helpers.remoteListOptions('/api/v1/avatar/slot/dropdown'),
         html: {
           label: 'Acceptable Slots',
           attr: 'style="width:100%;" placeholder="Type to search..."',
@@ -321,7 +357,7 @@ function openCategoryPopup(event) {
       {
         field: 'parent',
         type: 'list',
-        options: helpers.remoteListOptions('/api/v1/item/category'),
+        options: helpers.remoteListOptions('/api/v1/item/category/dropdown'),
         html: {
           label: 'Parent Category',
           attr: 'style="width:100%;" placeholder="Type to search..."',

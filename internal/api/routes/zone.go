@@ -21,6 +21,18 @@ func (h *Handler) GetZoneGrid(w http.ResponseWriter, r *http.Request) error {
 	return res.Write(w)
 }
 
+func (h *Handler) GetZoneDropdown(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseGetDropdownRequest(r.URL.Query().Get("request"))
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	res, err := h.svc.GetZonesDropdown(r.Context(), req)
+	if err != nil {
+		return err
+	}
+	return res.Write(w)
+}
+
 func (h *Handler) PostZoneForm(w http.ResponseWriter, r *http.Request) error {
 	req, err := w2.ParseSaveFormRequest[services.Zone](r.Body)
 	if err != nil {

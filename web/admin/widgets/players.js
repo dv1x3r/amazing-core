@@ -177,7 +177,7 @@ function createPlayerDetailsForm() {
       {
         field: 'active_avatar',
         type: 'list',
-        options: helpers.remoteListOptions(`/api/v1/player/${selectedPlayerID}/avatar`),
+        options: helpers.remoteListOptions(`/api/v1/player/${selectedPlayerID}/avatar/dropdown`),
         disabled: selectedPlayerID == null,
         html: {
           label: 'Active Avatar',
@@ -366,7 +366,7 @@ function openPlayerAvatarPopup(event) {
         field: 'avatar',
         type: 'list',
         required: true,
-        options: helpers.remoteListOptions('/api/v1/avatar'),
+        options: helpers.remoteListOptions('/api/v1/avatar/dropdown'),
         html: {
           label: 'Avatar',
           attr: 'style="width:100%;" placeholder="Type to search..."',
@@ -504,7 +504,7 @@ function openPlayerOutfitPopup(event) {
         field: 'player_avatar',
         type: 'list',
         required: true,
-        options: helpers.remoteListOptions(`/api/v1/player/${selectedPlayerID}/avatar`),
+        options: helpers.remoteListOptions(`/api/v1/player/${selectedPlayerID}/avatar/dropdown`),
         html: {
           label: 'Player Avatar',
           attr: 'style="width:100%;" placeholder="Type to search..."',
@@ -661,7 +661,7 @@ function openPlayerItemPopup(event) {
         field: 'item',
         type: 'list',
         required: true,
-        options: helpers.remoteListOptions('/api/v1/item'),
+        options: helpers.remoteListOptions('/api/v1/item/dropdown'),
         html: {
           label: 'Item',
           attr: 'style="width:100%;" placeholder="Type to search..."',
@@ -672,7 +672,7 @@ function openPlayerItemPopup(event) {
       {
         field: 'player_avatar',
         type: 'list',
-        options: helpers.remoteListOptions(`/api/v1/player/${selectedPlayerID}/avatar`),
+        options: helpers.remoteListOptions(`/api/v1/player/${selectedPlayerID}/avatar/dropdown`),
         html: {
           label: 'Player Avatar',
           attr: 'style="width:100%;" placeholder="Type to search..."',
@@ -683,7 +683,7 @@ function openPlayerItemPopup(event) {
       {
         field: 'player_outfit',
         type: 'list',
-        options: helpers.remoteListOptions(`/api/v1/player/${selectedPlayerID}/outfit`),
+        options: helpers.remoteListOptions(`/api/v1/player/${selectedPlayerID}/outfit/dropdown`),
         html: {
           label: 'Player Outfit',
           attr: 'style="width:100%;" placeholder="Type to search..."',
@@ -694,7 +694,7 @@ function openPlayerItemPopup(event) {
       {
         field: 'avatar_slot',
         type: 'list',
-        options: helpers.remoteListOptions('/api/v1/avatar/slot'),
+        options: helpers.remoteListOptions('/api/v1/avatar/slot/dropdown'),
         html: {
           label: 'Avatar Slot',
           attr: 'style="width:100%;" placeholder="Type to search..."',

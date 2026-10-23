@@ -118,7 +118,7 @@ export function createAssetGrid() {
         size: '150px',
         render: 'dropdown',
         sortable: true,
-        searchable: { type: 'enum', options: helpers.remoteListOptions('/api/v1/asset/filetype') },
+        searchable: { type: 'enum', options: helpers.remoteListOptions('/api/v1/asset/filetype/dropdown') },
       },
       {
         field: 'asset_type',
@@ -126,8 +126,8 @@ export function createAssetGrid() {
         size: '150px',
         render: 'dropdown',
         sortable: true,
-        searchable: { type: 'enum', options: helpers.remoteListOptions('/api/v1/asset/assettype') },
-        editable: helpers.remoteListOptions('/api/v1/asset/assettype'),
+        searchable: { type: 'enum', options: helpers.remoteListOptions('/api/v1/asset/assettype/dropdown') },
+        editable: helpers.remoteListOptions('/api/v1/asset/assettype/dropdown'),
       },
       {
         field: 'asset_group',
@@ -135,8 +135,8 @@ export function createAssetGrid() {
         size: '150px',
         render: 'dropdown',
         sortable: true,
-        searchable: { type: 'enum', options: helpers.remoteListOptions('/api/v1/asset/assetgroup') },
-        editable: helpers.remoteListOptions('/api/v1/asset/assetgroup'),
+        searchable: { type: 'enum', options: helpers.remoteListOptions('/api/v1/asset/assetgroup/dropdown') },
+        editable: helpers.remoteListOptions('/api/v1/asset/assetgroup/dropdown'),
       },
       {
         field: 'res_name',

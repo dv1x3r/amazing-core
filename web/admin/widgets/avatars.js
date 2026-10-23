@@ -30,6 +30,12 @@ export function createAvatarLayout() {
         searchable: 'int',
       },
       {
+        field: 'icon',
+        text: x => x.field ? '' : 'Icon',
+        size: '40px',
+        render: 'icon-sm',
+      },
+      {
         field: 'container',
         text: 'Asset Container',
         size: '200px',
@@ -44,6 +50,42 @@ export function createAvatarLayout() {
         render: 'text',
         sortable: true,
         searchable: 'text',
+      },
+      {
+        field: 'has_win_3d',
+        text: 'Win 3D',
+        size: '60px',
+        render: 'toggle',
+      },
+      {
+        field: 'has_osx_3d',
+        text: 'OSX 3D',
+        size: '60px',
+        render: 'toggle',
+      },
+      {
+        field: 'has_property',
+        text: 'Property',
+        size: '70px',
+        render: 'toggle',
+      },
+      {
+        field: 'has_emotes',
+        text: 'Emotes',
+        size: '60px',
+        render: 'toggle',
+      },
+      {
+        field: 'has_icon',
+        text: 'Icon',
+        size: '60px',
+        render: 'toggle',
+      },
+      {
+        field: 'has_profile',
+        text: 'Profile',
+        size: '60px',
+        render: 'toggle',
       },
     ],
     defaultOperator: {
@@ -95,7 +137,7 @@ function openAvatarPopup(event) {
         field: 'container',
         type: 'list',
         required: true,
-        options: helpers.remoteListOptions('/api/v1/container'),
+        options: helpers.remoteListOptions('/api/v1/container/dropdown'),
         html: {
           label: 'Asset Container',
           attr: 'style="width:100%;" placeholder="Type to search..."',

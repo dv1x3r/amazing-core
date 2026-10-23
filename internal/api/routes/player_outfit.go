@@ -10,22 +10,6 @@ import (
 	"github.com/dv1x3r/w2go/w2"
 )
 
-func (h *Handler) GetPlayerOutfit(w http.ResponseWriter, r *http.Request) error {
-	id, err := strconv.Atoi(r.PathValue("id"))
-	if err != nil {
-		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
-	}
-	req, err := w2.ParseGetDropdownRequest(r.URL.Query().Get("request"))
-	if err != nil {
-		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
-	}
-	res, err := h.svc.GetPlayerOutfitsDropdown(r.Context(), req, id)
-	if err != nil {
-		return err
-	}
-	return res.Write(w)
-}
-
 func (h *Handler) GetPlayerOutfitGrid(w http.ResponseWriter, r *http.Request) error {
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
@@ -36,6 +20,22 @@ func (h *Handler) GetPlayerOutfitGrid(w http.ResponseWriter, r *http.Request) er
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
 	res, err := h.svc.GetPlayerOutfitGrid(r.Context(), req, id)
+	if err != nil {
+		return err
+	}
+	return res.Write(w)
+}
+
+func (h *Handler) GetPlayerOutfitDropdown(w http.ResponseWriter, r *http.Request) error {
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	req, err := w2.ParseGetDropdownRequest(r.URL.Query().Get("request"))
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	res, err := h.svc.GetPlayerOutfitsDropdown(r.Context(), req, id)
 	if err != nil {
 		return err
 	}

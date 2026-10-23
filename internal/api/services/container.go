@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"net/url"
 
 	"github.com/dv1x3r/amazing-core/internal/lib/graph"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
@@ -81,18 +80,7 @@ func (s *Service) GetContainerGrid(ctx context.Context, req w2.GetGridRequest) (
 			"created_at": "c.created_at",
 		},
 		Build: func(sb *sqlbuilder.SelectBuilder) {
-			sb.JoinWithOption(sqlbuilder.LeftJoin, `(
-					select
-						am.container_id,
-					    a.cdnid,
-					    row_number() over (partition by am.container_id order by am.position) as rn
-					from asset_container_assetmap as am
-					join asset as a on a.id = am.win_asset_id
-					join file_type as ft on ft.id = a.file_type_id
-					where ft.name = 'image/png'
-				) as icon`,
-				"icon.container_id = c.id and icon.rn = 1",
-			)
+			sb.JoinWithOption(sqlbuilder.LeftJoin, containerIconJoin, "icon.container_id = c.id and icon.rn = 1")
 			sb.JoinWithOption(sqlbuilder.LeftJoin,
 				"(select container_id, count(*) as assets from asset_container_assetmap group by container_id) as a",
 				"a.container_id = c.id",
@@ -117,9 +105,7 @@ func (s *Service) GetContainerGrid(ctx context.Context, req w2.GetGridRequest) (
 				return err
 			}
 			record.OIDStr = types.OIDFromString(record.OID.V).String()
-			if icon != nil {
-				record.Icon, _ = url.JoinPath(s.deliveryURL, *icon)
-			}
+			record.Icon = s.iconURL(icon)
 			return nil
 		},
 	})

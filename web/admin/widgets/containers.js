@@ -136,14 +136,14 @@ export function createContainerLayout() {
         text: 'Windows Asset',
         render: 'dropdown-tooltip',
         size: '50%',
-        editable: helpers.remoteListOptions('/api/v1/asset'),
+        editable: helpers.remoteListOptions('/api/v1/asset/dropdown'),
       },
       {
         field: 'osx_asset',
         text: 'OSX Asset',
         render: 'dropdown-tooltip',
         size: '50%',
-        editable: helpers.remoteListOptions('/api/v1/asset'),
+        editable: helpers.remoteListOptions('/api/v1/asset/dropdown'),
         tooltip: 'macOS asset overrides the Windows asset on macOS; otherwise, the Windows asset is used on all platforms',
       },
     ],
@@ -188,7 +188,7 @@ export function createContainerLayout() {
         text: 'Package Container',
         render: 'dropdown-tooltip',
         size: '100%',
-        editable: helpers.remoteListOptions('/api/v1/container'),
+        editable: helpers.remoteListOptions('/api/v1/container/dropdown'),
       },
     ],
     onAdd: function(event) { openContainerPackagePopup(event) },
@@ -329,7 +329,7 @@ function openContainerAssetPopup(event) {
         field: 'win_asset',
         type: 'list',
         required: true,
-        options: helpers.remoteListOptions('/api/v1/asset'),
+        options: helpers.remoteListOptions('/api/v1/asset/dropdown'),
         html: {
           label: 'Windows Asset',
           attr: 'style="width:100%;" placeholder="Type to search..."',
@@ -340,7 +340,7 @@ function openContainerAssetPopup(event) {
       {
         field: 'osx_asset',
         type: 'list',
-        options: helpers.remoteListOptions('/api/v1/asset'),
+        options: helpers.remoteListOptions('/api/v1/asset/dropdown'),
         html: {
           label: 'OSX Asset',
           attr: 'style="width:100%;" placeholder="Type to search..."',
@@ -380,7 +380,7 @@ function openContainerPackagePopup(event) {
         field: 'pkg_container',
         type: 'list',
         required: true,
-        options: helpers.remoteListOptions('/api/v1/container'),
+        options: helpers.remoteListOptions('/api/v1/container/dropdown'),
         html: {
           label: 'Package Container',
           attr: 'style="width:100%;" placeholder="Type to search..."',

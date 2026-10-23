@@ -10,22 +10,6 @@ import (
 	"github.com/dv1x3r/w2go/w2"
 )
 
-func (h *Handler) GetPlayerAvatar(w http.ResponseWriter, r *http.Request) error {
-	id, err := strconv.Atoi(r.PathValue("id"))
-	if err != nil {
-		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
-	}
-	req, err := w2.ParseGetDropdownRequest(r.URL.Query().Get("request"))
-	if err != nil {
-		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
-	}
-	res, err := h.svc.GetPlayerAvatarsDropdown(r.Context(), req, id)
-	if err != nil {
-		return err
-	}
-	return res.Write(w)
-}
-
 func (h *Handler) GetPlayerAvatarGrid(w http.ResponseWriter, r *http.Request) error {
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
@@ -36,6 +20,22 @@ func (h *Handler) GetPlayerAvatarGrid(w http.ResponseWriter, r *http.Request) er
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
 	res, err := h.svc.GetPlayerAvatarGrid(r.Context(), req, id)
+	if err != nil {
+		return err
+	}
+	return res.Write(w)
+}
+
+func (h *Handler) GetPlayerAvatarDropdown(w http.ResponseWriter, r *http.Request) error {
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	req, err := w2.ParseGetDropdownRequest(r.URL.Query().Get("request"))
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	res, err := h.svc.GetPlayerAvatarsDropdown(r.Context(), req, id)
 	if err != nil {
 		return err
 	}

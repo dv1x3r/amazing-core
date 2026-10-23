@@ -9,24 +9,24 @@ import (
 	"github.com/dv1x3r/w2go/w2"
 )
 
-func (h *Handler) GetAvatar(w http.ResponseWriter, r *http.Request) error {
-	req, err := w2.ParseGetDropdownRequest(r.URL.Query().Get("request"))
-	if err != nil {
-		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
-	}
-	res, err := h.svc.GetAvatarsDropdown(r.Context(), req)
-	if err != nil {
-		return err
-	}
-	return res.Write(w)
-}
-
 func (h *Handler) GetAvatarGrid(w http.ResponseWriter, r *http.Request) error {
 	req, err := w2.ParseGetGridRequest(r.URL.Query().Get("request"))
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
 	res, err := h.svc.GetAvatarGrid(r.Context(), req)
+	if err != nil {
+		return err
+	}
+	return res.Write(w)
+}
+
+func (h *Handler) GetAvatarDropdown(w http.ResponseWriter, r *http.Request) error {
+	req, err := w2.ParseGetDropdownRequest(r.URL.Query().Get("request"))
+	if err != nil {
+		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
+	}
+	res, err := h.svc.GetAvatarsDropdown(r.Context(), req)
 	if err != nil {
 		return err
 	}
@@ -62,7 +62,7 @@ func (h *Handler) PostAvatarRemove(w http.ResponseWriter, r *http.Request) error
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)
 }
 
-func (h *Handler) GetAvatarSlot(w http.ResponseWriter, r *http.Request) error {
+func (h *Handler) GetAvatarSlotDropdown(w http.ResponseWriter, r *http.Request) error {
 	req, err := w2.ParseGetDropdownRequest(r.URL.Query().Get("request"))
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)

@@ -87,7 +87,7 @@ function openZonePopup(event) {
         field: 'container',
         type: 'list',
         required: true,
-        options: helpers.remoteListOptions('/api/v1/container'),
+        options: helpers.remoteListOptions('/api/v1/container/dropdown'),
         html: {
           label: 'Asset Container',
           attr: 'style="width:100%;" placeholder="Type to search..."',

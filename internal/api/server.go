@@ -49,32 +49,32 @@ func NewServer(logger *slog.Logger, handler *routes.Handler, store db.Store) *Se
 
 	v1 := http.NewServeMux()
 
-	v1.HandleFunc("GET /asset", errorHandler(handler.GetAsset))
 	v1.HandleFunc("GET /asset/grid", errorHandler(handler.GetAssetGrid))
+	v1.HandleFunc("GET /asset/dropdown", errorHandler(handler.GetAssetDropdown))
 	v1.HandleFunc("POST /asset/grid", errorHandler(handler.PostAssetGrid))
 	v1.HandleFunc("POST /asset/remove", errorHandler(handler.PostAssetRemove))
 
 	v1.HandleFunc("GET /asset/index", errorHandler(handler.GetAssetIndex))
 	v1.HandleFunc("POST /asset/import", errorHandler(handler.PostAssetImport))
 
-	v1.HandleFunc("GET /asset/filetype", errorHandler(handler.GetAssetFileType))
-	v1.HandleFunc("GET /asset/assettype", errorHandler(handler.GetAssetType))
-	v1.HandleFunc("GET /asset/assetgroup", errorHandler(handler.GetAssetGroup))
+	v1.HandleFunc("GET /asset/filetype/dropdown", errorHandler(handler.GetAssetFileTypeDropdown))
+	v1.HandleFunc("GET /asset/assettype/dropdown", errorHandler(handler.GetAssetTypeDropdown))
+	v1.HandleFunc("GET /asset/assetgroup/dropdown", errorHandler(handler.GetAssetGroupDropdown))
 
-	v1.HandleFunc("GET /avatar", errorHandler(handler.GetAvatar))
 	v1.HandleFunc("GET /avatar/grid", errorHandler(handler.GetAvatarGrid))
+	v1.HandleFunc("GET /avatar/dropdown", errorHandler(handler.GetAvatarDropdown))
 	v1.HandleFunc("POST /avatar/form", errorHandler(handler.PostAvatarForm))
 	v1.HandleFunc("POST /avatar/remove", errorHandler(handler.PostAvatarRemove))
 
-	v1.HandleFunc("GET /avatar/slot", errorHandler(handler.GetAvatarSlot))
+	v1.HandleFunc("GET /avatar/slot/dropdown", errorHandler(handler.GetAvatarSlotDropdown))
 
 	v1.HandleFunc("GET /blob/grid", errorHandler(handler.GetBlobGrid))
 	v1.HandleFunc("POST /blob/remove", errorHandler(handler.PostBlobRemove))
 	v1.HandleFunc("POST /blob/import", errorHandler(handler.PostBlobImport))
 	v1.HandleFunc("POST /blob/extract", errorHandler(handler.PostBlobExtract))
 
-	v1.HandleFunc("GET /container", errorHandler(handler.GetContainer))
 	v1.HandleFunc("GET /container/grid", errorHandler(handler.GetContainerGrid))
+	v1.HandleFunc("GET /container/dropdown", errorHandler(handler.GetContainerDropdown))
 	v1.HandleFunc("POST /container/form", errorHandler(handler.PostContainerForm))
 	v1.HandleFunc("POST /container/remove", errorHandler(handler.PostContainerRemove))
 
@@ -90,13 +90,13 @@ func NewServer(logger *slog.Logger, handler *routes.Handler, store db.Store) *Se
 	v1.HandleFunc("POST /container/package/remove", errorHandler(handler.PostContainerPackageRemove))
 	v1.HandleFunc("POST /container/package/reorder", errorHandler(handler.PostContainerPackageReorder))
 
-	v1.HandleFunc("GET /item", errorHandler(handler.GetItem))
 	v1.HandleFunc("GET /item/grid", errorHandler(handler.GetItemGrid))
+	v1.HandleFunc("GET /item/dropdown", errorHandler(handler.GetItemDropdown))
 	v1.HandleFunc("POST /item/form", errorHandler(handler.PostItemForm))
 	v1.HandleFunc("POST /item/remove", errorHandler(handler.PostItemRemove))
 
-	v1.HandleFunc("GET /item/category", errorHandler(handler.GetItemCategory))
 	v1.HandleFunc("GET /item/category/grid", errorHandler(handler.GetItemCategoryGrid))
+	v1.HandleFunc("GET /item/category/dropdown", errorHandler(handler.GetItemCategoryDropdown))
 	v1.HandleFunc("POST /item/category/form", errorHandler(handler.PostItemCategoryForm))
 	v1.HandleFunc("POST /item/category/remove", errorHandler(handler.PostItemCategoryRemove))
 
@@ -104,20 +104,24 @@ func NewServer(logger *slog.Logger, handler *routes.Handler, store db.Store) *Se
 	v1.HandleFunc("GET /player/form", errorHandler(handler.GetPlayerForm))
 	v1.HandleFunc("POST /player/form", errorHandler(handler.PostPlayerForm))
 
-	v1.HandleFunc("GET /player/{id}/item", errorHandler(handler.GetPlayerItem))
 	v1.HandleFunc("GET /player/{id}/item/grid", errorHandler(handler.GetPlayerItemGrid))
+	v1.HandleFunc("GET /player/{id}/item/dropdown", errorHandler(handler.GetPlayerItemDropdown))
 	v1.HandleFunc("POST /player/{id}/item/form", errorHandler(handler.PostPlayerItemForm))
 	v1.HandleFunc("POST /player/item/remove", errorHandler(handler.PostPlayerItemRemove))
 
-	v1.HandleFunc("GET /player/{id}/avatar", errorHandler(handler.GetPlayerAvatar))
 	v1.HandleFunc("GET /player/{id}/avatar/grid", errorHandler(handler.GetPlayerAvatarGrid))
+	v1.HandleFunc("GET /player/{id}/avatar/dropdown", errorHandler(handler.GetPlayerAvatarDropdown))
 	v1.HandleFunc("POST /player/{id}/avatar/form", errorHandler(handler.PostPlayerAvatarForm))
 	v1.HandleFunc("POST /player/avatar/remove", errorHandler(handler.PostPlayerAvatarRemove))
 
-	v1.HandleFunc("GET /player/{id}/outfit", errorHandler(handler.GetPlayerOutfit))
 	v1.HandleFunc("GET /player/{id}/outfit/grid", errorHandler(handler.GetPlayerOutfitGrid))
+	v1.HandleFunc("GET /player/{id}/outfit/dropdown", errorHandler(handler.GetPlayerOutfitDropdown))
 	v1.HandleFunc("POST /player/outfit/form", errorHandler(handler.PostPlayerOutfitForm))
 	v1.HandleFunc("POST /player/outfit/remove", errorHandler(handler.PostPlayerOutfitRemove))
+
+	v1.HandleFunc("GET /player/{id}/npc/grid", errorHandler(handler.GetPlayerNPCGrid))
+	v1.HandleFunc("POST /player/{id}/npc/form", errorHandler(handler.PostPlayerNPCForm))
+	v1.HandleFunc("POST /player/npc/remove", errorHandler(handler.PostPlayerNPCRemove))
 
 	v1.HandleFunc("GET /randname/grid", errorHandler(handler.GetRandnameGrid))
 	v1.HandleFunc("POST /randname/form", errorHandler(handler.PostRandnameForm))
@@ -128,6 +132,7 @@ func NewServer(logger *slog.Logger, handler *routes.Handler, store db.Store) *Se
 	v1.HandleFunc("POST /siteframe/remove", errorHandler(handler.PostSiteFrameRemove))
 
 	v1.HandleFunc("GET /zone/grid", errorHandler(handler.GetZoneGrid))
+	v1.HandleFunc("GET /zone/dropdown", errorHandler(handler.GetZoneDropdown))
 	v1.HandleFunc("POST /zone/form", errorHandler(handler.PostZoneForm))
 	v1.HandleFunc("POST /zone/remove", errorHandler(handler.PostZoneRemove))
 
