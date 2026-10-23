@@ -26,6 +26,7 @@ export function createItemLayout() {
         field: 'id',
         text: 'ID',
         size: '60px',
+        hidden: true,
         sortable: true,
         searchable: 'int',
       },
@@ -36,14 +37,6 @@ export function createItemLayout() {
         render: 'icon-sm',
       },
       {
-        field: 'container',
-        text: 'Asset Container',
-        size: '200px',
-        render: 'dropdown',
-        sortable: true,
-        searchable: 'text',
-      },
-      {
         field: 'name',
         text: 'Item Name',
         size: '200px',
@@ -52,15 +45,23 @@ export function createItemLayout() {
         searchable: 'text',
       },
       {
+        field: 'container',
+        text: 'Asset Container',
+        size: '200px',
+        render: 'dropdown',
+        sortable: true,
+        searchable: 'text',
+      },
+      {
         field: 'categories',
         text: 'Categories',
-        size: '200px',
+        size: '150px',
         render: 'dropdown-multi',
       },
       {
         field: 'slots',
         text: 'Acceptable Slots',
-        size: '200px',
+        size: '150px',
         render: 'dropdown-multi',
       },
       {

@@ -3,6 +3,8 @@ package services
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
+	"fmt"
 	"net/url"
 
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
@@ -28,6 +30,7 @@ type Asset struct {
 	SizeStr       string           `json:"size_str"`
 	BundleVersion w2.Field[string] `json:"bundle_version"`
 	Icon          string           `json:"icon"`
+	Containers    []w2.Dropdown    `json:"containers"`
 }
 
 func (s *Service) GetAssetGrid(ctx context.Context, req w2.GetGridRequest) (w2.GetGridResponse[Asset], error) {
@@ -48,6 +51,7 @@ func (s *Service) GetAssetGrid(ctx context.Context, req w2.GetGridRequest) (w2.G
 			"a.hash",
 			"a.size",
 			"a.bundle_version",
+			"cnt.containers",
 		},
 		Where: map[string]string{
 			"id":             "a.id",
@@ -76,8 +80,24 @@ func (s *Service) GetAssetGrid(ctx context.Context, req w2.GetGridRequest) (w2.G
 			sb.Join("file_type as ft", "ft.id = a.file_type_id")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_type as at", "at.id = a.asset_type_id")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_group as ag", "ag.id = a.asset_group_id")
+			sb.JoinWithOption(sqlbuilder.LeftJoin, `(
+					select
+						am.asset_id,
+						json_group_array(
+							json_object('id', c.id, 'text', c.name)
+							order by c.name
+						) as containers
+					from (
+						select container_id, win_asset_id as asset_id from asset_container_assetmap
+						union
+						select container_id, osx_asset_id as asset_id from asset_container_assetmap where osx_asset_id is not null
+					) as am
+					join asset_container as c on c.id = am.container_id
+					group by am.asset_id
+				) as cnt`, "cnt.asset_id = a.id")
 		},
 		Scan: func(rows *sql.Rows, record *Asset) error {
+			var containers sql.Null[string]
 			if err := rows.Scan(
 				&record.ID,
 				&record.OID,
@@ -92,8 +112,14 @@ func (s *Service) GetAssetGrid(ctx context.Context, req w2.GetGridRequest) (w2.G
 				&record.Hash,
 				&record.Size,
 				&record.BundleVersion,
+				&containers,
 			); err != nil {
 				return err
+			}
+			if containers.Valid {
+				if err := json.Unmarshal([]byte(containers.V), &record.Containers); err != nil {
+					return fmt.Errorf("containers unmarshal: %w", err)
+				}
 			}
 			record.OIDStr = types.OIDFromString(record.OID).String()
 			record.SizeStr = humanize.Bytes(uint64(record.Size))

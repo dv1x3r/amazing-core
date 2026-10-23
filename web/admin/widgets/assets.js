@@ -11,6 +11,7 @@ export function createAssetGrid() {
     },
     recid: 'id',
     recordHeight: 28,
+    disableCVS: true,
     show: {
       footer: true,
       toolbar: true,
@@ -21,7 +22,6 @@ export function createAssetGrid() {
       toolbarSearch: true,
       toolbarReload: true,
       searchSave: false,
-      expandColumn: true,
     },
     toolbar: {
       items: [
@@ -147,6 +147,12 @@ export function createAssetGrid() {
         searchAll: true,
         searchable: 'text',
         editable: { type: 'text' },
+      },
+      {
+        field: 'containers',
+        text: 'Containers',
+        size: '200px',
+        render: 'dropdown-multi',
       },
       {
         field: 'bundle_version',
