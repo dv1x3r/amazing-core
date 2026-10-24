@@ -71,6 +71,7 @@ func NewServer(
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.HEARTBEAT), handler.Heartbeat)
 	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_OTHER_PLAYER_DETAILS), handler.GetOtherPlayerDetails)
 	router.HandleFunc(int32(serviceclass.SYNC_SERVER), int32(syncmessagetype.LOGIN), handler.SyncLogin)
+	router.HandleFunc(int32(serviceclass.SYNC_SERVER), int32(syncmessagetype.RELOGIN), handler.SyncLogin)
 	router.HandleFunc(int32(serviceclass.SYNC_SERVER), int32(syncmessagetype.MOVE_PLAYER), handler.MovePlayer)
 	router.HandleFunc(int32(serviceclass.SYNC_SERVER), int32(syncmessagetype.ACTION), handler.SyncAction)
 	router.HandleFunc(int32(serviceclass.SYNC_SERVER), int32(syncmessagetype.HEARTBEAT_NOTIFY), handler.HeartbeatNotify)

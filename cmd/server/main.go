@@ -190,6 +190,7 @@ func main() {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	logBus.Close() // end log watch streams
 	apiServer.Shutdown(shutdownCtx)
 	gameServer.Shutdown(shutdownCtx)
 }

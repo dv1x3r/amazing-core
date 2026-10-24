@@ -8,8 +8,8 @@ import (
 )
 
 type Bus struct {
-	nextRecordID     uint64
-	nextSubscriberID uint64
+	nextRecordID     atomic.Uint64
+	nextSubscriberID atomic.Uint64
 
 	mu          sync.RWMutex
 	subscribers map[uint64]chan Record
@@ -29,7 +29,7 @@ func (b *Bus) Handler(next slog.Handler) slog.Handler {
 }
 
 func (b *Bus) Watch(ctx context.Context) <-chan Record {
-	id := atomic.AddUint64(&b.nextSubscriberID, 1)
+	id := b.nextSubscriberID.Add(1)
 	ch := make(chan Record, 256)
 
 	b.mu.Lock()
@@ -46,8 +46,19 @@ func (b *Bus) Watch(ctx context.Context) <-chan Record {
 	return ch
 }
 
+// Close closes the channels of all watchers, so their streams end and the API server can shut down.
+func (b *Bus) Close() {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	for id, ch := range b.subscribers {
+		close(ch)
+		delete(b.subscribers, id)
+	}
+}
+
 func (b *Bus) publish(record Record) {
-	record.ID = atomic.AddUint64(&b.nextRecordID, 1)
+	record.ID = b.nextRecordID.Add(1)
 
 	b.mu.RLock()
 	defer b.mu.RUnlock()

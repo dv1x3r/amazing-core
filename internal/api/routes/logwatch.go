@@ -35,13 +35,18 @@ func (h *Handler) GetLogsWatch(w http.ResponseWriter, r *http.Request) error {
 			if err := event.Flush(w); err != nil {
 				return err
 			}
-		case record := <-records:
+		case record, ok := <-records:
+			if !ok {
+				// the log bus is closed on shutdown
+				return nil
+			}
 			data, err := json.Marshal(record)
 			if err != nil {
-				return err
+				// skip the record, do not break the stream
+				continue
 			}
 			id := strconv.FormatUint(record.ID, 10)
-			event := sse.Event{ID: []byte(id), Event: []byte("log"), Data: data}
+			event = sse.Event{ID: []byte(id), Event: []byte("log"), Data: data}
 			if err := event.Flush(w); err != nil {
 				return err
 			}

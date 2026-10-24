@@ -563,6 +563,7 @@ func (h *Handler) InitLocation(w gsf.ResponseWriter, r *gsf.Request) error {
 
 // SyncLogin authenticates the player on the SYNC server.
 // The SYNC server handles real-time positional and social updates.
+// It also handles RELOGIN, the client sends it with the same payload after the connection is restored.
 func (h *Handler) SyncLogin(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.SyncLoginRequest{}
 	if err := r.Read(req); err != nil {

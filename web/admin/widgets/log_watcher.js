@@ -1,7 +1,10 @@
 import { w2grid, w2utils, query } from '/lib/w2ui.es6.min.js'
 
+const maxRecords = 1000
+
 export function createLogWatcherGrid() {
   let source = null
+  let pending = []
 
   const grid = new w2grid({
     name: 'logWatcherGrid',
@@ -150,23 +153,14 @@ export function createLogWatcherGrid() {
       if (!entry) {
         return
       }
-      grid.add({
-        id: entry.id,
-        time: entry.time,
-        kind: entry.kind,
-        remote_ip: entry.remote_ip,
-        player_oid: entry.player_oid,
-        service_class: entry.service_class,
-        message_type: entry.message_type,
-        result: entry.result,
-        app: entry.app,
-        request_id: entry.request_id,
-        request_flags: entry.request_flags,
-        response_flags: entry.response_flags,
-        latency: entry.latency,
-        details: entry.details,
-      }, true)
-      grid.refresh()
+      if (pending.length == 0) {
+        requestAnimationFrame(flushPending)
+      }
+      pending.push(entry)
+      // requestAnimationFrame is paused in a hidden tab, keep only the latest records
+      if (pending.length > maxRecords) {
+        pending.splice(0, pending.length - maxRecords)
+      }
     })
     source.onopen = () => {
       if (source) {
@@ -174,11 +168,28 @@ export function createLogWatcherGrid() {
       }
     }
     source.onerror = () => {
-      if (source) {
+      if (!source) {
+        return
+      }
+      // EventSource reconnects only after network errors, an error response closes it for good
+      if (source.readyState == EventSource.CLOSED) {
+        stopWatch()
+        grid.status('Connection is closed')
+      } else {
         grid.status('Reconnecting...')
       }
     }
     setWatchButton(true)
+  }
+
+  function flushPending() {
+    const overflow = grid.records.length + pending.length - maxRecords
+    if (overflow > 0) {
+      grid.records.splice(-overflow)
+    }
+    grid.add(pending, true)
+    grid.refresh()
+    pending = []
   }
 
   function stopWatch() {
