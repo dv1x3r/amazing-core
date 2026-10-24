@@ -69,6 +69,7 @@ func NewServer(logger *slog.Logger, handler *routes.Handler, store db.Store) *Se
 	v1.HandleFunc("GET /avatar/slot/dropdown", errorHandler(handler.GetAvatarSlotDropdown))
 
 	v1.HandleFunc("GET /blob/grid", errorHandler(handler.GetBlobGrid))
+	v1.HandleFunc("GET /blob/{cdnid}/metadata", errorHandler(handler.GetBlobMetadata))
 	v1.HandleFunc("POST /blob/remove", errorHandler(handler.PostBlobRemove))
 	v1.HandleFunc("POST /blob/import", errorHandler(handler.PostBlobImport))
 	v1.HandleFunc("POST /blob/extract", errorHandler(handler.PostBlobExtract))
@@ -99,6 +100,13 @@ func NewServer(logger *slog.Logger, handler *routes.Handler, store db.Store) *Se
 	v1.HandleFunc("GET /item/category/dropdown", errorHandler(handler.GetItemCategoryDropdown))
 	v1.HandleFunc("POST /item/category/form", errorHandler(handler.PostItemCategoryForm))
 	v1.HandleFunc("POST /item/category/remove", errorHandler(handler.PostItemCategoryRemove))
+
+	v1.HandleFunc("GET /npc/grid", errorHandler(handler.GetNPCGrid))
+	v1.HandleFunc("GET /npc/dropdown", errorHandler(handler.GetNPCDropdown))
+	v1.HandleFunc("POST /npc/form", errorHandler(handler.PostNPCForm))
+	v1.HandleFunc("POST /npc/remove", errorHandler(handler.PostNPCRemove))
+
+	v1.HandleFunc("GET /oidtype/dropdown", errorHandler(handler.GetOIDTypeDropdown))
 
 	v1.HandleFunc("GET /player/grid", errorHandler(handler.GetPlayerGrid))
 	v1.HandleFunc("GET /player/form", errorHandler(handler.GetPlayerForm))

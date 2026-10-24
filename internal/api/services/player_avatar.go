@@ -7,6 +7,7 @@ import (
 
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/oidtype"
 	"github.com/dv1x3r/w2go/w2"
 	"github.com/dv1x3r/w2go/w2db"
 
@@ -68,7 +69,7 @@ func (s *Service) CreatePlayerAvatar(ctx context.Context, req w2.SaveFormRequest
 		Into: "player_avatar",
 		Values: map[string]any{
 			"player_id": playerID,
-			"gsfoid":    sqlbuilder.Buildf("(select coalesce(max(gsfoid) + 1, 1) from player_avatar)"),
+			"gsfoid":    oidOrNext(req.Record.OID, "player_avatar", oidtype.UNTYPED),
 			"avatar_id": req.Record.Avatar.ID,
 			"name":      req.Record.Name,
 			"outfit_no": req.Record.OutfitNo,
@@ -85,7 +86,7 @@ func (s *Service) UpdatePlayerAvatar(ctx context.Context, req w2.SaveFormRequest
 	_, err := w2db.UpdateContext(ctx, s.store.DB(), w2db.UpdateOptions{
 		Update: "player_avatar",
 		Values: map[string]any{
-			"gsfoid":    req.Record.OID,
+			"gsfoid":    oidOrNext(req.Record.OID, "player_avatar", oidtype.UNTYPED),
 			"avatar_id": req.Record.Avatar.ID,
 			"name":      req.Record.Name,
 			"outfit_no": req.Record.OutfitNo,

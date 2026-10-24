@@ -585,6 +585,19 @@ func (h *Handler) MovePlayer(w gsf.ResponseWriter, r *gsf.Request) error {
 	return h.syncHub.Move(r.Session(), req)
 }
 
+// SyncAction receives a local player action and relays it to other sync peers.
+func (h *Handler) SyncAction(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &notify.Action{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	throttled, err := h.syncHub.Action(r.Session(), req)
+	if throttled {
+		r.MarkDropped()
+	}
+	return err
+}
+
 // HeartbeatNotify keeps the SYNC server session associated with the active player.
 func (h *Handler) HeartbeatNotify(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &notify.Heartbeat{}
@@ -718,8 +731,33 @@ func (h *Handler) GetPlayerNPCs(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
+	npcs, err := h.svc.GetZoneNPCs(r.Context(), r.Platform(), req.ZoneOID)
+	if err != nil {
+		return err
+	}
 	res := &messages.GetPlayerNPCsResponse{}
-	res.NPCs = []types.NPC{}
+	res.NPCs = npcs
+	return w.Write(res)
+}
+
+// GetRuleCountList fetches rule counter values for the requested objects.
+func (h *Handler) GetRuleCountList(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.GetRuleCountListRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	res := &messages.GetRuleCountListResponse{}
+	res.ItemPairs = make([]types.OIDLongPair, 0, len(req.Items))
+	for i, oid := range req.Items {
+		pair := types.OIDLongPair{A: oid}
+		// NPCsDownloader looks for the "SpawnPoint_<count>" location asset,
+		// and falls back to "SpawnPoint_Default" or the first one.
+		if i < len(req.Expressions) && req.Expressions[i] == "Counter.NPCSpawnPoint" {
+			pair.B = gsf.NewNullable[int64](0)
+		}
+		// TODO: other expressions (Counter.ConstructionStage, wheel respawn timers) are not evaluated yet
+		res.ItemPairs = append(res.ItemPairs, pair)
+	}
 	return w.Write(res)
 }
 
@@ -751,7 +789,16 @@ func (h *Handler) GetQuestFromParent(w gsf.ResponseWriter, r *gsf.Request) error
 	if err := r.Read(req); err != nil {
 		return err
 	}
+	isNPC, err := h.svc.IsNPC(r.Context(), req.ParentOID)
+	if err != nil {
+		return err
+	}
 	res := &messages.GetQuestFromParentResponse{}
+	// NPCs have no quests yet, NPCController expects a null quest in that case;
+	// TODO: MobquestController, MultiplayerQuestTrigger do not handle a null quest;
+	if !isNPC {
+		res.Quest = &types.Quest{}
+	}
 	return w.Write(res)
 }
 

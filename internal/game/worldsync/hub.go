@@ -2,6 +2,7 @@ package worldsync
 
 import (
 	"sync"
+	"time"
 
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/notify"
@@ -165,6 +166,46 @@ func (h *Hub) move(session *gsf.Session, move *notify.Move) []OutboundNotify {
 		outbound = append(outbound, NewOutboundNotify(recipient.Session, clientmessagetype.MOVE_PLAYER, notify))
 	}
 	return outbound
+}
+
+// Action relays a player action to players in the same location.
+// It reports throttled when the action repeats a recent one and is not relayed.
+func (h *Hub) Action(session *gsf.Session, action *notify.Action) (throttled bool, err error) {
+	outbound, throttled := h.action(session, action)
+	return throttled, SendAll(outbound)
+}
+
+func (h *Hub) action(session *gsf.Session, action *notify.Action) ([]OutboundNotify, bool) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	player := h.playersBySession[session]
+	if player == nil {
+		return nil, false
+	}
+	if player.throttlesItemAnimate(action, time.Now()) {
+		return nil, true
+	}
+
+	// TODO: keep isState actions for the ADD_PLAYER actionState of players joining later.
+	notify := &types.PlayerActionNotify{
+		POID:       player.OID,
+		ActionOID:  action.ActionOID,
+		TargetOID:  action.TargetOID,
+		SourceOID:  action.SourceOID,
+		ActionType: action.ActionType,
+		Parameters: action.Parameters,
+		Pos:        action.Pos,
+		QTH:        action.QTH,
+		IsState:    action.IsState,
+		ClearState: action.ClearState,
+		StateIndex: action.StateIndex,
+	}
+	outbound := make([]OutboundNotify, 0)
+	for _, recipient := range h.playersInLocation(player.Location, player) {
+		outbound = append(outbound, NewOutboundNotify(recipient.Session, clientmessagetype.ACTION, notify))
+	}
+	return outbound, false
 }
 
 // Chat relays a chat notify to connected players in the sender's current location.

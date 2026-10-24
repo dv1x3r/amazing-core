@@ -13,13 +13,124 @@
   </p>
 
   <p>
-    <code>Avatar_SlotIds.txt</code> is a slot registry for wearable/equippable avatar parts.
-    Also imported to the <code>avatar_slot</code> SQL table.
-    Used in <code>DressAvatarManager.cs:917</code>
+    Most site-frame assets are loaded by file name.
+    The client looks the name up in the site frame, zones, NPCs and mini-games,
+    and falls back to its built-in Resources when nothing is found.
+    Only a few asset types are read from the site-frame asset map directly:
+    <code>Audio</code>, <code>Config_Text</code>, <code>LocalizedText</code>, <code>Movie_Unity3D</code>,
+    <code>Nix_Animation_Unity3D</code>, <code>Preload_PrefabUnity3D</code> and <code>Scene_Unity3D</code>.
   </p>
 
-  <p>
-    <code>Main_Localization.txt</code> is a localization file for buttons and main text.
-  </p>
+  <section>
+    <h3>Core</h3>
+    <p>
+      <code>Player_Base.unity3d</code> is the base Zing rig with shared animations.
+      <br>
+      <code>PlayerCamera.unity3d</code> is the player camera prefab.
+      <br>
+      <code>ShadersList.unity3d</code> contains some special shaders. Other shaders are built into the client.
+    </p>
+  </section>
+
+  <section>
+    <h3>Dressing Room</h3>
+    <p>
+      <code>Dress_your_pet.unity3d</code> is the preloaded dressing room scene.
+      <br>
+      <code>DressYourZing_Layout.txt</code> is the dressing room UI layout.
+      <br>
+      <code>Avatar_SlotIds.txt</code> is a slot registry for wearable/equippable avatar parts.
+      Also imported to the <code>avatar_slot</code> SQL table.
+    </p>
+  </section>
+
+  <section>
+    <h3>Localization</h3>
+    <p>
+      <code>Main_Localization.txt</code> is a localization file for buttons and main text.
+    </p>
+  </section>
+
+  <section>
+    <h3>World</h3>
+    <p>
+      <code>Sky.unity3d</code> is the cloud layer spawned above zones.
+      <br>
+      <code>TeleportSmoke.unity3d</code> is the teleport smoke effect.
+      <br>
+      <code>minimap_base.unity3d</code> is the zone map base mesh and texture.
+      <br>
+      <code>syst019_arrow.unity3d</code>, <code>syst019_map.unity3d</code> and <code>syst019_shovel.unity3d</code>
+      are the treasure hunt arrow, map and shovel models.
+      <br>
+      <code>Crown.unity3d</code> is the crown shown above the mob quest leader.
+    </p>
+  </section>
+
+  <section>
+    <h3>Sounds</h3>
+    <p>
+      <code>dock_up.unity3d</code> and <code>dock_down.unity3d</code> are panel slide sounds.
+      <br>
+      <code>fanfare.unity3d</code> is the prize wheel win sound.
+    </p>
+  </section>
+
+  <section>
+    <h3>Quest Rewards</h3>
+    <p>
+      <code>RewardUIPane.unity3d</code> is the quest reward dialog,
+      and <code>RewardItem.unity3d</code> is a reward item row inside it.
+    </p>
+  </section>
+
+  <section>
+    <h3>NPC and Crafting UI</h3>
+    <p>
+      <code>NPC_Hint.unity3d</code> is the NPC hint bubble.
+      <br>
+      <code>NPC_Choice.unity3d</code> is an NPC skill entry.
+      <br>
+      <code>HintBubble.unity3d</code> is the material hint bubble.
+      <br>
+      <code>MaterialCard.unity3d</code>, <code>RecipeCard.unity3d</code>, <code>TypeCard.unity3d</code>
+      and <code>Skill List.unity3d</code> are crafting journal cards and lists.
+      <br>
+      <code>CraftingUIPane.unity3d</code> is the crafting dialog.
+    </p>
+  </section>
+
+  <section>
+    <h3>Fishing and Home Upgrade</h3>
+    <p>
+      <code>Bobber.unity3d</code> is the fishing bobber,
+      and <code>PreloadedFishingSounds.unity3d</code> contains the fishing sounds.
+      <br>
+      <code>BrickCamera.unity3d</code> is the house upgrade camera animation,
+      and <code>PreloadedHomeUpgrade.unity3d</code> contains the house upgrade sounds.
+    </p>
+  </section>
+
+  <section>
+    <h3>Nix</h3>
+    <p>
+      <code>NixConfig.txt</code> lists the zone Nix and screen Nix files, and sets spawn timing and mini-game chances.
+      <br>
+      <code>NPCtheNix001.unity3d</code> to <code>NPCtheNix006.unity3d</code> are the Nix spawned in zones,
+      at the spawn points from <code>NixSpawnpoints.unity3d</code> (clawing, kicking, rummaging).
+      <br>
+      <code>ninjaSpawnIn_comboAnim.unity3d</code>, <code>ninjaSpawnOut_comboAnim.unity3d</code>
+      and <code>&lt;spawn point&gt;_Loop_comboAnim.unity3d</code> are the Nix spawn and loop animations.
+      They must have the <code>Nix_Animation_Unity3D</code> type and exact file names.
+      <br>
+      <code>ScreenNix001.unity3d</code> to <code>ScreenNix006.unity3d</code> are the Nix shown over mini-games,
+      with <code>ScreenNixSpawnpoints.unity3d</code> and <code>ScreenNixLight.unity3d</code>.
+      <code>ScreenNix004.unity3d</code> is missing from the cache (maybe old versions somewhere?..)
+      <br>
+      <code>nixsounds.unity3d</code> contains the Nix sounds.
+      <br>
+      <code>nixShieldExplode.unity3d</code> is the Nix shield explosion effect.
+    </p>
+  </section>
 
 </div>

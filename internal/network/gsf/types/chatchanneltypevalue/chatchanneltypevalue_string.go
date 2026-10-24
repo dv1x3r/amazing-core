@@ -18,8 +18,9 @@ const _ChatChannelTypeValue_name = "PRIVATEPRIVATE_GROUPLOCAL"
 var _ChatChannelTypeValue_index = [...]uint8{0, 7, 20, 25}
 
 func (i ChatChannelTypeValue) String() string {
-	if i < 0 || i >= ChatChannelTypeValue(len(_ChatChannelTypeValue_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_ChatChannelTypeValue_index)-1 {
 		return "ChatChannelTypeValue(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _ChatChannelTypeValue_name[_ChatChannelTypeValue_index[i]:_ChatChannelTypeValue_index[i+1]]
+	return _ChatChannelTypeValue_name[_ChatChannelTypeValue_index[idx]:_ChatChannelTypeValue_index[idx+1]]
 }

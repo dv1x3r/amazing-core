@@ -33,7 +33,7 @@ export function createZoneLayout() {
         field: 'container',
         text: 'Asset Container',
         size: '300px',
-        render: 'dropdown',
+        render: 'dropdown-tooltip',
         sortable: true,
         searchable: 'text',
       },

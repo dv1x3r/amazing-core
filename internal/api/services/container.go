@@ -25,6 +25,7 @@ var (
 type Container struct {
 	ID        int              `json:"id"`
 	OID       w2.Field[string] `json:"oid"`
+	OIDType   w2.Dropdown      `json:"oid_type"`
 	OIDStr    string           `json:"oid_str"`
 	Name      w2.Field[string] `json:"name"`
 	PTag      w2.Field[string] `json:"ptag"`
@@ -56,6 +57,8 @@ func (s *Service) GetContainerGrid(ctx context.Context, req w2.GetGridRequest) (
 		Select: []string{
 			"c.id",
 			"c.gsfoid",
+			"ot.id",
+			"ot.name",
 			"c.name",
 			"c.ptag",
 			"coalesce(a.assets, 0) as assets",
@@ -64,14 +67,16 @@ func (s *Service) GetContainerGrid(ctx context.Context, req w2.GetGridRequest) (
 			"icon.cdnid",
 		},
 		Where: map[string]string{
-			"id":   "c.id",
-			"oid":  "c.gsfoid",
-			"name": "c.name",
-			"ptag": "c.ptag",
+			"id":       "c.id",
+			"oid":      "c.gsfoid",
+			"oid_type": "ot.id",
+			"name":     "c.name",
+			"ptag":     "c.ptag",
 		},
 		OrderBy: map[string]string{
 			"id":         "c.id",
 			"oid":        "c.gsfoid",
+			"oid_type":   "ot.name",
 			"oid_str":    "c.gsfoid",
 			"name":       "c.name",
 			"ptag":       "c.ptag",
@@ -80,7 +85,14 @@ func (s *Service) GetContainerGrid(ctx context.Context, req w2.GetGridRequest) (
 			"created_at": "c.created_at",
 		},
 		Build: func(sb *sqlbuilder.SelectBuilder) {
-			sb.JoinWithOption(sqlbuilder.LeftJoin, containerIconJoin, "icon.container_id = c.id and icon.rn = 1")
+			sb.JoinWithOption(sqlbuilder.LeftJoin,
+				"oid_type as ot",
+				"c.gsfoid between ot.min_oid and ot.max_oid",
+			)
+			sb.JoinWithOption(sqlbuilder.LeftJoin,
+				containerIconJoin,
+				"icon.container_id = c.id and icon.rn = 1",
+			)
 			sb.JoinWithOption(sqlbuilder.LeftJoin,
 				"(select container_id, count(*) as assets from asset_container_assetmap group by container_id) as a",
 				"a.container_id = c.id",
@@ -95,6 +107,8 @@ func (s *Service) GetContainerGrid(ctx context.Context, req w2.GetGridRequest) (
 			if err := rows.Scan(
 				&record.ID,
 				&record.OID,
+				&record.OIDType.ID,
+				&record.OIDType.Text,
 				&record.Name,
 				&record.PTag,
 				&record.Assets,
@@ -178,7 +192,7 @@ func (s *Service) CreateContainer(ctx context.Context, req w2.SaveFormRequest[Co
 	id, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{
 		Into: "asset_container",
 		Values: map[string]any{
-			"gsfoid": req.Record.OID,
+			"gsfoid": oidOrNext(req.Record.OID, "asset_container", req.Record.OIDType.ID),
 			"name":   req.Record.Name,
 			"ptag":   req.Record.PTag,
 		},
@@ -194,7 +208,7 @@ func (s *Service) UpdateContainer(ctx context.Context, req w2.SaveFormRequest[Co
 	_, err := w2db.UpdateContext(ctx, s.store.DB(), w2db.UpdateOptions{
 		Update: "asset_container",
 		Values: map[string]any{
-			"gsfoid": req.Record.OID,
+			"gsfoid": oidOrNext(req.Record.OID, "asset_container", req.Record.OIDType.ID),
 			"name":   req.Record.Name,
 			"ptag":   req.Record.PTag,
 		},

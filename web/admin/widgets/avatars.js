@@ -48,7 +48,7 @@ export function createAvatarLayout() {
         field: 'container',
         text: 'Asset Container',
         size: '200px',
-        render: 'dropdown',
+        render: 'dropdown-tooltip',
         sortable: true,
         searchable: 'text',
       },

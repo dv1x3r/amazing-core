@@ -27,8 +27,9 @@ const _SessionStatus_name = "IN_PROGRESSLOGGED_OUTTIMED_OUTFORCED_LOGOUTLOGOUT_I
 var _SessionStatus_index = [...]uint8{0, 11, 21, 30, 43, 61, 79, 92, 104, 119, 134, 149, 160}
 
 func (i SessionStatus) String() string {
-	if i < 0 || i >= SessionStatus(len(_SessionStatus_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_SessionStatus_index)-1 {
 		return "SessionStatus(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _SessionStatus_name[_SessionStatus_index[i]:_SessionStatus_index[i+1]]
+	return _SessionStatus_name[_SessionStatus_index[idx]:_SessionStatus_index[idx+1]]
 }

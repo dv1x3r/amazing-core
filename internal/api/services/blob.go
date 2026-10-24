@@ -39,6 +39,22 @@ func (s *Service) GetBlobData(ctx context.Context, cdnid string) ([]byte, error)
 	return data, nil
 }
 
+func (s *Service) GetBlobMetadata(ctx context.Context, cdnid string) (string, error) {
+	const op = "api.Service.GetBlobMetadata"
+
+	var metadata sql.Null[string]
+
+	const query = "select json_pretty(metadata) from blob.asset_file where cdnid = ?;"
+	row := s.store.DB().QueryRowContext(ctx, query, cdnid)
+	if err := row.Scan(&metadata); err == sql.ErrNoRows {
+		return "", ErrBlobFileNotFound
+	} else if err != nil {
+		return "", wrap.IfErr(op, err)
+	}
+
+	return metadata.V, nil
+}
+
 func (s *Service) GetBlobGrid(ctx context.Context, req w2.GetGridRequest) (w2.GetGridResponse[File], error) {
 	const op = "api.Service.GetBlobGrid"
 	res, err := w2db.GetGridContext(ctx, s.store.DB(), req, w2db.GetGridOptions[File]{

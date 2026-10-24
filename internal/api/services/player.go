@@ -7,6 +7,7 @@ import (
 
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/oidtype"
 	"github.com/dv1x3r/w2go/w2"
 	"github.com/dv1x3r/w2go/w2db"
 
@@ -128,7 +129,7 @@ func (s *Service) UpdatePlayerDetails(ctx context.Context, req w2.SaveFormReques
 		affected, err := w2db.UpdateContext(ctx, tx, w2db.UpdateOptions{
 			Update: "player",
 			Values: map[string]any{
-				"gsfoid":                req.Record.OID,
+				"gsfoid":                oidOrNext(w2.NewField(req.Record.OID), "player", oidtype.PLAYER),
 				"username":              req.Record.Username,
 				"is_tutorial_completed": req.Record.IsTutorialCompleted,
 				"is_chat_allowed":       req.Record.IsChatAllowed,

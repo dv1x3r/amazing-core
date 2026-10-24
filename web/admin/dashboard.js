@@ -53,15 +53,6 @@ const dashboardSidebar = new w2sidebar({
           },
         },
         {
-          id: 'asset-files',
-          text: 'Asset Files',
-          icon: 'fa fa-file',
-          onClick: async function() {
-            const module = await import('./widgets/blob_db.js')
-            setDashboardWidget(module.createBlobLayout)
-          },
-        },
-        {
           id: 'asset-containers',
           text: 'Containers',
           icon: 'fa fa-folder-open',
@@ -73,8 +64,42 @@ const dashboardSidebar = new w2sidebar({
       ],
     },
     {
-      id: 'collections',
-      text: 'Collections',
+      id: 'blob-db-group',
+      text: 'blob.db',
+      group: true,
+      expanded: true,
+      nodes: [
+        {
+          id: 'asset-files',
+          text: 'Asset Files',
+          icon: 'fa fa-file',
+          onClick: async function() {
+            const module = await import('./widgets/blob_db.js')
+            setDashboardWidget(module.createBlobLayout)
+          },
+        },
+      ],
+    },
+    {
+      id: 'world-group',
+      text: 'World',
+      group: true,
+      expanded: true,
+      nodes: [
+        {
+          id: 'players',
+          text: 'Players',
+          icon: 'fa fa-users',
+          onClick: async function() {
+            const module = await import('./widgets/players.js')
+            setDashboardWidget(module.createPlayerLayout)
+          },
+        },
+      ],
+    },
+    {
+      id: 'templates-group',
+      text: 'Templates',
       group: true,
       expanded: true,
       nodes: [
@@ -97,6 +122,32 @@ const dashboardSidebar = new w2sidebar({
           },
         },
         {
+          id: 'npcs',
+          text: 'NPCs',
+          icon: 'fa fa-user-tie',
+          onClick: async function() {
+            const module = await import('./widgets/npcs.js')
+            setDashboardWidget(module.createNPCLayout)
+          },
+        },
+        {
+          id: 'zones',
+          text: 'Zones',
+          icon: 'fa fa-location-dot',
+          onClick: async function() {
+            const module = await import('./widgets/zones.js')
+            setDashboardWidget(module.createZoneLayout)
+          },
+        },
+      ],
+    },
+    {
+      id: 'reference-group',
+      text: 'Reference',
+      group: true,
+      expanded: true,
+      nodes: [
+        {
           id: 'item-categories',
           text: 'Item Categories',
           icon: 'fa fa-tags',
@@ -114,6 +165,14 @@ const dashboardSidebar = new w2sidebar({
             setDashboardWidget(module.createRandomNameLayout)
           },
         },
+      ],
+    },
+    {
+      id: 'config-group',
+      text: 'Config',
+      group: true,
+      expanded: true,
+      nodes: [
         {
           id: 'site-frame',
           text: 'Site Frame',
@@ -121,32 +180,6 @@ const dashboardSidebar = new w2sidebar({
           onClick: async function() {
             const module = await import('./widgets/site_frame.js')
             setDashboardWidget(module.createSiteFrameLayout)
-          },
-        },
-        {
-          id: 'zones',
-          text: 'Zones',
-          icon: 'fa fa-location-dot',
-          onClick: async function() {
-            const module = await import('./widgets/zones.js')
-            setDashboardWidget(module.createZoneLayout)
-          },
-        },
-      ],
-    },
-    {
-      id: 'world-group',
-      text: 'World',
-      group: true,
-      expanded: true,
-      nodes: [
-        {
-          id: 'players',
-          text: 'Players',
-          icon: 'fa fa-users',
-          onClick: async function() {
-            const module = await import('./widgets/players.js')
-            setDashboardWidget(module.createPlayerLayout)
           },
         },
       ],

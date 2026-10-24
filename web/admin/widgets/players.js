@@ -80,6 +80,7 @@ export function createPlayerLayout() {
             { id: 'avatars', text: 'Avatars' },
             { id: 'outfits', text: 'Outfits' },
             { id: 'items', text: 'Items' },
+            { id: 'npcs', text: 'NPCs' },
           ],
           onClick(event) {
             renderActiveTab(event.target)
@@ -110,6 +111,9 @@ export function createPlayerLayout() {
         break
       case 'items':
         subLayout.html('main', createPlayerItemsGrid())
+        break
+      case 'npcs':
+        subLayout.html('main', createPlayerNPCsGrid())
         break
     }
   }
@@ -160,6 +164,7 @@ function createPlayerDetailsForm() {
         disabled: selectedPlayerID == null,
         html: {
           label: 'Player OID',
+          attr: 'size="20" placeholder="Automatic"',
           span: 6,
           column: 0,
         },
@@ -343,10 +348,9 @@ function openPlayerAvatarPopup(event) {
       {
         field: 'oid',
         type: 'text',
-        required: isEditMode,
         html: {
           label: 'Player Avatar OID',
-          attr: isEditMode ? 'size="15"' : 'size="15" readonly',
+          attr: 'size="20" placeholder="Automatic"',
           span: 6,
           column: 0,
         },
@@ -492,10 +496,9 @@ function openPlayerOutfitPopup(event) {
       {
         field: 'oid',
         type: 'text',
-        required: isEditMode,
         html: {
           label: 'Player Outfit OID',
-          attr: isEditMode ? 'size="15"' : 'size="15" readonly',
+          attr: 'size="20" placeholder="Automatic"',
           span: 6,
           column: 0,
         },
@@ -649,10 +652,9 @@ function openPlayerItemPopup(event) {
       {
         field: 'oid',
         type: 'text',
-        required: isEditMode,
         html: {
           label: 'Player Item OID',
-          attr: isEditMode ? 'size="15"' : 'size="15" readonly',
+          attr: 'size="20" placeholder="Automatic"',
           span: 6,
           column: 0,
         },
@@ -733,3 +735,134 @@ function openPlayerItemPopup(event) {
     .then(() => form.render('#popup-form'))
     .close(() => form.destroy())
 }
+
+function createPlayerNPCsGrid() {
+  return new w2grid({
+    name: 'playerNPCGrid',
+    url: {
+      get: '/api/v1/player/:id/npc/grid',
+      remove: '/api/v1/player/npc/remove',
+    },
+    routeData: { id: selectedPlayerID ?? 0 },
+    recid: 'id',
+    recordHeight: 28,
+    show: {
+      footer: true,
+      toolbar: true,
+      toolbarAdd: true,
+      toolbarEdit: true,
+      toolbarDelete: true,
+      toolbarSave: false,
+      toolbarSearch: false,
+      toolbarReload: true,
+      searchSave: false,
+    },
+    columns: [
+      {
+        field: 'id',
+        text: 'ID',
+        size: '60px',
+      },
+      {
+        field: 'npc',
+        text: 'NPC',
+        size: '200px',
+        render: 'dropdown',
+      },
+      {
+        field: 'points',
+        text: 'Relationship Points',
+        size: '140px',
+        render: 'int',
+      },
+      {
+        field: 'is_friend',
+        text: 'Friend',
+        size: '70px',
+        render: 'toggle',
+      },
+    ],
+    onRender: function(event) {
+      if (selectedPlayerID == null) {
+        event.owner.toolbar.disable('w2ui-add')
+      }
+    },
+    onAdd: function(event) { openPlayerNPCPopup(event) },
+    onEdit: function(event) { openPlayerNPCPopup(event) },
+    onDblClick: function(event) { openPlayerNPCPopup(event) },
+  })
+}
+
+function openPlayerNPCPopup(event) {
+  const record = event.owner.get(event.detail.recid)
+  const isEditMode = record != null
+  const form = new w2form({
+    name: 'playerNPCForm',
+    url: '/api/v1/player/:id/npc/form',
+    routeData: { id: selectedPlayerID ?? 0 },
+    focus: -1,
+    record: record ?? { points: 0 },
+    fields: [
+      {
+        field: 'id',
+        type: 'text',
+        html: {
+          label: 'ID',
+          attr: 'size="15" readonly',
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'npc',
+        type: 'list',
+        required: true,
+        options: helpers.remoteListOptions('/api/v1/npc/dropdown'),
+        html: {
+          label: 'NPC',
+          attr: 'style="width:100%;" placeholder="Type to search..."',
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'points',
+        type: 'int',
+        required: true,
+        html: {
+          label: 'Relationship Points',
+          attr: 'size="15"',
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'is_friend',
+        type: 'checkbox',
+        html: {
+          label: 'Is Friend',
+          span: 6,
+          column: 0,
+        },
+      },
+    ],
+    actions: {
+      async Save() {
+        const res = await this.save()
+        if (res.status == 'success') {
+          event.owner.reload()
+          w2popup.close()
+        }
+      },
+      Cancel() { w2popup.close() },
+    },
+  })
+  w2popup.open({
+    title: isEditMode ? 'Edit Player NPC' : 'New Player NPC',
+    body: '<div id="popup-form" style="width: 100%; height: 100%;"></div>',
+    width: 600, height: 300, showMax: false, resizable: false,
+  })
+    .then(() => form.render('#popup-form'))
+    .close(() => form.destroy())
+}
+

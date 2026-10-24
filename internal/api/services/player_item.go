@@ -7,6 +7,7 @@ import (
 
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/oidtype"
 	"github.com/dv1x3r/w2go/w2"
 	"github.com/dv1x3r/w2go/w2db"
 
@@ -81,7 +82,7 @@ func (s *Service) CreatePlayerItem(ctx context.Context, req w2.SaveFormRequest[P
 		Into: "player_item",
 		Values: map[string]any{
 			"player_id":               playerID,
-			"gsfoid":                  sqlbuilder.Buildf("(select coalesce(max(gsfoid) + 1, 1) from player_item)"),
+			"gsfoid":                  oidOrNext(req.Record.OID, "player_item", oidtype.UNTYPED),
 			"item_id":                 req.Record.Item.ID,
 			"player_avatar_id":        req.Record.PlayerAvatar.ID,
 			"player_avatar_outfit_id": req.Record.PlayerOutfit.ID,
@@ -100,7 +101,7 @@ func (s *Service) UpdatePlayerItem(ctx context.Context, req w2.SaveFormRequest[P
 	_, err := w2db.UpdateContext(ctx, s.store.DB(), w2db.UpdateOptions{
 		Update: "player_item",
 		Values: map[string]any{
-			"gsfoid":                  req.Record.OID,
+			"gsfoid":                  oidOrNext(req.Record.OID, "player_item", oidtype.UNTYPED),
 			"item_id":                 req.Record.Item.ID,
 			"player_avatar_id":        req.Record.PlayerAvatar.ID,
 			"player_avatar_outfit_id": req.Record.PlayerOutfit.ID,

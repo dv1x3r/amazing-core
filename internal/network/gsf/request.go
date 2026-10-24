@@ -12,6 +12,7 @@ type Request struct {
 	reader  ProtocolReader
 	ctx     context.Context
 	session *Session
+	dropped bool
 }
 
 func NewRequest(ctx context.Context, header *Header, reader ProtocolReader, session *Session) *Request {
@@ -57,6 +58,14 @@ func (req *Request) PlayerOID() (int64, bool) {
 
 func (req *Request) SetPlayerOID(playerOID int64) {
 	req.session.SetPlayerOID(playerOID)
+}
+
+func (req *Request) MarkDropped() {
+	req.dropped = true
+}
+
+func (req *Request) Dropped() bool {
+	return req.dropped
 }
 
 func (req *Request) Read(body Deserializable) error {

@@ -41,6 +41,7 @@ type RequestEvent struct {
 	ResponseBody   Serializable
 	Err            error
 	Latency        time.Duration
+	Dropped        bool
 }
 
 type NotifyEvent struct {
@@ -218,6 +219,7 @@ func (s *Server) processRequest(ctx context.Context, session *Session) error {
 			ResponseBody:   res.Body(),
 			Err:            eventErr,
 			Latency:        time.Since(startTime),
+			Dropped:        req.Dropped(),
 		})
 	}
 

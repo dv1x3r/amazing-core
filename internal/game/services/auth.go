@@ -9,6 +9,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/lib/pass"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/oidtype"
 )
 
 var (
@@ -96,9 +97,14 @@ func (s *Service) insertPlayer(ctx context.Context, tx *sql.Tx, username, passwo
 	var playerOID types.OID
 	err := tx.QueryRowContext(ctx, `
 			insert into player (gsfoid, username, password, is_tutorial_completed, is_qa, max_outfits)
-			values ((select coalesce(max(gsfoid), 0) + 1 from player), ?, ?, 1, 1, 1)
+			values ((
+				select coalesce(max(p.gsfoid) + 1, t.min_oid)
+				from oid_type as t
+				left join player as p on p.gsfoid between t.min_oid and t.max_oid
+				where t.id = ?
+			), ?, ?, 1, 1, 1)
 			returning id, gsfoid;
-		`, username, passwordHash).Scan(&playerID, &playerOID)
+		`, oidtype.PLAYER, username, passwordHash).Scan(&playerID, &playerOID)
 	if s.store.IsErrConstraintUnique(err) {
 		return 0, types.OID{}, ErrCreatePlayerAccountFailed
 	}

@@ -33,7 +33,7 @@ export function createSiteFrameLayout() {
         field: 'container',
         text: 'Asset Container',
         size: '200px',
-        render: 'dropdown',
+        render: 'dropdown-tooltip',
         sortable: true,
         searchable: 'text',
       },

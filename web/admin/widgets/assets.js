@@ -1,4 +1,4 @@
-import { w2confirm, w2grid } from '/lib/w2ui.es6.min.js'
+import { query, w2confirm, w2grid, w2utils } from '/lib/w2ui.es6.min.js'
 import * as helpers from '/lib/w2ui.helpers.js'
 
 export function createAssetGrid() {
@@ -22,6 +22,7 @@ export function createAssetGrid() {
       toolbarSearch: true,
       toolbarReload: true,
       searchSave: false,
+      expandColumn: true,
     },
     toolbar: {
       items: [
@@ -187,6 +188,52 @@ export function createAssetGrid() {
     ],
     onSave: function(event) { helpers.reloadOnSuccess(event) },
     onSearch: function(event) { helpers.searchAllFilter(event) },
+    onExpand: function(event) { expandAsset(event) },
   })
+}
+
+async function expandAsset(event) {
+  const row = event.owner.get(event.detail.recid)
+  const box = query('#' + event.detail.box_id)
+  const fileType = row.file_type?.text ?? ''
+  const cdnid = encodeURIComponent(row.cdnid)
+
+  if (fileType.startsWith('image/')) {
+    box.html(`
+      <div style="padding: 5px; height: 150px;">
+        <img style="height: 100%;" src="/cdn/${cdnid}"/>
+      </div>
+    `)
+    return
+  }
+
+  if (fileType.startsWith('audio/')) {
+    box.html(`
+      <div style="padding: 5px;">
+        <audio controls src="/cdn/${cdnid}"></audio>
+      </div>
+    `)
+    return
+  }
+
+  box.html(`
+    <div style="padding: 5px;">
+      <div style="height: 300px;">Loading...</div>
+    </div>
+  `)
+
+  const isText = fileType.startsWith('TreeNode/') || fileType == 'json'
+  const res = await fetch(isText ? `/cdn/${cdnid}` : `/api/v1/blob/${cdnid}/metadata`)
+  const text = res.ok ? await res.text() : ''
+  if (!text) {
+    box.html('<div style="padding: 5px;">preview not available</div>')
+    return
+  }
+
+  box.html(`
+    <div style="padding: 5px;">
+      <textarea style="width: 100%; height: 300px; resize: none; font-family: monospace;" readonly>${w2utils.encodeTags(text)}</textarea>
+    </div>
+  `)
 }
 

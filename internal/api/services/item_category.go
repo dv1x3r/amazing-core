@@ -9,6 +9,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/lib/graph"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/oidtype"
 	"github.com/dv1x3r/w2go/w2"
 	"github.com/dv1x3r/w2go/w2db"
 
@@ -88,7 +89,7 @@ func (s *Service) CreateCategory(ctx context.Context, req w2.SaveFormRequest[Cat
 	id, err := w2db.InsertContext(ctx, s.store.DB(), w2db.InsertOptions{
 		Into: "item_category",
 		Values: map[string]any{
-			"gsfoid":       sqlbuilder.Raw("(select coalesce(max(gsfoid) + 1, 1) from item_category)"),
+			"gsfoid":       oidOrNext(req.Record.OID, "item_category", oidtype.UNTYPED),
 			"name":         req.Record.Name,
 			"parent_id":    req.Record.Parent.ID,
 			"is_public":    req.Record.IsPublic,
@@ -109,7 +110,7 @@ func (s *Service) UpdateCategory(ctx context.Context, req w2.SaveFormRequest[Cat
 		_, err := w2db.UpdateContext(ctx, tx, w2db.UpdateOptions{
 			Update: "item_category",
 			Values: map[string]any{
-				"gsfoid":       req.Record.OID,
+				"gsfoid":       oidOrNext(req.Record.OID, "item_category", oidtype.UNTYPED),
 				"name":         req.Record.Name,
 				"parent_id":    req.Record.Parent.ID,
 				"is_public":    req.Record.IsPublic,

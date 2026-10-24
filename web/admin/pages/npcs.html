@@ -1,0 +1,45 @@
+<div class="w2ui-reset page">
+
+  <h2><i class="fa fa-circle-info"></i> NPCs</h2>
+
+  <p>
+    An NPC is a rule container (asset container with rule metadata and flags) placed in a zone.
+  </p>
+
+  <section>
+    <h3>Asset Container</h3>
+    <p>
+      <code>NPCsDownloader</code> spawns an NPC only when its asset container has all of these assets.
+      A missing asset, or a model that fails to load, leaves the zone loading screen hanging.
+      <br>
+      <code>Prefab_Unity3D</code> with the <code>3D Prefab</code> group is the NPC model.
+      <br>
+      <code>Location_Unity3D</code> is a prefab with the spawn position. With several locations, the client picks
+      <code>SpawnPoint_&lt;n&gt;</code>, then <code>SpawnPoint_Default</code>, then the first one.
+      <br>
+      <code>Text</code> is the NPCAnimations treenode (idle animations, emotes and chat bubbles).
+      <br>
+      <code>Relationship_Text</code> is the NPCRelationships treenode (relationship levels).
+    </p>
+    <p>
+      Optional assets:
+      <code>Localized_Data</code> is the JSON with the name label, <code>FacePlayer</code>, <code>AllowTasks</code>,
+      <code>Size</code> and <code>ScreenOffset</code>.
+      <code>LocalizedText</code>, <code>Config_Text</code> and <code>Images</code> are used by NPC stores,
+      <code>Intro_Unity3D</code> is spawned with the NPC while Spring Bay is locked.
+    </p>
+  </section>
+
+  <section>
+    <h3>Fields</h3>
+    <p>
+      The client reads only the zone, the locked flag and the asset map of an NPC.
+      <br>
+      <b>Zone</b>: home yard NPCs belong to the <code>HardCodedZoneId (4, 16, 0, 2937912)</code> zone,
+      and are shown only in the player's own yard, and only when unlocked.
+      <br>
+      <b>Locked</b>: a locked NPC shows the members-only icon and offers no quests.
+    </p>
+  </section>
+
+</div>

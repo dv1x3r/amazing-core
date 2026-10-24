@@ -19,8 +19,9 @@ const _OnlineStatusValue_name = "OFFLINEAPPEAR_OFFLINEONLINEBUSY"
 var _OnlineStatusValue_index = [...]uint8{0, 7, 21, 27, 31}
 
 func (i OnlineStatusValue) String() string {
-	if i < 0 || i >= OnlineStatusValue(len(_OnlineStatusValue_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_OnlineStatusValue_index)-1 {
 		return "OnlineStatusValue(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _OnlineStatusValue_name[_OnlineStatusValue_index[i]:_OnlineStatusValue_index[i+1]]
+	return _OnlineStatusValue_name[_OnlineStatusValue_index[idx]:_OnlineStatusValue_index[idx+1]]
 }

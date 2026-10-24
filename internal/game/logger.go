@@ -20,6 +20,10 @@ func newGSFLogger(logger *slog.Logger) *gsfLogger {
 }
 
 func (l *gsfLogger) OnRequest(event gsf.RequestEvent) {
+	if event.Dropped && event.Err == nil {
+		return
+	}
+
 	debug := l.debugEnabled()
 
 	logFn := l.logFunc(event.Err, debug)

@@ -22,6 +22,18 @@ func (h *Handler) GetBlob(w http.ResponseWriter, r *http.Request) error {
 	return err
 }
 
+func (h *Handler) GetBlobMetadata(w http.ResponseWriter, r *http.Request) error {
+	metadata, err := h.svc.GetBlobMetadata(r.Context(), r.PathValue("cdnid"))
+	if errors.Is(err, services.ErrBlobFileNotFound) {
+		return wrap.WithHTTPStatus(err, http.StatusNotFound)
+	} else if err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	_, err = w.Write([]byte(metadata))
+	return err
+}
+
 func (h *Handler) GetBlobGrid(w http.ResponseWriter, r *http.Request) error {
 	req, err := w2.ParseGetGridRequest(r.URL.Query().Get("request"))
 	if err != nil {

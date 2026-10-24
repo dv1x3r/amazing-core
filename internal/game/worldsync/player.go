@@ -1,9 +1,20 @@
 package worldsync
 
 import (
+	"time"
+
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/notify"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
+)
+
+const (
+	// actionItemAnimate is SyncManager.ActionNotifyType.ItemAnimate.
+	actionItemAnimate = 3
+
+	// itemAnimateThrottle is the minimum interval between relays of a decorative ItemAnimate of the same object.
+	// Level object triggers can fire every frame, while the receiver only restarts the same animation clip.
+	itemAnimateThrottle = 250 * time.Millisecond
 )
 
 // Player stores world sync state that survives reconnects and zone joins.
@@ -16,6 +27,31 @@ type Player struct {
 	QTH                 types.QTH
 	SecondQTH           types.QTH
 	Seq                 byte
+
+	// itemAnimates holds the last relay time of decorative ItemAnimate actions by the object path hash.
+	itemAnimates map[string]time.Time
+}
+
+// throttlesItemAnimate reports whether a decorative ItemAnimate of the same object was relayed less than itemAnimateThrottle ago.
+// Actions with isState (stopPlayerMovement objects such as seats) are never throttled.
+// The position is not compared, the receiver finds the object by the path hash only.
+func (p *Player) throttlesItemAnimate(action *notify.Action, now time.Time) bool {
+	if action.ActionType != actionItemAnimate || action.IsState {
+		return false
+	}
+	if last, ok := p.itemAnimates[action.Parameters]; ok && now.Sub(last) < itemAnimateThrottle {
+		return true
+	}
+	if p.itemAnimates == nil {
+		p.itemAnimates = map[string]time.Time{}
+	}
+	for object, last := range p.itemAnimates {
+		if now.Sub(last) >= itemAnimateThrottle {
+			delete(p.itemAnimates, object)
+		}
+	}
+	p.itemAnimates[action.Parameters] = now
+	return false
 }
 
 // AddPlayerNotify builds the payload used when this player becomes visible.

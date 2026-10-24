@@ -26,8 +26,15 @@ export function createContainerLayout() {
         field: 'id',
         text: 'ID',
         size: '60px',
+        hidden: true,
         sortable: true,
         searchable: 'int',
+      },
+      {
+        field: 'icon',
+        text: x => x.field ? '' : 'Icon',
+        size: '40px',
+        render: 'icon-sm',
       },
       {
         field: 'oid',
@@ -46,6 +53,14 @@ export function createContainerLayout() {
         hidden: true,
       },
       {
+        field: 'oid_type',
+        text: 'OID Type',
+        size: '135px',
+        render: 'dropdown',
+        sortable: true,
+        searchable: { type: 'enum', options: helpers.remoteListOptions('/api/v1/oidtype/dropdown') },
+      },
+      {
         field: 'name',
         text: 'Container Name',
         render: 'text',
@@ -60,12 +75,6 @@ export function createContainerLayout() {
         render: 'text',
         sortable: true,
         searchable: 'text',
-      },
-      {
-        field: 'icon',
-        text: x => x.field ? '' : 'Icon',
-        size: '40px',
-        render: 'icon-sm',
       },
       {
         field: 'assets',
@@ -91,7 +100,7 @@ export function createContainerLayout() {
       'text': 'contains',
     },
     sortData: [
-      { field: 'id', direction: 'desc' },
+      { field: 'oid', direction: 'desc' },
     ],
     onAdd: function(event) { openContainerPopup(event) },
     onEdit: function(event) { openContainerPopup(event) },
@@ -266,14 +275,24 @@ function openContainerPopup(event) {
         },
       },
       {
-        field: 'oid',
-        type: 'text',
-        required: true,
+        field: 'oid_type',
+        type: 'list',
+        options: helpers.remoteListOptions('/api/v1/oidtype/dropdown'),
         html: {
           label: 'Container OID',
-          attr: 'size="15"',
+          attr: 'size="15" placeholder="OID Type"',
+          text: ' @oid',
           span: 6,
           column: 0,
+        },
+      },
+      {
+        field: 'oid',
+        type: 'text',
+        html: {
+          label: '',
+          attr: 'size="20" placeholder="Automatic"',
+          anchor: '@oid',
         },
       },
       {

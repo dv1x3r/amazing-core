@@ -25,6 +25,7 @@ export function createRandomNameLayout() {
         field: 'id',
         text: 'ID',
         size: '60px',
+        hidden: true,
         sortable: true,
         searchable: 'int',
       },
