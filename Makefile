@@ -42,7 +42,7 @@ update:
 
 .PHONY: generate
 generate:
-	go generate ./...
+	GOTOOLCHAIN=go1.25.0 go generate ./...
 
 .PHONY: clean
 clean:

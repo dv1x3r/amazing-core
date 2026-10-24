@@ -105,8 +105,11 @@ func (h *Handler) computeAttrs(ctx context.Context, r slog.Record) (map[string]a
 		return nil, fmt.Errorf("error when calling inner handler's Handle: %w", err)
 	}
 
+	// UseNumber keeps int64 values exact instead of rounding them through float64.
 	var attrs map[string]any
-	if err := json.Unmarshal(h.buf.Bytes(), &attrs); err != nil {
+	dec := json.NewDecoder(h.buf)
+	dec.UseNumber()
+	if err := dec.Decode(&attrs); err != nil {
 		return nil, fmt.Errorf("error when unmarshaling inner handler's Handle result: %w", err)
 	}
 
@@ -122,12 +125,13 @@ func processHTTP(message string, attrs map[string]any) string {
 
 	status := "-"
 	statusColor := Green
-	if v, ok := attrs["status"].(float64); ok {
-		status = fmt.Sprint(v)
+	if v, ok := attrs["status"].(json.Number); ok {
+		status = v.String()
 		delete(attrs, "status")
-		if v >= 500 {
+		code, _ := v.Int64()
+		if code >= 500 {
 			statusColor = Red
-		} else if v >= 300 {
+		} else if code >= 300 {
 			statusColor = Yellow
 		}
 	}
@@ -182,8 +186,8 @@ func processGSF(message string, attrs map[string]any) string {
 	}
 
 	resultCode := "-"
-	if v, ok := attrs["result_code"].(float64); ok {
-		resultCode = fmt.Sprint(v)
+	if v, ok := attrs["result_code"].(json.Number); ok {
+		resultCode = v.String()
 		delete(attrs, "result_code")
 	}
 
@@ -194,8 +198,8 @@ func processGSF(message string, attrs map[string]any) string {
 	}
 
 	appCode := "-"
-	if v, ok := attrs["app_code"].(float64); ok {
-		appCode = fmt.Sprint(v)
+	if v, ok := attrs["app_code"].(json.Number); ok {
+		appCode = v.String()
 		delete(attrs, "app_code")
 	}
 
@@ -206,8 +210,8 @@ func processGSF(message string, attrs map[string]any) string {
 	}
 
 	svcClass := "-"
-	if v, ok := attrs["svc_class"].(float64); ok {
-		svcClass = fmt.Sprint(v)
+	if v, ok := attrs["svc_class"].(json.Number); ok {
+		svcClass = v.String()
 		delete(attrs, "svc_class")
 	}
 
@@ -218,8 +222,8 @@ func processGSF(message string, attrs map[string]any) string {
 	}
 
 	msgType := "-"
-	if v, ok := attrs["msg_type"].(float64); ok {
-		msgType = fmt.Sprint(v)
+	if v, ok := attrs["msg_type"].(json.Number); ok {
+		msgType = v.String()
 		delete(attrs, "msg_type")
 	}
 
@@ -230,20 +234,20 @@ func processGSF(message string, attrs map[string]any) string {
 	}
 
 	requestID := "-"
-	if v, ok := attrs["request_id"].(float64); ok {
-		requestID = fmt.Sprint(v)
+	if v, ok := attrs["request_id"].(json.Number); ok {
+		requestID = v.String()
 		delete(attrs, "request_id")
 	}
 
 	flags := "-"
-	if v, ok := attrs["flags"].(float64); ok {
-		flags = fmt.Sprint(v)
+	if v, ok := attrs["flags"].(json.Number); ok {
+		flags = v.String()
 		delete(attrs, "flags")
 	}
 
 	responseFlags := "-"
-	if v, ok := attrs["response_flags"].(float64); ok {
-		responseFlags = fmt.Sprint(v)
+	if v, ok := attrs["response_flags"].(json.Number); ok {
+		responseFlags = v.String()
 		delete(attrs, "response_flags")
 	}
 
