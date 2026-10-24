@@ -18,7 +18,8 @@ type ProtocolCodec interface {
 }
 
 type ProtocolReader interface {
-	ReadObject(value Deserializable)
+	// ReadObject reads value and returns false when the object is null.
+	ReadObject(value Deserializable) bool
 	GetByte() byte
 	ReadBool() bool
 	ReadInt16() int16

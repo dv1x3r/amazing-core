@@ -95,10 +95,12 @@ func NewBitReader(data []byte) *BitReader {
 	return &BitReader{stream: NewBitStreamWithData(data)}
 }
 
-func (br *BitReader) ReadObject(value gsf.Deserializable) {
-	if !br.stream.Get() {
-		value.Deserialize(br)
+func (br *BitReader) ReadObject(value gsf.Deserializable) bool {
+	if br.stream.Get() {
+		return false
 	}
+	value.Deserialize(br)
+	return true
 }
 
 func (br *BitReader) GetByte() byte {
