@@ -15,6 +15,15 @@
       <br>
       <b>Asset Package</b> is an asset container that is referenced by another asset container.
     </p>
+    <p>
+      A container row has the Windows asset and the optional OSX asset,
+      the OSX client gets the Windows one when there is none.
+      <br>
+      The Windows client (Unity 5.3.6p8) loads the <code>StandaloneWindows</code>,
+      <code>StandaloneWindows64</code> and <code>WebPlayerStreamed</code> 5.3 builds.
+      The <code>StandaloneOSX</code> builds render magenta on Windows,
+      the 3.x builds do not load and should be converted.
+    </p>
   </section>
 
   <section>
@@ -34,6 +43,8 @@
       <b>Items</b> contain item collection.
       <br>
       <b>NPCs</b> contain NPCs placed in zones, each with its own asset container.
+      <br>
+      <b>Quests</b> contain quests offered by NPCs, with their order and rewards.
       <br>
       <b>Zones</b> contain zone scene containers.
     </p>
@@ -58,7 +69,7 @@
   <section>
     <h3>Requests</h3>
     <p>
-      <b>Log Watcher</b> provies a watcher to monitor and analyze game requests in real time.
+      <b>Log Watcher</b> provides a watcher to monitor and analyze game requests in real time.
     </p>
   </section>
 

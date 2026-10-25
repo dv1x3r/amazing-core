@@ -15,11 +15,12 @@ func _() {
 	_ = x[AVATAR-5]
 	_ = x[NPC-6]
 	_ = x[ZONE-7]
+	_ = x[PLAYER_QUEST-8]
 }
 
-const _OIDType_name = "UNTYPEDPLAYERAVATAR_SLOTITEMAVATARNPCZONE"
+const _OIDType_name = "UNTYPEDPLAYERAVATAR_SLOTITEMAVATARNPCZONEPLAYER_QUEST"
 
-var _OIDType_index = [...]uint8{0, 7, 13, 24, 28, 34, 37, 41}
+var _OIDType_index = [...]uint8{0, 7, 13, 24, 28, 34, 37, 41, 53}
 
 func (i OIDType) String() string {
 	idx := int(i) - 1

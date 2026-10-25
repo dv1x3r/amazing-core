@@ -3,22 +3,17 @@
   <h2><i class="fa fa-circle-info"></i> Site Frame</h2>
 
   <p>
-    A site-frame object contains the main asset container with core assets such as
-    <code>Player_Base</code>, <code>PlayerCamera</code> and <code>ShadersList</code>.
+    The site frame is the root asset container with the core assets, UI skins and localization.
+    The client requests it on start and after login, the only known <code>type_value</code> is 1.
   </p>
 
   <p>
-    The client requests this payload during intro loading and again after login.
-    The only known <code>type_value</code> is 1.
-  </p>
-
-  <p>
-    Most site-frame assets are loaded by file name.
-    The client looks the name up in the site frame, zones, NPCs and mini-games,
-    and falls back to its built-in Resources when nothing is found.
-    Only a few asset types are read from the site-frame asset map directly:
-    <code>Audio</code>, <code>Config_Text</code>, <code>LocalizedText</code>, <code>Movie_Unity3D</code>,
-    <code>Nix_Animation_Unity3D</code>, <code>Preload_PrefabUnity3D</code> and <code>Scene_Unity3D</code>.
+    Assets are found by <code>res_name</code>, exact and case-sensitive.
+    Files from the cache could have invalid names and must be renamed to the name the client asks for.
+    <br>
+    The asset type matters only for <code>Audio</code>, <code>Config_Text</code>, <code>LocalizedText</code>,
+    <code>Movie_Unity3D</code>, <code>Nix_Animation_Unity3D</code>, <code>Preload_PrefabUnity3D</code> and
+    <code>Scene_Unity3D</code>.
   </p>
 
   <section>
@@ -114,22 +109,42 @@
   <section>
     <h3>Nix</h3>
     <p>
-      <code>NixConfig.txt</code> lists the zone Nix and screen Nix files, and sets spawn timing and mini-game chances.
+      <code>NixConfig.txt</code> lists the zone and screen Nix, the spawn timing and the mini-game chances.
       <br>
-      <code>NPCtheNix001.unity3d</code> to <code>NPCtheNix006.unity3d</code> are the Nix spawned in zones,
-      at the spawn points from <code>NixSpawnpoints.unity3d</code> (clawing, kicking, rummaging).
+      <code>NPCtheNix001.unity3d</code> to <code>NPCtheNix006.unity3d</code> are the zone Nix,
+      <code>NixSpawnpoints.unity3d</code> are their spawn points.
       <br>
-      <code>ninjaSpawnIn_comboAnim.unity3d</code>, <code>ninjaSpawnOut_comboAnim.unity3d</code>
-      and <code>&lt;spawn point&gt;_Loop_comboAnim.unity3d</code> are the Nix spawn and loop animations.
-      They must have the <code>Nix_Animation_Unity3D</code> type and exact file names.
+      <code>ninjaSpawnIn_comboAnim.unity3d</code> and <code>ninjaSpawnOut_comboAnim.unity3d</code> are the spawn smoke,
+      <code>&lt;spawn point&gt;_Loop_comboAnim.unity3d</code> are the spawn point props.
+      They need the <code>Nix_Animation_Unity3D</code> type and exact names.
       <br>
-      <code>ScreenNix001.unity3d</code> to <code>ScreenNix006.unity3d</code> are the Nix shown over mini-games,
+      The hash-named <code>Nix_Animation_Unity3D</code> bundles are the Nix body animations (<code>theNix_*</code>
+      inside),
+      only their type matters.
+      <br>
+      <code>ScreenNix001.unity3d</code> to <code>ScreenNix006.unity3d</code> are the Nix over mini-games,
       with <code>ScreenNixSpawnpoints.unity3d</code> and <code>ScreenNixLight.unity3d</code>.
-      <code>ScreenNix004.unity3d</code> is missing from the cache (maybe old versions somewhere?..)
+      <code>ScreenNix004.unity3d</code> is missing from the cache.
       <br>
-      <code>nixsounds.unity3d</code> contains the Nix sounds.
+      <code>nixsounds.unity3d</code> are the Nix sounds, <code>nixShieldExplode.unity3d</code> is the shield explosion.
+    </p>
+  </section>
+
+  <section>
+    <h3>UI Skins</h3>
+    <p>
+      A skin is a <code>&lt;skin&gt;.txt</code> file and a <code>&lt;texture&gt;.unity3d</code> bundle,
+      the texture name is in the skin file. Without a skin the window has no background.
       <br>
-      <code>nixShieldExplode.unity3d</code> is the Nix shield explosion effect.
+      <code>Task_dialogue_Texture</code> is the NPC speech bubble.
+      <br>
+      <code>TaskV2_Texture</code> (texture <code>TaskV2_Texture_Image</code>) is the job dialog and the job frame.
+      <br>
+      <code>Missions_Texture</code> is used by the job dialog.
+      <br>
+      <code>Task_Complete_Incomplete_Headers_Texture</code> is the job complete and incomplete headers.
+      <br>
+      <code>Supersnack_Texture.unity3d</code> is the texture for the Supersnack skin built into the client.
     </p>
   </section>
 

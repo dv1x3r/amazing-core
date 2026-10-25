@@ -3,21 +3,37 @@
   <h2><i class="fa fa-circle-info"></i> Zones</h2>
 
   <p>
-    The playable area containers.
+    A zone is an asset container with the zone scene and its content.
   </p>
 
-  <p>
-    These can include <code>Scene_Unity3D</code> and <code>Text</code>
-    assets with zone metadata, such as names and area definitions.
-  </p>
+  <section>
+    <h3>Asset Container</h3>
+    <p>
+      <code>Scene_Unity3D</code> with the <code>Main_Scene</code> group is the zone scene.
+      As the zone scene, <code>Springtime003</code>, <code>HomeLotSmall</code> and <code>Dress_your_pet</code>
+      are loaded from the client build, not downloaded.
+      <br>
+      <code>EmptyScene.unity3d</code> without a group is required in every zone:
+      it has the NPC dialog camera, the radial menus and the minimap.
+      <br>
+      <code>Text</code> is the zone name, the locked flag and the areas (<code>SpringBay_Zone.txt</code>).
+      The spawn points do not load without it.
+      <br>
+      <code>Treenode</code> with the <code>SpawnPoints</code> group lists the item spawn point sets
+      (<code>SpringBay_SpawnPoints.txt</code>).
+      <br>
+      <code>Prefab_Unity3D</code> are the spawn point sets the quests use (<code>CSPS_CenterSquare.unity3d</code>).
+    </p>
+  </section>
 
-  <p>
-    The NPC zone <code>HardCodedZoneId (4, 16, 0, 2937912)</code> is required for LoadNPCsCommand.
-    This should contain NPC spawnpoints.
-  </p>
-
-  <p>
-    NPCs are placed in zones on the <b>NPCs</b> page.
-  </p>
+  <section>
+    <h3>Home Yard</h3>
+    <p>
+      The yard has no container, the server sends its scene and <code>EmptyScene</code> itself.
+      <br>
+      The NPC zone <code>HardCodedZoneId (4, 16, 0, 2937912)</code> is required for the yard NPCs.
+      NPCs are placed in zones on the <b>NPCs</b> page.
+    </p>
+  </section>
 
 </div>

@@ -106,6 +106,11 @@ func NewServer(logger *slog.Logger, handler *routes.Handler, store db.Store) *Se
 	v1.HandleFunc("POST /npc/form", errorHandler(handler.PostNPCForm))
 	v1.HandleFunc("POST /npc/remove", errorHandler(handler.PostNPCRemove))
 
+	v1.HandleFunc("GET /npc/{id}/quest/grid", errorHandler(handler.GetNPCQuestGrid))
+	v1.HandleFunc("POST /npc/{id}/quest/form", errorHandler(handler.PostNPCQuestForm))
+	v1.HandleFunc("POST /npc/quest/remove", errorHandler(handler.PostNPCQuestRemove))
+	v1.HandleFunc("POST /npc/quest/reorder", errorHandler(handler.PostNPCQuestReorder))
+
 	v1.HandleFunc("GET /oidtype/dropdown", errorHandler(handler.GetOIDTypeDropdown))
 
 	v1.HandleFunc("GET /player/grid", errorHandler(handler.GetPlayerGrid))
@@ -130,6 +135,13 @@ func NewServer(logger *slog.Logger, handler *routes.Handler, store db.Store) *Se
 	v1.HandleFunc("GET /player/{id}/npc/grid", errorHandler(handler.GetPlayerNPCGrid))
 	v1.HandleFunc("POST /player/{id}/npc/form", errorHandler(handler.PostPlayerNPCForm))
 	v1.HandleFunc("POST /player/npc/remove", errorHandler(handler.PostPlayerNPCRemove))
+
+	v1.HandleFunc("GET /player/{id}/quest/grid", errorHandler(handler.GetPlayerQuestGrid))
+	v1.HandleFunc("POST /player/{id}/quest/form", errorHandler(handler.PostPlayerQuestForm))
+	v1.HandleFunc("POST /player/quest/remove", errorHandler(handler.PostPlayerQuestRemove))
+
+	v1.HandleFunc("GET /quest/dropdown", errorHandler(handler.GetQuestDropdown))
+	v1.HandleFunc("GET /quest/state/dropdown", errorHandler(handler.GetQuestStateDropdown))
 
 	v1.HandleFunc("GET /randname/grid", errorHandler(handler.GetRandnameGrid))
 	v1.HandleFunc("POST /randname/form", errorHandler(handler.PostRandnameForm))

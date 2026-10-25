@@ -2,6 +2,7 @@ package gsf
 
 import (
 	"bufio"
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/resultcode"
 )
 
 type Server struct {
@@ -26,15 +28,15 @@ type Server struct {
 }
 
 type ServerHooks struct {
-	OnConnect    func(session *Session)
-	OnDisconnect func(session *Session, reason string)
-	OnUnhandled  func(session *Session, header *Header, data []byte)
+	OnConnect    func(conn *Conn)
+	OnDisconnect func(conn *Conn, reason string)
+	OnUnhandled  func(conn *Conn, header *Header, data []byte)
 	OnRequest    func(event RequestEvent)
 	OnNotify     func(event NotifyEvent)
 }
 
 type RequestEvent struct {
-	Session        *Session
+	Conn           *Conn
 	RequestHeader  *Header
 	ResponseHeader *Header
 	RequestBody    Deserializable
@@ -45,7 +47,7 @@ type RequestEvent struct {
 }
 
 type NotifyEvent struct {
-	Session *Session
+	Conn    *Conn
 	Header  *Header
 	Body    Serializable
 	Err     error
@@ -67,10 +69,9 @@ func (s *Server) ListenAndServe() error {
 		if err != nil {
 			if errors.Is(err, net.ErrClosed) {
 				return err
-			} else {
-				time.Sleep(1 * time.Second)
-				continue
 			}
+			time.Sleep(1 * time.Second)
+			continue
 		}
 
 		s.conns.Store(conn, struct{}{})
@@ -118,44 +119,37 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-func (s *Server) handleConn(ctx context.Context, conn net.Conn) {
-	stream := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
-	remoteAddr, _, _ := net.SplitHostPort(conn.RemoteAddr().String())
-	session := NewSession(remoteAddr, stream, s.Codec, s.Hooks.OnNotify)
+func (s *Server) handleConn(ctx context.Context, netConn net.Conn) {
+	stream := bufio.NewReadWriter(bufio.NewReader(netConn), bufio.NewWriter(netConn))
+	remoteAddr, _, _ := net.SplitHostPort(netConn.RemoteAddr().String())
+	conn := NewConn(remoteAddr, stream, s.Codec, s.Hooks.OnNotify)
 	if s.Hooks.OnConnect != nil {
-		s.Hooks.OnConnect(session)
+		s.Hooks.OnConnect(conn)
 	}
 
 	for {
-		err := s.processRequest(ctx, session)
-		if err == nil {
-			continue
-		}
-
-		if errors.Is(err, io.EOF) {
+		if err := s.processRequest(ctx, conn); err != nil {
 			if s.Hooks.OnDisconnect != nil {
-				s.Hooks.OnDisconnect(session, "eof")
+				s.Hooks.OnDisconnect(conn, disconnectReason(err))
 			}
-			break
+			return
 		}
-
-		var netErr net.Error
-		if errors.As(err, &netErr) && netErr.Timeout() {
-			if s.Hooks.OnDisconnect != nil {
-				s.Hooks.OnDisconnect(session, "timeout")
-			}
-			break
-		}
-
-		if s.Hooks.OnDisconnect != nil {
-			s.Hooks.OnDisconnect(session, err.Error())
-		}
-		break
 	}
 }
 
-func (s *Server) processRequest(ctx context.Context, session *Session) error {
-	data, err := s.readMessage(session.stream)
+func disconnectReason(err error) string {
+	if errors.Is(err, io.EOF) {
+		return "eof"
+	}
+	var netErr net.Error
+	if errors.As(err, &netErr) && netErr.Timeout() {
+		return "timeout"
+	}
+	return err.Error()
+}
+
+func (s *Server) processRequest(ctx context.Context, conn *Conn) error {
+	data, err := s.readMessage(conn.stream)
 	if err != nil {
 		return err
 	}
@@ -177,53 +171,52 @@ func (s *Server) processRequest(ctx context.Context, session *Session) error {
 	handler, ok := s.Router.Lookup(header.SvcClass, header.MsgType)
 	if !ok {
 		if s.Hooks.OnUnhandled != nil {
-			s.Hooks.OnUnhandled(session, header, data)
+			s.Hooks.OnUnhandled(conn, header, data)
 		}
 		return nil
 	}
 
-	req := NewRequest(ctx, header, reader, session)
+	req := NewRequest(ctx, header, reader, conn)
 	res := NewResponse(header)
 
 	startTime := time.Now()
 	handlerErr := handler(res, req)
-	eventErr := handlerErr
-	returnErr := handlerErr
-
-	if handlerErr == nil {
-		if res.Body() != nil {
-			eventErr = session.Send(res.Header(), res.Body())
-			returnErr = eventErr
-		}
-	} else {
-		var gsfErr wrap.GSFError
-		if errors.As(handlerErr, &gsfErr) {
-			res.Header().ResultCode = gsfErr.ResultCode()
-			res.Header().AppCode = gsfErr.AppCode()
-			res.Header().AppString = gsfErr.Error()
-			if err := session.Send(res.Header(), res.Body()); err != nil {
-				eventErr = err
-				returnErr = err
-			} else {
-				returnErr = nil
-			}
-		}
-	}
+	sendErr := respond(conn, res, handlerErr)
 
 	if s.Hooks.OnRequest != nil {
 		s.Hooks.OnRequest(RequestEvent{
-			Session:        session,
+			Conn:           conn,
 			RequestHeader:  req.Header(),
 			ResponseHeader: res.Header(),
 			RequestBody:    req.Body(),
 			ResponseBody:   res.Body(),
-			Err:            eventErr,
+			Err:            cmp.Or(sendErr, handlerErr),
 			Latency:        time.Since(startTime),
 			Dropped:        req.Dropped(),
 		})
 	}
 
-	return returnErr
+	// A GSF error is sent to the client as the error response
+	// and keeps the connection, any other handler error closes it.
+	if sendErr != nil || errors.As(handlerErr, new(wrap.GSFError)) {
+		return sendErr
+	}
+	return handlerErr
+}
+
+// respond sends the error response for a GSF error, or the response body if the handler wrote one.
+func respond(conn *Conn, res *Response, handlerErr error) error {
+	var gsfErr wrap.GSFError
+	if errors.As(handlerErr, &gsfErr) {
+		res.Header().ResultCode = int32(resultcode.ERR)
+		res.Header().AppCode = int32(gsfErr.AppCode())
+		res.Header().AppString = gsfErr.Error()
+		return conn.Send(res.Header(), res.Body())
+	}
+	if handlerErr != nil || res.Body() == nil {
+		return nil
+	}
+	return conn.Send(res.Header(), res.Body())
 }
 
 func (s *Server) readMessage(stream *bufio.ReadWriter) ([]byte, error) {

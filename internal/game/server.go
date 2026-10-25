@@ -30,82 +30,95 @@ func NewServer(
 		middleware.Recover(),
 	)
 
+	handleUser := func(msgType usermessagetype.UserMessageType, handler gsf.HandlerFunc) {
+		router.HandleFunc(int32(serviceclass.USER_SERVER), int32(msgType), handler)
+	}
+	handleSync := func(msgType syncmessagetype.SyncMessageType, handler gsf.HandlerFunc) {
+		router.HandleFunc(int32(serviceclass.SYNC_SERVER), int32(msgType), handler)
+	}
+
 	// ── General ──────────────────────────────────────────────────────────────────
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_CLIENT_VERSION_INFO), handler.GetClientVersionInfo)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_SITE_FRAME), handler.GetSiteFrame)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.LOGIN), handler.Login)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.LOGOUT), handler.Logout)
+	handleUser(usermessagetype.GET_CLIENT_VERSION_INFO, handler.GetClientVersionInfo)
+	handleUser(usermessagetype.GET_SITE_FRAME, handler.GetSiteFrame)
+	handleUser(usermessagetype.LOGIN, handler.Login)
+	handleUser(usermessagetype.LOGOUT, handler.Logout)
+	handleUser(usermessagetype.RELOGIN, handler.Relogin)
 
 	// ── Registration ─────────────────────────────────────────────────────────────
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_RANDOM_NAMES), handler.GetRandomNames)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.VALIDATE_NAME), handler.ValidateName)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.SELECT_PLAYER_NAME), handler.SelectPlayerName)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.CHECK_USERNAME), handler.CheckUsername)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.REGISTER_PLAYER), handler.RegisterPlayer)
+	handleUser(usermessagetype.GET_RANDOM_NAMES, handler.GetRandomNames)
+	handleUser(usermessagetype.VALIDATE_NAME, handler.ValidateName)
+	handleUser(usermessagetype.SELECT_PLAYER_NAME, handler.SelectPlayerName)
+	handleUser(usermessagetype.CHECK_USERNAME, handler.CheckUsername)
+	handleUser(usermessagetype.REGISTER_PLAYER, handler.RegisterPlayer)
 
 	// ── Inventory ────────────────────────────────────────────────────────────────
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_PUBLIC_ITEM_CATEGORIES), handler.GetPublicItemCategories)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_CMS_ITEMCATEGORIES), handler.GetCMSItemCategories)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_BUILD_OBJECTS), handler.GetBuildObjects)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_INVENTORY_OBJECTS), handler.GetInventoryObjects)
+	handleUser(usermessagetype.GET_PUBLIC_ITEM_CATEGORIES, handler.GetPublicItemCategories)
+	handleUser(usermessagetype.GET_CMS_ITEMCATEGORIES, handler.GetCMSItemCategories)
+	handleUser(usermessagetype.GET_BUILD_OBJECTS, handler.GetBuildObjects)
+	handleUser(usermessagetype.GET_INVENTORY_OBJECTS, handler.GetInventoryObjects)
 
 	// ── Avatars ──────────────────────────────────────────────────────────────────
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_AVATARS), handler.GetAvatars)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_AVATAR_ITEMS), handler.GetAvatarItems)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.UPDATE_PLAYER_ACTIVE_AVATAR), handler.UpdatePlayerActiveAvatar)
+	handleUser(usermessagetype.GET_AVATARS, handler.GetAvatars)
+	handleUser(usermessagetype.GET_AVATAR_ITEMS, handler.GetAvatarItems)
+	handleUser(usermessagetype.UPDATE_PLAYER_ACTIVE_AVATAR, handler.UpdatePlayerActiveAvatar)
 
 	// ──  Outfits ─────────────────────────────────────────────────────────────────
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_OUTFITS), handler.GetOutfits)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.ADD_OUTFIT), handler.AddOutfit)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.SET_CURRENT_OUTFIT), handler.SetCurrentOutfit)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_OUTFIT_ITEMS), handler.GetOutfitItems)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.ADD_OUTFIT_ITEMS), handler.AddOutfitItems)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.REMOVE_OUTFIT_ITEMS), handler.RemoveOutfitItems)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.REPLACE_OUTFIT_ITEMS), handler.ReplaceOutfitItems)
+	handleUser(usermessagetype.GET_OUTFITS, handler.GetOutfits)
+	handleUser(usermessagetype.ADD_OUTFIT, handler.AddOutfit)
+	handleUser(usermessagetype.SET_CURRENT_OUTFIT, handler.SetCurrentOutfit)
+	handleUser(usermessagetype.GET_OUTFIT_ITEMS, handler.GetOutfitItems)
+	handleUser(usermessagetype.ADD_OUTFIT_ITEMS, handler.AddOutfitItems)
+	handleUser(usermessagetype.REMOVE_OUTFIT_ITEMS, handler.RemoveOutfitItems)
+	handleUser(usermessagetype.REPLACE_OUTFIT_ITEMS, handler.ReplaceOutfitItems)
 
 	// ── Login ────────────────────────────────────────────────────────────────────
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_TIERS), handler.GetTiers)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_PUBLIC_ITEMS_BY_OIDS), handler.GetPublicItemsByOIDs)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_ZONES), handler.GetZones)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.INIT_LOCATION), handler.InitLocation)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.HEARTBEAT), handler.Heartbeat)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_OTHER_PLAYER_DETAILS), handler.GetOtherPlayerDetails)
-	router.HandleFunc(int32(serviceclass.SYNC_SERVER), int32(syncmessagetype.LOGIN), handler.SyncLogin)
-	router.HandleFunc(int32(serviceclass.SYNC_SERVER), int32(syncmessagetype.RELOGIN), handler.SyncLogin)
-	router.HandleFunc(int32(serviceclass.SYNC_SERVER), int32(syncmessagetype.MOVE_PLAYER), handler.MovePlayer)
-	router.HandleFunc(int32(serviceclass.SYNC_SERVER), int32(syncmessagetype.ACTION), handler.SyncAction)
-	router.HandleFunc(int32(serviceclass.SYNC_SERVER), int32(syncmessagetype.HEARTBEAT_NOTIFY), handler.HeartbeatNotify)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_MAZE_ITEMS), handler.GetMazeItems)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_CHAT_CHANNEL_TYPES), handler.GetChatChannelTypes)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.SEND_MESSAGE), handler.SendMessage)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_ANNOUNCEMENTS), handler.GetAnnouncements)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.ENTER_BUILDING), handler.EnterBuilding)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_ONLINE_STATUSES), handler.GetOnlineStatuses)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_PLAYER_NPCS), handler.GetPlayerNPCs)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_RULE_COUNT_LIST), handler.GetRuleCountList)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_STORE_ITEMS), handler.GetStoreItems)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_PLAYER_QUESTS), handler.GetPlayerQuests)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_QUEST_FROM_PARENT), handler.GetQuestFromParent)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.CREATE_QUEST), handler.CreateQuest)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.ACCEPT_QUEST), handler.AcceptQuest)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.START_QUEST), handler.StartQuest)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.COMPLETE_QUEST), handler.CompleteQuest)
-	router.HandleFunc(int32(serviceclass.USER_SERVER), int32(usermessagetype.GET_PLAYER_QUESTS_BY_QUEST_IDS), handler.GetPlayerQuestsByOIDs)
+	handleUser(usermessagetype.GET_TIERS, handler.GetTiers)
+	handleUser(usermessagetype.GET_PUBLIC_ITEMS_BY_OIDS, handler.GetPublicItemsByOIDs)
+	handleUser(usermessagetype.GET_ZONES, handler.GetZones)
+	handleUser(usermessagetype.INIT_LOCATION, handler.InitLocation)
+	handleUser(usermessagetype.HEARTBEAT, handler.Heartbeat)
+	handleUser(usermessagetype.GET_OTHER_PLAYER_DETAILS, handler.GetOtherPlayerDetails)
+	handleSync(syncmessagetype.LOGIN, handler.SyncLogin)
+	handleSync(syncmessagetype.RELOGIN, handler.SyncLogin)
+	handleSync(syncmessagetype.MOVE_PLAYER, handler.MovePlayer)
+	handleSync(syncmessagetype.ACTION, handler.SyncAction)
+	handleSync(syncmessagetype.HEARTBEAT_NOTIFY, handler.HeartbeatNotify)
+	handleUser(usermessagetype.GET_MAZE_ITEMS, handler.GetMazeItems)
+	handleUser(usermessagetype.GET_CHAT_CHANNEL_TYPES, handler.GetChatChannelTypes)
+	handleUser(usermessagetype.SEND_MESSAGE, handler.SendMessage)
+	handleUser(usermessagetype.GET_ANNOUNCEMENTS, handler.GetAnnouncements)
+	handleUser(usermessagetype.ENTER_BUILDING, handler.EnterBuilding)
+	handleUser(usermessagetype.GET_ONLINE_STATUSES, handler.GetOnlineStatuses)
+	handleUser(usermessagetype.GET_PLAYER_NPCS, handler.GetPlayerNPCs)
+	handleUser(usermessagetype.GET_RULE_COUNT_LIST, handler.GetRuleCountList)
+	handleUser(usermessagetype.GET_RULE_INFO, handler.GetRuleInfo)
+	handleUser(usermessagetype.GET_RULE_INSTANCE_INFO, handler.GetRuleInstanceInfo)
+	handleUser(usermessagetype.GET_STORE_ITEMS, handler.GetStoreItems)
+	handleUser(usermessagetype.GET_PLAYER_QUESTS, handler.GetPlayerQuests)
+	handleUser(usermessagetype.GET_QUEST_FROM_PARENT, handler.GetQuestFromParent)
+	handleUser(usermessagetype.CREATE_QUEST, handler.CreateQuest)
+	handleUser(usermessagetype.ACCEPT_QUEST, handler.AcceptQuest)
+	handleUser(usermessagetype.START_QUEST, handler.StartQuest)
+	handleUser(usermessagetype.COMPLETE_QUEST, handler.CompleteQuest)
+	handleUser(usermessagetype.ABANDON_QUEST, handler.AbandonQuest)
+	handleUser(usermessagetype.GET_PLAYER_QUESTS_BY_QUEST_IDS, handler.GetPlayerQuestsByOIDs)
+	handleUser(usermessagetype.GET_ASSETS_BY_OIDS, handler.GetAssetsByOIDs)
 
-	gsfLogger := newGSFLogger(logger)
+	gsfLogger := newGSFLogger(logger, handler.sessions)
 
 	server := &gsf.Server{
 		Router: router,
 		Codec:  bitprotocol.NewBitCodec(),
 		Hooks: gsf.ServerHooks{
-			OnConnect: func(session *gsf.Session) {
-				logger.Info(fmt.Sprintf("tcp %s connected", session.RemoteIP()))
+			OnConnect: func(conn *gsf.Conn) {
+				logger.Info(fmt.Sprintf("tcp %s connected", conn.RemoteIP()))
 			},
-			OnDisconnect: func(session *gsf.Session, reason string) {
-				if err := handler.syncHub.Leave(session); err != nil {
+			OnDisconnect: func(conn *gsf.Conn, reason string) {
+				if err := handler.syncHub.Leave(conn); err != nil {
 					logger.Error(err.Error())
 				}
-				logger.Info(fmt.Sprintf("tcp %s disconnected: %s", session.RemoteIP(), reason))
+				handler.sessions.Detach(conn)
+				logger.Info(fmt.Sprintf("tcp %s disconnected: %s", conn.RemoteIP(), reason))
 			},
 			OnUnhandled: gsfLogger.OnUnhandled,
 			OnRequest:   gsfLogger.OnRequest,

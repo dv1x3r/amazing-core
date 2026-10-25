@@ -1,50 +1,42 @@
 package gsf
 
-import "sync"
+import "slices"
 
 type HandlerFunc func(w ResponseWriter, r *Request) error
 
 type Middleware func(next HandlerFunc) HandlerFunc
 
+type routeKey struct {
+	svcClass int32
+	msgType  int32
+}
+
 type Router struct {
-	mu          *sync.RWMutex
-	handlers    map[int32]map[int32]HandlerFunc
+	handlers    map[routeKey]HandlerFunc
 	middlewares []Middleware
 }
 
 func NewRouter() *Router {
 	return &Router{
-		mu:       &sync.RWMutex{},
-		handlers: map[int32]map[int32]HandlerFunc{},
+		handlers: map[routeKey]HandlerFunc{},
 	}
 }
 
 func (r *Router) HandleFunc(svcClass int32, msgType int32, handler HandlerFunc) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if r.handlers[svcClass] == nil {
-		r.handlers[svcClass] = map[int32]HandlerFunc{}
-	}
-	r.handlers[svcClass][msgType] = r.chain(handler)
-}
-
-func (r *Router) Lookup(svcClass int32, msgType int32) (HandlerFunc, bool) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-	if msgMap, ok := r.handlers[svcClass]; ok {
-		h, ok := msgMap[msgType]
-		return h, ok
-	}
-	return nil, false
+	r.handlers[routeKey{svcClass, msgType}] = handler
 }
 
 func (r *Router) Use(xs ...Middleware) {
 	r.middlewares = append(r.middlewares, xs...)
 }
 
-func (r *Router) chain(h HandlerFunc) HandlerFunc {
-	for i := len(r.middlewares) - 1; i >= 0; i-- {
-		h = r.middlewares[i](h)
+func (r *Router) Lookup(svcClass int32, msgType int32) (HandlerFunc, bool) {
+	h, ok := r.handlers[routeKey{svcClass, msgType}]
+	if !ok {
+		return nil, false
 	}
-	return h
+	for _, v := range slices.Backward(r.middlewares) {
+		h = v(h)
+	}
+	return h, true
 }

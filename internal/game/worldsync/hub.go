@@ -17,8 +17,8 @@ type Hub struct {
 	// remembered players, connected or not
 	playersByOID map[int64]*Player
 
-	// live players by sync session
-	playersBySession map[*gsf.Session]*Player
+	// live players by sync connection
+	playersByConn map[*gsf.Conn]*Player
 
 	// live players grouped by location OID, then player OID
 	playersByLocation map[int64]map[int64]*Player
@@ -28,47 +28,47 @@ type Hub struct {
 func NewHub() *Hub {
 	return &Hub{
 		playersByOID:      map[int64]*Player{},
-		playersBySession:  map[*gsf.Session]*Player{},
+		playersByConn:     map[*gsf.Conn]*Player{},
 		playersByLocation: map[int64]map[int64]*Player{},
 	}
 }
 
-// Join registers a sync session and exchanges ADD_PLAYER notifications with players in the same location.
-func (h *Hub) Join(session *gsf.Session, playerOID types.OID) error {
-	return SendAll(h.join(session, playerOID))
+// Join registers a sync connection and exchanges ADD_PLAYER notifications with players in the same location.
+func (h *Hub) Join(conn *gsf.Conn, playerOID types.OID) error {
+	return SendAll(h.join(conn, playerOID))
 }
 
-func (h *Hub) join(session *gsf.Session, playerOID types.OID) []OutboundNotify {
+func (h *Hub) join(conn *gsf.Conn, playerOID types.OID) []OutboundNotify {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
 	outbound := []OutboundNotify{}
-	current := h.playersBySession[session]
+	current := h.playersByConn[conn]
 	player := h.ensurePlayer(playerOID)
 
-	// This session is already joined as this player.
-	if current == player && player.Session == session {
+	// This connection is already joined as this player.
+	if current == player && player.Conn == conn {
 		return nil
 	}
 
-	// This session is already linked to another player.
+	// This connection is already linked to another player.
 	if current != nil && current != player {
 		outbound = append(outbound, h.removeLivePlayer(current)...)
 	}
 
-	// A player can only have one live sync session.
-	if player.Session != nil {
+	// A player can only have one live sync connection.
+	if player.Conn != nil {
 		outbound = append(outbound, h.removeLivePlayer(player)...)
 	}
 
 	existing := h.playersInLocation(player.Location, nil)
-	h.addLivePlayer(player, session)
+	h.addLivePlayer(player, conn)
 
 	newPlayerNotify := player.AddPlayerNotify()
 	for _, other := range existing {
 		outbound = append(outbound,
-			NewOutboundNotify(session, clientmessagetype.ADD_PLAYER, other.AddPlayerNotify()),
-			NewOutboundNotify(other.Session, clientmessagetype.ADD_PLAYER, newPlayerNotify),
+			NewOutboundNotify(conn, clientmessagetype.ADD_PLAYER, other.AddPlayerNotify()),
+			NewOutboundNotify(other.Conn, clientmessagetype.ADD_PLAYER, newPlayerNotify),
 		)
 	}
 	return outbound
@@ -86,14 +86,14 @@ func (h *Hub) appearanceChanged(playerOID types.OID) []OutboundNotify {
 	player := h.ensurePlayer(playerOID)
 	player.PlayerDetailVersion++
 
-	if player.Session == nil {
+	if player.Conn == nil {
 		return nil
 	}
 
 	notify := player.ChangeObjectNotify()
 	outbound := make([]OutboundNotify, 0)
 	for _, recipient := range h.playersInLocation(player.Location, player) {
-		outbound = append(outbound, NewOutboundNotify(recipient.Session, clientmessagetype.CHANGE_OBJECT, notify))
+		outbound = append(outbound, NewOutboundNotify(recipient.Conn, clientmessagetype.CHANGE_OBJECT, notify))
 	}
 	return outbound
 }
@@ -115,8 +115,8 @@ func (h *Hub) setLocation(playerOID types.OID, locationOID types.OID) []Outbound
 		return nil
 	}
 
-	// Remember the target location even before the sync session joins.
-	if player.Session == nil {
+	// Remember the target location even before the sync connection joins.
+	if player.Conn == nil {
 		player.Location = location
 		return nil
 	}
@@ -130,27 +130,27 @@ func (h *Hub) setLocation(playerOID types.OID, locationOID types.OID) []Outbound
 
 	outbound := make([]OutboundNotify, 0, len(oldRecipients)+len(newRecipients)*2)
 	for _, recipient := range oldRecipients {
-		outbound = append(outbound, NewOutboundNotify(recipient.Session, clientmessagetype.REMOVE_PLAYER, removeNotify))
+		outbound = append(outbound, NewOutboundNotify(recipient.Conn, clientmessagetype.REMOVE_PLAYER, removeNotify))
 	}
 	for _, other := range newRecipients {
 		outbound = append(outbound,
-			NewOutboundNotify(player.Session, clientmessagetype.ADD_PLAYER, other.AddPlayerNotify()),
-			NewOutboundNotify(other.Session, clientmessagetype.ADD_PLAYER, addNotify),
+			NewOutboundNotify(player.Conn, clientmessagetype.ADD_PLAYER, other.AddPlayerNotify()),
+			NewOutboundNotify(other.Conn, clientmessagetype.ADD_PLAYER, addNotify),
 		)
 	}
 	return outbound
 }
 
 // Move updates the latest movement state and relays it to players in the same location.
-func (h *Hub) Move(session *gsf.Session, move *notify.Move) error {
-	return SendAll(h.move(session, move))
+func (h *Hub) Move(conn *gsf.Conn, move *notify.Move) error {
+	return SendAll(h.move(conn, move))
 }
 
-func (h *Hub) move(session *gsf.Session, move *notify.Move) []OutboundNotify {
+func (h *Hub) move(conn *gsf.Conn, move *notify.Move) []OutboundNotify {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	player := h.playersBySession[session]
+	player := h.playersByConn[conn]
 	if player == nil {
 		return nil
 	}
@@ -163,23 +163,23 @@ func (h *Hub) move(session *gsf.Session, move *notify.Move) []OutboundNotify {
 	notify := player.PlayerMoveNotify()
 	outbound := make([]OutboundNotify, 0)
 	for _, recipient := range h.playersInLocation(player.Location, player) {
-		outbound = append(outbound, NewOutboundNotify(recipient.Session, clientmessagetype.MOVE_PLAYER, notify))
+		outbound = append(outbound, NewOutboundNotify(recipient.Conn, clientmessagetype.MOVE_PLAYER, notify))
 	}
 	return outbound
 }
 
 // Action relays a player action to players in the same location.
 // It reports throttled when the action repeats a recent one and is not relayed.
-func (h *Hub) Action(session *gsf.Session, action *notify.Action) (throttled bool, err error) {
-	outbound, throttled := h.action(session, action)
+func (h *Hub) Action(conn *gsf.Conn, action *notify.Action) (throttled bool, err error) {
+	outbound, throttled := h.action(conn, action)
 	return throttled, SendAll(outbound)
 }
 
-func (h *Hub) action(session *gsf.Session, action *notify.Action) ([]OutboundNotify, bool) {
+func (h *Hub) action(conn *gsf.Conn, action *notify.Action) ([]OutboundNotify, bool) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	player := h.playersBySession[session]
+	player := h.playersByConn[conn]
 	if player == nil {
 		return nil, false
 	}
@@ -203,7 +203,7 @@ func (h *Hub) action(session *gsf.Session, action *notify.Action) ([]OutboundNot
 	}
 	outbound := make([]OutboundNotify, 0)
 	for _, recipient := range h.playersInLocation(player.Location, player) {
-		outbound = append(outbound, NewOutboundNotify(recipient.Session, clientmessagetype.ACTION, notify))
+		outbound = append(outbound, NewOutboundNotify(recipient.Conn, clientmessagetype.ACTION, notify))
 	}
 	return outbound, false
 }
@@ -218,56 +218,56 @@ func (h *Hub) chat(senderOID types.OID, chat *notify.Chat) []OutboundNotify {
 	defer h.mu.Unlock()
 
 	player := h.playersByOID[senderOID.Int64()]
-	if player == nil || player.Session == nil {
+	if player == nil || player.Conn == nil {
 		return nil
 	}
 
 	outbound := make([]OutboundNotify, 0)
 	for _, recipient := range h.playersInLocation(player.Location, nil) {
-		outbound = append(outbound, NewOutboundNotify(recipient.Session, clientmessagetype.CHAT, chat))
+		outbound = append(outbound, NewOutboundNotify(recipient.Conn, clientmessagetype.CHAT, chat))
 	}
 	return outbound
 }
 
-// Leave removes a sync session and tells nearby players to remove that player.
-func (h *Hub) Leave(session *gsf.Session) error {
-	return SendAll(h.leave(session))
+// Leave removes a sync connection and tells nearby players to remove that player.
+func (h *Hub) Leave(conn *gsf.Conn) error {
+	return SendAll(h.leave(conn))
 }
 
-func (h *Hub) leave(session *gsf.Session) []OutboundNotify {
+func (h *Hub) leave(conn *gsf.Conn) []OutboundNotify {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	player := h.playersBySession[session]
+	player := h.playersByConn[conn]
 	if player == nil {
 		return nil
 	}
 	return h.removeLivePlayer(player)
 }
 
-// addLivePlayer indexes a connected sync player by session and location.
-func (h *Hub) addLivePlayer(player *Player, session *gsf.Session) {
-	player.Session = session
-	h.playersBySession[session] = player
+// addLivePlayer indexes a connected sync player by connection and location.
+func (h *Hub) addLivePlayer(player *Player, conn *gsf.Conn) {
+	player.Conn = conn
+	h.playersByConn[conn] = player
 	h.addPlayerToLocation(player)
 }
 
 // removeLivePlayer removes a connected player from live indexes.
 func (h *Hub) removeLivePlayer(player *Player) []OutboundNotify {
-	if player.Session == nil {
+	if player.Conn == nil {
 		return nil
 	}
 
 	notify := player.RemovePlayerNotify()
 	outbound := make([]OutboundNotify, 0)
 	for _, recipient := range h.playersInLocation(player.Location, player) {
-		outbound = append(outbound, NewOutboundNotify(recipient.Session, clientmessagetype.REMOVE_PLAYER, notify))
+		outbound = append(outbound, NewOutboundNotify(recipient.Conn, clientmessagetype.REMOVE_PLAYER, notify))
 	}
 
 	h.removePlayerFromLocation(player)
-	delete(h.playersBySession, player.Session)
+	delete(h.playersByConn, player.Conn)
 
 	// Keep the player in playersByOID so location/version survive reconnect.
-	player.Session = nil
+	player.Conn = nil
 	return outbound
 }
 
@@ -283,7 +283,7 @@ func (h *Hub) movePlayer(player *Player, location int64) {
 
 // addPlayerToLocation inserts a connected player into its current location bucket.
 func (h *Hub) addPlayerToLocation(player *Player) {
-	if player.Session == nil {
+	if player.Conn == nil {
 		return
 	}
 	if h.playersByLocation[player.Location] == nil {
@@ -294,7 +294,7 @@ func (h *Hub) addPlayerToLocation(player *Player) {
 
 // removePlayerFromLocation removes a connected player from its current location bucket.
 func (h *Hub) removePlayerFromLocation(player *Player) {
-	if player.Session == nil {
+	if player.Conn == nil {
 		return
 	}
 	players := h.playersByLocation[player.Location]

@@ -11,16 +11,16 @@ type Request struct {
 	body    Deserializable
 	reader  ProtocolReader
 	ctx     context.Context
-	session *Session
+	conn    *Conn
 	dropped bool
 }
 
-func NewRequest(ctx context.Context, header *Header, reader ProtocolReader, session *Session) *Request {
+func NewRequest(ctx context.Context, header *Header, reader ProtocolReader, conn *Conn) *Request {
 	return &Request{
-		header:  header,
-		reader:  reader,
-		ctx:     ctx,
-		session: session,
+		header: header,
+		reader: reader,
+		ctx:    ctx,
+		conn:   conn,
 	}
 }
 
@@ -36,28 +36,12 @@ func (req *Request) Context() context.Context {
 	return req.ctx
 }
 
-func (req *Request) Session() *Session {
-	return req.session
+func (req *Request) Conn() *Conn {
+	return req.conn
 }
 
 func (req *Request) RemoteIP() string {
-	return req.session.RemoteIP()
-}
-
-func (req *Request) Platform() Platform {
-	return req.session.Platform()
-}
-
-func (req *Request) SetPlatform(platform Platform) {
-	req.session.SetPlatform(platform)
-}
-
-func (req *Request) PlayerOID() (int64, bool) {
-	return req.session.PlayerOID()
-}
-
-func (req *Request) SetPlayerOID(playerOID int64) {
-	req.session.SetPlayerOID(playerOID)
+	return req.conn.RemoteIP()
 }
 
 func (req *Request) MarkDropped() {

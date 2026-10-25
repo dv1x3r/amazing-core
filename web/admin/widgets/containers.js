@@ -207,7 +207,6 @@ export function createContainerLayout() {
 
   const subLayout = new w2layout({
     name: 'assetContainerSubLayout',
-    style: 'margin: 5px;',
     padding: 5,
     panels: [
       { type: 'top', size: '50%', resizable: true, html: containerAssetGrid },

@@ -2,6 +2,8 @@ package services
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
@@ -13,6 +15,32 @@ func (s *Service) GetAssetContainer(ctx context.Context, platform gsf.Platform, 
 	const op = "game.Service.GetAssetContainer"
 	ac, err := s.getAssetContainer(ctx, containerID, platform, map[int]struct{}{})
 	return ac, wrap.IfErr(op, err)
+}
+
+func (s *Service) GetAssetContainersByOIDs(ctx context.Context, platform gsf.Platform, oids []types.OID) ([]types.AssetContainer, error) {
+	const op = "game.Service.GetAssetContainersByOIDs"
+	containers := make([]types.AssetContainer, 0, len(oids))
+	for _, oid := range oids {
+		var containerID int
+		err := s.store.DB().QueryRowContext(ctx, "select id from asset_container where gsfoid = ?;", oid).Scan(&containerID)
+		if errors.Is(err, sql.ErrNoRows) {
+			containers = append(containers, types.AssetContainer{
+				OID:           oid,
+				AssetMap:      types.AssetMap{},
+				AssetPackages: []types.AssetPackage{},
+			})
+			continue
+		}
+		if err != nil {
+			return nil, wrap.IfErr(op, err)
+		}
+		container, err := s.GetAssetContainer(ctx, platform, containerID)
+		if err != nil {
+			return nil, wrap.IfErr(op, err)
+		}
+		containers = append(containers, container)
+	}
+	return containers, nil
 }
 
 func (s *Service) getAssetContainer(ctx context.Context, containerID int, platform gsf.Platform, path map[int]struct{}) (types.AssetContainer, error) {

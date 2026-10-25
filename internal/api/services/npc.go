@@ -12,7 +12,10 @@ import (
 	"github.com/huandu/go-sqlbuilder"
 )
 
-var ErrNPCExists = errors.New("npc with the same name or container already exists")
+var (
+	ErrNPCExists = errors.New("npc with the same name or container already exists")
+	ErrNPCInUse  = errors.New("npc still has quests and cannot be removed")
+)
 
 type NPC struct {
 	ID        int              `json:"id"`
@@ -20,6 +23,7 @@ type NPC struct {
 	Zone      w2.Dropdown      `json:"zone"`
 	Name      w2.Field[string] `json:"name"`
 	IsLocked  w2.Field[bool]   `json:"is_locked"`
+	Quests    int              `json:"quests"`
 
 	Icon            string `json:"icon"`
 	HasWin3D        bool   `json:"has_win_3d"`
@@ -41,6 +45,7 @@ func (s *Service) GetNPCGrid(ctx context.Context, req w2.GetGridRequest) (w2.Get
 			"(zc.gsfoid || ' - ' || zc.name) as zone",
 			"n.name",
 			"n.is_locked",
+			"coalesce(q.quests, 0) as quests",
 			"icon.cdnid",
 			"coalesce(flags.has_win_3d, 0)",
 			"coalesce(flags.has_osx_3d, 0)",
@@ -59,11 +64,16 @@ func (s *Service) GetNPCGrid(ctx context.Context, req w2.GetGridRequest) (w2.Get
 			"container": "ac.gsfoid",
 			"zone":      "zc.gsfoid",
 			"name":      "n.name",
+			"quests":    "q.quests",
 		},
 		Build: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("asset_container as ac", "ac.id = n.container_id")
 			sb.Join("zone as z", "z.id = n.zone_id")
 			sb.Join("asset_container as zc", "zc.id = z.container_id")
+			sb.JoinWithOption(sqlbuilder.LeftJoin,
+				"(select npc_id, count(*) as quests from quest group by npc_id) as q",
+				"q.npc_id = n.id",
+			)
 			sb.JoinWithOption(sqlbuilder.LeftJoin, containerIconJoin, "icon.container_id = n.container_id and icon.rn = 1")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, `(
 					select
@@ -90,6 +100,7 @@ func (s *Service) GetNPCGrid(ctx context.Context, req w2.GetGridRequest) (w2.Get
 				&record.Zone.Text,
 				&record.Name,
 				&record.IsLocked,
+				&record.Quests,
 				&icon,
 				&record.HasWin3D,
 				&record.HasOSX3D,
@@ -149,5 +160,8 @@ func (s *Service) DeleteNPCs(ctx context.Context, req w2.RemoveGridRequest) erro
 		From:    "npc",
 		IDField: "id",
 	})
+	if s.store.IsErrConstraintTrigger(err) {
+		return wrap.IfErr(op, ErrNPCInUse)
+	}
 	return wrap.IfErr(op, err)
 }

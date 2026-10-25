@@ -1,6 +1,7 @@
 package game
 
 import (
+	"database/sql"
 	"errors"
 	"math/rand"
 	"time"
@@ -15,25 +16,43 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/appcode"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/chatchanneltypevalue"
-	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/resultcode"
+	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/queststate"
 )
 
 type Handler struct {
-	svc     *services.Service
-	syncHub *worldsync.Hub
+	svc      *services.Service
+	syncHub  *worldsync.Hub
+	sessions *SessionManager
 }
 
 func NewHandler(svc *services.Service) *Handler {
 	return &Handler{
-		svc:     svc,
-		syncHub: worldsync.NewHub(),
+		svc:      svc,
+		syncHub:  worldsync.NewHub(),
+		sessions: NewSessionManager(),
 	}
+}
+
+// session returns the session of the request connection, errNoSession before LOGIN or RELOGIN.
+func (h *Handler) session(r *gsf.Request) (*Session, error) {
+	if s := h.sessions.Get(r.Conn()); s != nil {
+		return s, nil
+	}
+	return nil, errNoSession
+}
+
+// platform returns the platform of the session, the requests before LOGIN get the default one.
+func (h *Handler) platform(r *gsf.Request) gsf.Platform {
+	if s := h.sessions.Get(r.Conn()); s != nil {
+		return s.platform
+	}
+	return gsf.PlatformUnknown
 }
 
 const (
 	SCENE_HOMELOT_SMALL  = "OTYxMTQ4NDU5NDE5MA"
 	SCENE_HOMELOT_WINTER = "OTQ1MDc3NTY0MjEyNg"
-	SCENE_SPRINGTIME     = "OTYwOTUyODk5OTk1MA"
+	SCENE_EMPTY          = "OTYwNzA1NTQwOTE2Ng"
 )
 
 const (
@@ -63,7 +82,7 @@ func (h *Handler) GetSiteFrame(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	siteFrame, err := h.svc.GetSiteFrame(r.Context(), r.Platform(), req.TypeValue)
+	siteFrame, err := h.svc.GetSiteFrame(r.Context(), h.platform(r), req.TypeValue)
 	if err != nil {
 		return err
 	}
@@ -81,25 +100,26 @@ func (h *Handler) Login(w gsf.ResponseWriter, r *gsf.Request) error {
 		return err
 	}
 
-	r.SetPlatform(gsf.ParsePlatformFromMachineOS(req.ClientEnvInfo.MachineOS))
-
 	playerOID, err := h.svc.LoginOrCreatePlayer(r.Context(), req.LoginID, req.Password)
 	if err != nil {
-		return wrap.WithGSFError(err, int32(resultcode.ERR), int32(loginAppCode(err)))
+		return wrap.WithGSFError(err, loginAppCode(err))
 	}
-	r.SetPlayerOID(playerOID.Int64())
+	platform := gsf.ParsePlatformFromMachineOS(req.ClientEnvInfo.MachineOS)
+	session := h.sessions.Login(r.Conn(), playerOID, platform, req.LoginID)
 
-	player, err := h.svc.GetPlayer(r.Context(), r.Platform(), playerOID)
+	player, err := h.svc.GetPlayer(r.Context(), session.platform, playerOID)
 	if err != nil {
-		return wrap.WithGSFError(err, int32(resultcode.ERR), int32(appcode.INTERNAL_ERROR))
+		return wrap.WithGSFError(err, appcode.INTERNAL_ERROR)
 	}
 
 	playerInfo, err := h.svc.GetPlayerInfoTO(r.Context(), playerOID)
 	if err != nil {
-		return wrap.WithGSFError(err, int32(resultcode.ERR), int32(appcode.INTERNAL_ERROR))
+		return wrap.WithGSFError(err, appcode.INTERNAL_ERROR)
 	}
 
 	res := &messages.LoginResponse{}
+	res.SessionOID = session.sessionOID
+	res.ConversationID = session.conversationID
 	res.AssetDeliveryURL = h.svc.DeliveryURL()
 	res.Player = player
 	res.PlayerInfoTO = playerInfo
@@ -124,7 +144,23 @@ func (h *Handler) Logout(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
+	h.sessions.Logout(r.Conn())
 	res := &messages.LogoutResponse{}
+	return w.Write(res)
+}
+
+// Relogin binds the new USER connection to the session after the client reconnects.
+// The client sends the session OID and conversation ID from the LOGIN response,
+// an unknown session gets the SESSION app code and GSFSession switches to SessionExpired.
+func (h *Handler) Relogin(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.ReloginRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	if !h.sessions.Relogin(r.Conn(), req.SessionOID, req.ConversationID, req.LoginName) {
+		return wrap.WithGSFError(errors.New("session expired"), appcode.SESSION)
+	}
+	res := &messages.ReloginResponse{}
 	return w.Write(res)
 }
 
@@ -256,11 +292,11 @@ func (h *Handler) GetInventoryObjects(w gsf.ResponseWriter, r *gsf.Request) erro
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	playerOID, ok := r.PlayerOID()
-	if !ok {
-		return errors.New("player oid is not set on session")
+	session, err := h.session(r)
+	if err != nil {
+		return err
 	}
-	items, err := h.svc.GetInventoryObjects(r.Context(), r.Platform(), types.OIDFromInt64(playerOID))
+	items, err := h.svc.GetInventoryObjects(r.Context(), session.platform, session.playerOID)
 	if err != nil {
 		return err
 	}
@@ -277,11 +313,11 @@ func (h *Handler) GetAvatars(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	playerOID, ok := r.PlayerOID()
-	if !ok {
-		return errors.New("player oid is not set on session")
+	session, err := h.session(r)
+	if err != nil {
+		return err
 	}
-	avatars, err := h.svc.GetPlayerAvatars(r.Context(), r.Platform(), types.OIDFromInt64(playerOID))
+	avatars, err := h.svc.GetPlayerAvatars(r.Context(), session.platform, session.playerOID)
 	if err != nil {
 		return err
 	}
@@ -310,7 +346,7 @@ func (h *Handler) UpdatePlayerActiveAvatar(w gsf.ResponseWriter, r *gsf.Request)
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	avatar, err := h.svc.SetPlayerActiveAvatar(r.Context(), r.Platform(), req.PlayerAvatarOID)
+	avatar, err := h.svc.SetPlayerActiveAvatar(r.Context(), h.platform(r), req.PlayerAvatarOID)
 	if err != nil {
 		return err
 	}
@@ -366,8 +402,8 @@ func (h *Handler) SetCurrentOutfit(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err != nil {
 		return err
 	}
-	if playerOID, ok := r.PlayerOID(); ok {
-		if err := h.syncHub.AppearanceChanged(types.OIDFromInt64(playerOID)); err != nil {
+	if session, err := h.session(r); err == nil {
+		if err := h.syncHub.AppearanceChanged(session.playerOID); err != nil {
 			return err
 		}
 	}
@@ -382,7 +418,7 @@ func (h *Handler) GetOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	items, err := h.svc.GetOutfitItems(r.Context(), r.Platform(), req.PlayerAvatarOutfitOID, req.PlayerOID)
+	items, err := h.svc.GetOutfitItems(r.Context(), h.platform(r), req.PlayerAvatarOutfitOID, req.PlayerOID)
 	if err != nil {
 		return err
 	}
@@ -402,8 +438,8 @@ func (h *Handler) AddOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err != nil {
 		return err
 	}
-	if playerOID, ok := r.PlayerOID(); ok {
-		if err := h.syncHub.AppearanceChanged(types.OIDFromInt64(playerOID)); err != nil {
+	if session, err := h.session(r); err == nil {
+		if err := h.syncHub.AppearanceChanged(session.playerOID); err != nil {
 			return err
 		}
 	}
@@ -423,8 +459,8 @@ func (h *Handler) RemoveOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error 
 	if err != nil {
 		return err
 	}
-	if playerOID, ok := r.PlayerOID(); ok {
-		if err := h.syncHub.AppearanceChanged(types.OIDFromInt64(playerOID)); err != nil {
+	if session, err := h.session(r); err == nil {
+		if err := h.syncHub.AppearanceChanged(session.playerOID); err != nil {
 			return err
 		}
 	}
@@ -444,8 +480,8 @@ func (h *Handler) ReplaceOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error
 	if err != nil {
 		return err
 	}
-	if playerOID, ok := r.PlayerOID(); ok {
-		if err := h.syncHub.AppearanceChanged(types.OIDFromInt64(playerOID)); err != nil {
+	if session, err := h.session(r); err == nil {
+		if err := h.syncHub.AppearanceChanged(session.playerOID); err != nil {
 			return err
 		}
 	}
@@ -485,7 +521,7 @@ func (h *Handler) GetZones(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	zones, err := h.svc.GetZones(r.Context(), r.Platform())
+	zones, err := h.svc.GetZones(r.Context(), h.platform(r))
 	if err != nil {
 		return err
 	}
@@ -505,8 +541,8 @@ func (h *Handler) InitLocation(w gsf.ResponseWriter, r *gsf.Request) error {
 	res.SyncServerIP = config.Get().Settings.SyncServerIP
 	res.SyncServerPort = int32(config.Get().Settings.SyncServerPort)
 
-	if playerOID, ok := r.PlayerOID(); ok {
-		if err := h.syncHub.SetLocation(types.OIDFromInt64(playerOID), req.LocOID); err != nil {
+	if session, err := h.session(r); err == nil {
+		if err := h.syncHub.SetLocation(session.playerOID, req.LocOID); err != nil {
 			return err
 		}
 	}
@@ -515,20 +551,13 @@ func (h *Handler) InitLocation(w gsf.ResponseWriter, r *gsf.Request) error {
 	// LoadMazeCommand.cs -> LoadMainScene() -> AssetDownloadManager.cs -> LoadMainScene()
 
 	if req.LocOID.Int64() == 292733975781503755 {
-		scene, err := h.svc.GetAssetByCDNID(r.Context(), SCENE_SPRINGTIME)
+		// The zone container has the Main_Scene asset and the spawn points of the task items,
+		// SpawnPoints.ParseZone reads them from ZoneManager.currentZone set by this response.
+		zone, err := h.svc.GetZone(r.Context(), h.platform(r), req.LocOID)
 		if err != nil {
 			return err
 		}
-
-		container := types.AssetContainer{}
-		container.AssetMap = types.AssetMap{}
-		container.AssetMap["Scene_Unity3D"] = []types.Asset{scene}
-
-		zoneInstance := &types.ZoneInstance{}
-		zoneInstance.Zone.OID = types.OIDFromInt64(292733975781503755)
-		zoneInstance.Zone.AssetContainer = container
-
-		res.ZoneInstance = zoneInstance
+		res.ZoneInstance = &types.ZoneInstance{Zone: zone}
 
 	} else {
 		cdnid := SCENE_HOMELOT_SMALL
@@ -541,12 +570,26 @@ func (h *Handler) InitLocation(w gsf.ResponseWriter, r *gsf.Request) error {
 			return err
 		}
 
+		// EmptyScene has the shared scene objects (AngleViewCamera, RadialMenuManager, MiniMap),
+		// LoadMazeCommand loads it additively after the Main_Scene.
+		emptyScene, err := h.svc.GetAssetByCDNID(r.Context(), SCENE_EMPTY)
+		if err != nil {
+			return err
+		}
+
 		container := types.AssetContainer{}
 		container.AssetMap = types.AssetMap{}
-		container.AssetMap["Scene_Unity3D"] = []types.Asset{scene}
+		container.AssetMap["Scene_Unity3D"] = []types.Asset{scene, emptyScene}
+
+		// ZoneManager takes the yard owner from PlayerHome.PlayerOID and HUDManager requests its details.
+		session, err := h.session(r)
+		if err != nil {
+			return err
+		}
 
 		playerMaze := types.PlayerMaze{
 			Name:       "coremaze",
+			PlayerOID:  session.playerOID,
 			MazePieces: []types.PlayerMazePiece{},
 			HomeTheme:  container,
 		}
@@ -554,6 +597,7 @@ func (h *Handler) InitLocation(w gsf.ResponseWriter, r *gsf.Request) error {
 		res.Home = &types.PlayerHome{
 			PlayerMaze:  playerMaze,
 			HomeTheme:   container,
+			PlayerOID:   session.playerOID,
 			PlayerMazes: []types.PlayerMaze{playerMaze},
 		}
 	}
@@ -569,8 +613,10 @@ func (h *Handler) SyncLogin(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	r.SetPlayerOID(req.UOID.Int64())
-	if err := h.syncHub.Join(r.Session(), req.UOID); err != nil {
+	if !h.sessions.AttachSync(r.Conn(), req.UOID) {
+		return errNoSession
+	}
+	if err := h.syncHub.Join(r.Conn(), req.UOID); err != nil {
 		return err
 	}
 	res := &messages.SyncLoginResponse{}
@@ -583,7 +629,7 @@ func (h *Handler) MovePlayer(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	return h.syncHub.Move(r.Session(), req)
+	return h.syncHub.Move(r.Conn(), req)
 }
 
 // SyncAction receives a local player action and relays it to other sync peers.
@@ -592,20 +638,20 @@ func (h *Handler) SyncAction(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	throttled, err := h.syncHub.Action(r.Session(), req)
+	throttled, err := h.syncHub.Action(r.Conn(), req)
 	if throttled {
 		r.MarkDropped()
 	}
 	return err
 }
 
-// HeartbeatNotify keeps the SYNC server session associated with the active player.
+// HeartbeatNotify keeps the SYNC connection bound to the session of the player.
 func (h *Handler) HeartbeatNotify(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &notify.Heartbeat{}
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	r.SetPlayerOID(req.POID.Int64())
+	h.sessions.AttachSync(r.Conn(), req.POID)
 	return nil
 }
 
@@ -615,7 +661,11 @@ func (h *Handler) GetOtherPlayerDetails(w gsf.ResponseWriter, r *gsf.Request) er
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	details, err := h.svc.GetOtherPlayerDetails(r.Context(), r.Platform(), req.PlayerOID)
+	details, err := h.svc.GetOtherPlayerDetails(r.Context(), h.platform(r), req.PlayerOID)
+	if errors.Is(err, sql.ErrNoRows) {
+		// PlayerInfoCache handles the error response (OtherPlayerDetailErrorHandler).
+		return wrap.WithGSFError(err, appcode.NOT_FOUND)
+	}
 	if err != nil {
 		return err
 	}
@@ -671,11 +721,11 @@ func (h *Handler) SendMessage(w gsf.ResponseWriter, r *gsf.Request) error {
 
 	localChatTypeOID := types.OIDFromInt64(CHAT_LOCAL_OID)
 	if req.Message != "" && req.TypeID == localChatTypeOID {
-		playerOID, ok := r.PlayerOID()
-		if !ok {
-			return errors.New("player oid is not set on session")
+		session, err := h.session(r)
+		if err != nil {
+			return err
 		}
-		senderOID := types.OIDFromInt64(playerOID)
+		senderOID := session.playerOID
 		if err := h.syncHub.Chat(senderOID, &notify.Chat{
 			Msg:          res.FilteredMessage,
 			TypeID:       localChatTypeOID,
@@ -732,7 +782,7 @@ func (h *Handler) GetPlayerNPCs(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	npcs, err := h.svc.GetZoneNPCs(r.Context(), r.Platform(), req.ZoneOID)
+	npcs, err := h.svc.GetZoneNPCs(r.Context(), h.platform(r), req.ZoneOID)
 	if err != nil {
 		return err
 	}
@@ -762,6 +812,32 @@ func (h *Handler) GetRuleCountList(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
+// GetRuleInfo fetches the rules of an object. Task requests them for a quest before the quest dialog.
+func (h *Handler) GetRuleInfo(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.GetRuleInfoRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	res := &messages.GetRuleInfoResponse{}
+	// TODO: quest awards (AwardSets) for the quest dialog
+	// Task.RuleInfoHandler continues only with the "Maps" group.
+	res.Property.ChildrenGroup = map[string][]types.RuleProperty{"Maps": {}}
+	res.ObjectOID = req.ObjectOID
+	return w.Write(res)
+}
+
+// GetRuleInstanceInfo fetches the rules of an instance. Task requests them for a player quest on accept.
+func (h *Handler) GetRuleInstanceInfo(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.GetRuleInstanceInfoRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	res := &messages.GetRuleInstanceInfoResponse{}
+	res.Property.ChildrenGroup = map[string][]types.RuleProperty{"Maps": {}}
+	res.InstanceOID = req.InstanceOID
+	return w.Write(res)
+}
+
 // GetStoreItems fetches the items placed in store.
 func (h *Handler) GetStoreItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetStoreItemsRequest{}
@@ -784,7 +860,7 @@ func (h *Handler) GetPlayerQuests(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// GetQuestFromParent fetches the quests associated with NPC.
+// GetQuestFromParent fetches the quest offered by the parent (e.g. NPC).
 func (h *Handler) GetQuestFromParent(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetQuestFromParentRequest{}
 	if err := r.Read(req); err != nil {
@@ -795,41 +871,104 @@ func (h *Handler) GetQuestFromParent(w gsf.ResponseWriter, r *gsf.Request) error
 		return err
 	}
 	res := &messages.GetQuestFromParentResponse{}
-	// NPCs have no quests yet, NPCController expects a null quest in that case;
 	// TODO: MobquestController, MultiplayerQuestTrigger do not handle a null quest;
 	if !isNPC {
 		res.Quest = &types.Quest{}
+		return w.Write(res)
+	}
+	session, err := h.session(r)
+	if err != nil {
+		return err
+	}
+	// NPCController expects a null quest when the NPC offers nothing.
+	res.Quest, err = h.svc.GetNPCQuest(r.Context(), session.platform, session.playerOID, req.ParentOID)
+	if err != nil {
+		return err
 	}
 	return w.Write(res)
 }
 
-// CreateQuest requests a quest initialization.
+// CreateQuest creates a player quest for the quest the player has taken.
 func (h *Handler) CreateQuest(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.CreateQuestRequest{}
 	if err := r.Read(req); err != nil {
 		return err
 	}
+	session, err := h.session(r)
+	if err != nil {
+		return err
+	}
+	playerQuestOID, err := h.svc.CreatePlayerQuest(r.Context(), session.playerOID, req.QuestOID)
+	if err != nil {
+		return err
+	}
 	res := &messages.CreateQuestResponse{}
+	res.PlayerQuestOID = playerQuestOID
+	// NPC quests have no children, TaskController reads the map only for the quest children.
+	res.SubQuestMap = map[string]types.OID{}
 	return w.Write(res)
 }
 
-// AcceptQuest requests a quest acceptance.
+// AcceptQuest accepts the player quest.
 func (h *Handler) AcceptQuest(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.AcceptQuestRequest{}
 	if err := r.Read(req); err != nil {
 		return err
 	}
+	session, err := h.session(r)
+	if err != nil {
+		return err
+	}
+	if err := h.svc.SetPlayerQuestState(r.Context(), session.playerOID, req.PlayerQuestOID, queststate.ACCEPTED); err != nil {
+		return err
+	}
 	res := &messages.AcceptQuestResponse{}
+	res.IsAccepted = true
+	res.CanStart = true
+	res.CanPlay = true
+	res.JoinedPlayers = []types.OID{}
 	return w.Write(res)
 }
 
-// StartQuest requests a quest start.
+// StartQuest starts the player quest, the spawned items are sent back as is.
 func (h *Handler) StartQuest(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.StartQuestRequest{}
 	if err := r.Read(req); err != nil {
 		return err
 	}
+	session, err := h.session(r)
+	if err != nil {
+		return err
+	}
+	if err := h.svc.SetPlayerQuestState(r.Context(), session.playerOID, req.PlayerQuestOID, queststate.STARTED); err != nil {
+		return err
+	}
 	res := &messages.StartQuestResponse{}
+	res.IsStarted = true
+	res.SpawnedItems = req.SpawnedItems
+	res.ConfirmedPlayers = []types.OID{}
+	return w.Write(res)
+}
+
+// AbandonQuest closes the player quest the player has quit or failed, the NPC offers it again.
+func (h *Handler) AbandonQuest(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.AbandonQuestRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	session, err := h.session(r)
+	if err != nil {
+		return err
+	}
+	state := queststate.CLOSED_ABANDONED
+	if req.IsFailed {
+		state = queststate.FAILED
+	}
+	if err := h.svc.SetPlayerQuestState(r.Context(), session.playerOID, req.PlayerQuestOID, state); err != nil {
+		return err
+	}
+	res := &messages.AbandonQuestResponse{}
+	res.IsAbandoned = true
 	return w.Write(res)
 }
 
@@ -852,5 +991,20 @@ func (h *Handler) GetPlayerQuestsByOIDs(w gsf.ResponseWriter, r *gsf.Request) er
 	}
 	res := &messages.GetPlayerQuestsByOIDsResponse{}
 	res.PlayerQuests = []types.PlayerQuest{}
+	return w.Write(res)
+}
+
+// GetAssetsByOIDs fetches the asset containers by OIDs, e.g. the quest items.
+func (h *Handler) GetAssetsByOIDs(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.GetAssetsByOIDsRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	assets, err := h.svc.GetAssetContainersByOIDs(r.Context(), h.platform(r), req.OIDs)
+	if err != nil {
+		return err
+	}
+	res := &messages.GetAssetsByOIDsResponse{}
+	res.Assets = assets
 	return w.Write(res)
 }

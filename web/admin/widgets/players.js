@@ -21,7 +21,7 @@ export function createPlayerLayout() {
       toolbarDelete: false,
       toolbarSave: false,
       toolbarSearch: true,
-      toolbarReload: false,
+      toolbarReload: true,
       searchSave: false,
     },
     columns: [
@@ -67,7 +67,6 @@ export function createPlayerLayout() {
 
   const subLayout = new w2layout({
     name: 'playerSubLayout',
-    style: 'margin: 5px;',
     padding: 5,
     panels: [
       {
@@ -81,6 +80,7 @@ export function createPlayerLayout() {
             { id: 'outfits', text: 'Outfits' },
             { id: 'items', text: 'Items' },
             { id: 'npcs', text: 'NPCs' },
+            { id: 'quests', text: 'Quests' },
           ],
           onClick(event) {
             renderActiveTab(event.target)
@@ -115,13 +115,16 @@ export function createPlayerLayout() {
       case 'npcs':
         subLayout.html('main', createPlayerNPCsGrid())
         break
+      case 'quests':
+        subLayout.html('main', createPlayerQuestsGrid())
+        break
     }
   }
 
   return new w2layout({
     name: 'playerLayout',
     panels: [
-      { type: 'left', size: '340px', resizable: true, html: playerListGrid },
+      { type: 'left', size: '350px', resizable: true, html: playerListGrid },
       { type: 'main', size: '100%', html: subLayout },
     ],
     onDestroy: function() {
@@ -859,6 +862,157 @@ function openPlayerNPCPopup(event) {
   })
   w2popup.open({
     title: isEditMode ? 'Edit Player NPC' : 'New Player NPC',
+    body: '<div id="popup-form" style="width: 100%; height: 100%;"></div>',
+    width: 600, height: 300, showMax: false, resizable: false,
+  })
+    .then(() => form.render('#popup-form'))
+    .close(() => form.destroy())
+}
+
+function createPlayerQuestsGrid() {
+  return new w2grid({
+    name: 'playerQuestGrid',
+    url: {
+      get: '/api/v1/player/:id/quest/grid',
+      remove: '/api/v1/player/quest/remove',
+    },
+    routeData: { id: selectedPlayerID ?? 0 },
+    recid: 'id',
+    recordHeight: 28,
+    show: {
+      footer: true,
+      toolbar: true,
+      toolbarAdd: true,
+      toolbarEdit: true,
+      toolbarDelete: true,
+      toolbarSave: false,
+      toolbarSearch: false,
+      toolbarReload: true,
+      searchSave: false,
+    },
+    columns: [
+      {
+        field: 'id',
+        text: 'ID',
+        size: '60px',
+      },
+      {
+        field: 'oid',
+        text: 'Player Quest OID',
+        size: '135px',
+        render: 'text',
+      },
+      {
+        field: 'oid_str',
+        text: 'OID Details',
+        size: '135px',
+        render: 'text',
+        hidden: true,
+      },
+      {
+        field: 'quest',
+        text: 'Quest',
+        size: '200px',
+        render: 'dropdown',
+      },
+      {
+        field: 'state',
+        text: 'State',
+        size: '200px',
+        render: 'dropdown',
+      },
+      {
+        field: 'created_at',
+        text: 'Created at',
+        size: '135px',
+        render: 'datetime',
+      },
+      {
+        field: 'completed_at',
+        text: 'Completed at',
+        size: '135px',
+        render: 'datetime',
+      },
+    ],
+    onRender: function(event) {
+      if (selectedPlayerID == null) {
+        event.owner.toolbar.disable('w2ui-add')
+      }
+    },
+    onAdd: function(event) { openPlayerQuestPopup(event) },
+    onEdit: function(event) { openPlayerQuestPopup(event) },
+    onDblClick: function(event) { openPlayerQuestPopup(event) },
+  })
+}
+
+function openPlayerQuestPopup(event) {
+  const record = event.owner.get(event.detail.recid)
+  const isEditMode = record != null
+  const form = new w2form({
+    name: 'playerQuestForm',
+    url: '/api/v1/player/:id/quest/form',
+    routeData: { id: selectedPlayerID ?? 0 },
+    focus: -1,
+    record: record,
+    fields: [
+      {
+        field: 'id',
+        type: 'text',
+        html: {
+          label: 'ID',
+          attr: 'size="15" readonly',
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'oid',
+        type: 'text',
+        html: {
+          label: 'Player Quest OID',
+          attr: 'size="20" placeholder="Automatic"',
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'quest',
+        type: 'list',
+        required: true,
+        options: helpers.remoteListOptions('/api/v1/quest/dropdown'),
+        html: {
+          label: 'Quest',
+          attr: 'style="width:100%;" placeholder="Type to search..."',
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'state',
+        type: 'list',
+        required: true,
+        options: helpers.remoteListOptions('/api/v1/quest/state/dropdown'),
+        html: {
+          label: 'State',
+          attr: 'style="width:100%;" placeholder="Type to search..."',
+          span: 6,
+          column: 0,
+        },
+      },
+    ],
+    actions: {
+      async Save() {
+        const res = await this.save()
+        if (res.status == 'success') {
+          event.owner.reload()
+          w2popup.close()
+        }
+      },
+      Cancel() { w2popup.close() },
+    },
+  })
+  w2popup.open({
+    title: isEditMode ? 'Edit Player Quest' : 'New Player Quest',
     body: '<div id="popup-form" style="width: 100%; height: 100%;"></div>',
     width: 600, height: 300, showMax: false, resizable: false,
   })

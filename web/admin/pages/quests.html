@@ -1,0 +1,56 @@
+<div class="w2ui-reset page">
+
+  <h2><i class="fa fa-circle-info"></i> Quests</h2>
+
+  <p>
+    A quest is a job offered by an NPC. Only NPC jobs are supported for now.
+  </p>
+
+  <section>
+    <h3>Asset Container</h3>
+    <p>
+      <code>Treenode</code> is the quest definition: texts, audio, task type, items and finish rules.
+      <br>
+      The prop from <code>Attach_Asset</code> is held by the player during the task,
+      its <code>res_name</code> must match.
+    </p>
+  </section>
+
+  <section>
+    <h3>Items</h3>
+    <p>
+      Every item in the quest definition has <code>gsfoid</code> and <code>Item_Asset</code>.
+      <br>
+      <code>gsfoid</code> is the OID of the <b>Quest Item</b> container,
+      <code>Item_Asset</code> is the <code>res_name</code> of the item bundle in it.
+      <br>
+      The item icon <code>&lt;Item_Asset&gt;.icon.png</code> and name <code>&lt;Item_Asset&gt;_info</code>
+      go to the same container, they are not found in the cache.
+      <br>
+      The items spawn at the zone spawn points, see <b>Zones</b>.
+    </p>
+  </section>
+
+  <section>
+    <h3>Fields</h3>
+    <p>
+      <b>Order</b>: an NPC offers one quest at a time, in the grid order, and starts over after the last one.
+      <br>
+      <b>XP</b>, <b>Coins</b> and <b>NPC Points</b> are the rewards for completing the quest, not given yet.
+      <br>
+      <b>Cooldown</b>: seconds the NPC offers no quest after this one is completed.
+    </p>
+  </section>
+
+  <section>
+    <h3>In Game</h3>
+    <p>
+      The quest windows need <code>EmptyScene</code> in the zone and the UI skins in the site frame.
+      <br>
+      A click on the NPC during its task shows "task in progress".
+      <br>
+      <b>Cancel</b> on the job frame abandons the task, the NPC offers it again.
+    </p>
+  </section>
+
+</div>

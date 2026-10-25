@@ -20,7 +20,7 @@ const (
 // Player stores world sync state that survives reconnects and zone joins.
 type Player struct {
 	OID                 types.OID
-	Session             *gsf.Session
+	Conn                *gsf.Conn
 	Location            int64
 	PlayerDetailVersion int64
 	Pos                 []types.Position

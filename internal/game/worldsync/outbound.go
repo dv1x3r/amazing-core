@@ -7,15 +7,15 @@ import (
 
 // OutboundNotify is one prepared notify send.
 type OutboundNotify struct {
-	Session *gsf.Session
+	Conn    *gsf.Conn
 	MsgType clientmessagetype.ClientMessageType
 	Body    gsf.Serializable
 }
 
 // NewOutboundNotify prepares one notify send after hub state is unlocked.
-func NewOutboundNotify(session *gsf.Session, msgType clientmessagetype.ClientMessageType, body gsf.Serializable) OutboundNotify {
+func NewOutboundNotify(conn *gsf.Conn, msgType clientmessagetype.ClientMessageType, body gsf.Serializable) OutboundNotify {
 	return OutboundNotify{
-		Session: session,
+		Conn:    conn,
 		MsgType: msgType,
 		Body:    body,
 	}
@@ -24,7 +24,7 @@ func NewOutboundNotify(session *gsf.Session, msgType clientmessagetype.ClientMes
 // SendAll sends prepared notifies in order.
 func SendAll(notifies []OutboundNotify) error {
 	for _, notify := range notifies {
-		if err := notify.Session.SendNotify(notify.MsgType, notify.Body); err != nil {
+		if err := notify.Conn.SendNotify(notify.MsgType, notify.Body); err != nil {
 			return err
 		}
 	}

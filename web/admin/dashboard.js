@@ -131,6 +131,15 @@ const dashboardSidebar = new w2sidebar({
           },
         },
         {
+          id: 'quests',
+          text: 'Quests',
+          icon: 'fa fa-scroll',
+          onClick: async function() {
+            const module = await import('./widgets/quests.js')
+            setDashboardWidget(module.createQuestLayout)
+          },
+        },
+        {
           id: 'zones',
           text: 'Zones',
           icon: 'fa fa-location-dot',

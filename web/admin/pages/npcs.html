@@ -10,9 +10,10 @@
     <h3>Asset Container</h3>
     <p>
       <code>NPCsDownloader</code> spawns an NPC only when its asset container has all of these assets.
-      A missing asset, or a model that fails to load, leaves the zone loading screen hanging.
+      Without one of them the NPC is skipped. An asset that fails to download leaves the zone loading screen hanging.
       <br>
       <code>Prefab_Unity3D</code> with the <code>3D Prefab</code> group is the NPC model.
+      Its <code>res_name</code> is the NPC name, and it must be the CMS name <code>NPC_&lt;Name&gt;</code>.
       <br>
       <code>Location_Unity3D</code> is a prefab with the spawn position. With several locations, the client picks
       <code>SpawnPoint_&lt;n&gt;</code>, then <code>SpawnPoint_Default</code>, then the first one.

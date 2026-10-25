@@ -109,7 +109,7 @@ function openSiteFramePopup(event) {
         required: true,
         html: {
           label: 'Type Value',
-          attr: 'size="15"',
+          attr: 'size="10"',
           span: 6,
           column: 0,
         },

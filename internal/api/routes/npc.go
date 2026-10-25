@@ -56,7 +56,10 @@ func (h *Handler) PostNPCRemove(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return wrap.WithHTTPStatus(err, http.StatusBadRequest)
 	}
-	if err := h.svc.DeleteNPCs(r.Context(), req); err != nil {
+	err = h.svc.DeleteNPCs(r.Context(), req)
+	if errors.Is(err, services.ErrNPCInUse) {
+		return wrap.WithHTTPStatus(err, http.StatusConflict)
+	} else if err != nil {
 		return err
 	}
 	return w2.NewSuccessResponse().Write(w, http.StatusOK)
