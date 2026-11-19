@@ -4,6 +4,7 @@ import * as helpers from '/lib/w2ui.helpers.js'
 export function createSiteFrameLayout() {
   const grid = new w2grid({
     name: 'siteFrameGrid',
+    header: '<i class="fa fa-layer-group"></i> Site Frame',
     url: {
       get: '/api/v1/siteframe/grid',
       remove: '/api/v1/siteframe/remove',
@@ -11,6 +12,7 @@ export function createSiteFrameLayout() {
     recid: 'id',
     recordHeight: 28,
     show: {
+      header: true,
       footer: true,
       toolbar: true,
       toolbarAdd: true,

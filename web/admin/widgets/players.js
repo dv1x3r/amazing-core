@@ -7,6 +7,7 @@ export function createPlayerLayout() {
   selectedPlayerID = null
   const playerListGrid = new w2grid({
     name: 'playerListGrid',
+    header: '<i class="fa fa-users"></i> Players',
     url: {
       get: '/api/v1/player/grid',
     },
@@ -14,6 +15,7 @@ export function createPlayerLayout() {
     recordHeight: 28,
     multiSelect: false,
     show: {
+      header: true,
       footer: true,
       toolbar: true,
       toolbarAdd: false,

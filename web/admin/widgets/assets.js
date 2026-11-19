@@ -4,6 +4,7 @@ import * as helpers from '/lib/w2ui.helpers.js'
 export function createAssetGrid() {
   return new w2grid({
     name: 'assetGrid',
+    header: '<i class="fa-brands fa-unity"></i> Assets',
     url: {
       get: '/api/v1/asset/grid',
       save: '/api/v1/asset/grid',
@@ -13,6 +14,7 @@ export function createAssetGrid() {
     recordHeight: 28,
     disableCVS: true,
     show: {
+      header: true,
       footer: true,
       toolbar: true,
       toolbarAdd: false,

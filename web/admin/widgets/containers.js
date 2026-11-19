@@ -4,6 +4,7 @@ import * as helpers from '/lib/w2ui.helpers.js'
 export function createContainerLayout() {
   const containerGrid = new w2grid({
     name: 'containerGrid',
+    header: '<i class="fa fa-folder-open"></i> Containers',
     url: {
       get: '/api/v1/container/grid',
       remove: '/api/v1/container/remove',
@@ -11,6 +12,7 @@ export function createContainerLayout() {
     recid: 'id',
     recordHeight: 28,
     show: {
+      header: true,
       footer: true,
       toolbar: true,
       toolbarAdd: true,

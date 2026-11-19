@@ -4,6 +4,7 @@ import * as helpers from '/lib/w2ui.helpers.js'
 export function createAvatarLayout() {
   const grid = new w2grid({
     name: 'avatarGrid',
+    header: '<i class="fa fa-user-astronaut"></i> Avatars',
     url: {
       get: '/api/v1/avatar/grid',
       remove: '/api/v1/avatar/remove',
@@ -11,6 +12,7 @@ export function createAvatarLayout() {
     recid: 'id',
     recordHeight: 28,
     show: {
+      header: true,
       footer: true,
       toolbar: true,
       toolbarAdd: true,

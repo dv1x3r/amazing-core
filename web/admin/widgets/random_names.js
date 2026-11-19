@@ -3,6 +3,7 @@ import { w2form, w2grid, w2layout, w2popup } from '/lib/w2ui.es6.min.js'
 export function createRandomNameLayout() {
   const grid = new w2grid({
     name: 'randomNameGrid',
+    header: '<i class="fa fa-dice"></i> Random Names',
     url: {
       get: '/api/v1/randname/grid',
       remove: '/api/v1/randname/remove',
@@ -10,6 +11,7 @@ export function createRandomNameLayout() {
     recid: 'id',
     recordHeight: 28,
     show: {
+      header: true,
       footer: true,
       toolbar: true,
       toolbarAdd: true,

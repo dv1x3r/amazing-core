@@ -4,6 +4,7 @@ import * as helpers from '/lib/w2ui.helpers.js'
 export function createZoneLayout() {
   const grid = new w2grid({
     name: 'zoneGrid',
+    header: '<i class="fa fa-location-dot"></i> Zones',
     url: {
       get: '/api/v1/zone/grid',
       remove: '/api/v1/zone/remove',
@@ -11,6 +12,7 @@ export function createZoneLayout() {
     recid: 'id',
     recordHeight: 28,
     show: {
+      header: true,
       footer: true,
       toolbar: true,
       toolbarAdd: true,

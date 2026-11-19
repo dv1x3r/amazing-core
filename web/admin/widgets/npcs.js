@@ -4,6 +4,7 @@ import * as helpers from '/lib/w2ui.helpers.js'
 export function createNPCLayout() {
   const grid = new w2grid({
     name: 'npcGrid',
+    header: '<i class="fa fa-user-tie"></i> NPCs',
     url: {
       get: '/api/v1/npc/grid',
       remove: '/api/v1/npc/remove',
@@ -11,6 +12,7 @@ export function createNPCLayout() {
     recid: 'id',
     recordHeight: 28,
     show: {
+      header: true,
       footer: true,
       toolbar: true,
       toolbarAdd: true,

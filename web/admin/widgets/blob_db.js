@@ -1,9 +1,9 @@
 import { w2form, w2grid, w2layout, w2popup } from '/lib/w2ui.es6.min.js'
-import * as helpers from '/lib/w2ui.helpers.js'
 
 export function createBlobLayout() {
   const grid = new w2grid({
     name: 'blobGrid',
+    header: '<i class="fa fa-file"></i> Asset Files',
     url: {
       get: '/api/v1/blob/grid',
       remove: '/api/v1/blob/remove',
@@ -11,6 +11,7 @@ export function createBlobLayout() {
     recid: 'id',
     recordHeight: 28,
     show: {
+      header: true,
       footer: true,
       toolbar: true,
       toolbarAdd: false,

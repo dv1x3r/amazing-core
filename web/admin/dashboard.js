@@ -161,8 +161,8 @@ const dashboardSidebar = new w2sidebar({
           text: 'Item Categories',
           icon: 'fa fa-tags',
           onClick: async function() {
-            const module = await import('./widgets/items.js')
-            setDashboardWidget(module.createCategoryLayout)
+            const module = await import('./widgets/item_categories.js')
+            setDashboardWidget(module.createItemCategoryLayout)
           },
         },
         {
