@@ -95,12 +95,12 @@ func (m *SessionManager) AttachSync(conn *gsf.Conn, playerOID types.OID) bool {
 	return true
 }
 
-// Logout closes the session of the connection.
+// Logout closes the session of the connection, it can no longer be restored with RELOGIN.
 func (m *SessionManager) Logout(conn *gsf.Conn) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if s, ok := m.byConn[conn]; ok {
-		m.removeLocked(s)
+		m.revokeLocked(s)
 	}
 }
 
@@ -149,11 +149,16 @@ func (m *SessionManager) unbindLocked(conn *gsf.Conn) {
 	}
 }
 
-func (m *SessionManager) removeLocked(s *Session) {
+// revokeLocked makes the session unreachable by RELOGIN and SYNC_LOGIN, its connections stay bound.
+func (m *SessionManager) revokeLocked(s *Session) {
 	delete(m.byToken, s.sessionOID)
 	if m.byPlayer[s.playerOID] == s {
 		delete(m.byPlayer, s.playerOID)
 	}
+}
+
+func (m *SessionManager) removeLocked(s *Session) {
+	m.revokeLocked(s)
 	for _, conn := range []*gsf.Conn{s.userConn, s.syncConn} {
 		if conn != nil {
 			delete(m.byConn, conn)

@@ -13,7 +13,6 @@ import (
 
 type Conn struct {
 	remoteIP string
-
 	stream   *bufio.ReadWriter
 	codec    ProtocolCodec
 	onNotify func(NotifyEvent)
@@ -52,7 +51,7 @@ func (c *Conn) Send(header *Header, body Serializable) error {
 
 func (c *Conn) SendNotify(msgType clientmessagetype.ClientMessageType, body Serializable) error {
 	header := &Header{
-		Flags:    2,
+		Flags:    FlagNotify,
 		SvcClass: int32(serviceclass.CLIENT),
 		MsgType:  int32(msgType),
 	}

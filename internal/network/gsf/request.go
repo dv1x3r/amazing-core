@@ -40,10 +40,6 @@ func (req *Request) Conn() *Conn {
 	return req.conn
 }
 
-func (req *Request) RemoteIP() string {
-	return req.conn.RemoteIP()
-}
-
 func (req *Request) MarkDropped() {
 	req.dropped = true
 }

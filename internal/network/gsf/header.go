@@ -11,6 +11,15 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/usermessagetype"
 )
 
+// Header flags, GSFHeaderFlags in the client.
+const (
+	FlagResponse    int32 = 1
+	FlagNotify      int32 = 2
+	FlagTraceLog    int32 = 4
+	FlagReceived    int32 = 8
+	FlagDiscardable int32 = 16
+)
+
 type Header struct {
 	Flags         int32
 	SvcClass      int32
@@ -27,19 +36,11 @@ type Header struct {
 }
 
 func (h *Header) IsService() bool {
-	return h.Flags&2 == 0
+	return h.Flags&FlagNotify == 0
 }
 
 func (h *Header) IsResponse() bool {
-	return h.IsService() && ((h.Flags & 1) != 0)
-}
-
-func (h *Header) SetResponse(value bool) {
-	if value {
-		h.Flags |= 1
-	} else {
-		h.Flags &= -1
-	}
+	return h.IsService() && h.Flags&FlagResponse != 0
 }
 
 func (h *Header) IsRequest() bool {
@@ -47,18 +48,18 @@ func (h *Header) IsRequest() bool {
 }
 
 func (h *Header) IsNotify() bool {
-	return h.Flags&2 != 0
+	return h.Flags&FlagNotify != 0
 }
 
 func (h *Header) IsDiscardable() bool {
-	return h.Flags&0x10 != 0
+	return h.Flags&FlagDiscardable != 0
 }
 
 func (h *Header) SetDiscardable(value bool) {
 	if value {
-		h.Flags |= 16
+		h.Flags |= FlagDiscardable
 	} else {
-		h.Flags &= -17
+		h.Flags &^= FlagDiscardable
 	}
 }
 

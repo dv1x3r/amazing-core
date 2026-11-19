@@ -9,22 +9,28 @@ import (
 	"io"
 	"net"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/resultcode"
 )
 
-type Server struct {
-	Addr   string
-	Router *Router
-	Codec  ProtocolCodec
-	Hooks  ServerHooks
+// maxMessageSize limits the size of a message the server reads, the length format allows up to 256 MB.
+const maxMessageSize = 1 << 20
 
-	listener net.Listener
-	cancel   context.CancelFunc
-	conns    sync.Map
-	wg       sync.WaitGroup
+type Server struct {
+	Addr        string
+	Router      *Router
+	Codec       ProtocolCodec
+	Hooks       ServerHooks
+	IdleTimeout time.Duration // closes a connection that sends nothing for this long, zero keeps it open.
+	mu          sync.Mutex    // guards listener, cancel and shutdown
+	listener    net.Listener
+	cancel      context.CancelFunc
+	shutdown    bool
+	conns       sync.Map
+	wg          sync.WaitGroup
 }
 
 type ServerHooks struct {
@@ -59,10 +65,18 @@ func (s *Server) ListenAndServe() error {
 	if err != nil {
 		return err
 	}
-	s.listener = listener
-
 	ctx, cancel := context.WithCancel(context.Background())
+
+	s.mu.Lock()
+	if s.shutdown {
+		s.mu.Unlock()
+		cancel()
+		listener.Close()
+		return net.ErrClosed
+	}
+	s.listener = listener
 	s.cancel = cancel
+	s.mu.Unlock()
 
 	for {
 		conn, err := listener.Accept()
@@ -84,12 +98,17 @@ func (s *Server) ListenAndServe() error {
 }
 
 func (s *Server) Shutdown(ctx context.Context) error {
-	if s.listener == nil {
+	s.mu.Lock()
+	s.shutdown = true
+	listener, cancel := s.listener, s.cancel
+	s.mu.Unlock()
+
+	if listener == nil {
 		return nil
 	}
 
-	s.listener.Close()
-	s.cancel()
+	listener.Close()
+	cancel()
 
 	// unblock connections that are waiting for read input
 	s.conns.Range(func(k, _ any) bool {
@@ -128,6 +147,9 @@ func (s *Server) handleConn(ctx context.Context, netConn net.Conn) {
 	}
 
 	for {
+		if s.IdleTimeout > 0 && ctx.Err() == nil {
+			netConn.SetReadDeadline(time.Now().Add(s.IdleTimeout))
+		}
 		if err := s.processRequest(ctx, conn); err != nil {
 			if s.Hooks.OnDisconnect != nil {
 				s.Hooks.OnDisconnect(conn, disconnectReason(err))
@@ -137,9 +159,18 @@ func (s *Server) handleConn(ctx context.Context, netConn net.Conn) {
 	}
 }
 
+// connClosed reports whether the client has closed the connection,
+// e.g. it sends LOGOUT on exit and closes the socket without waiting for the response.
+func connClosed(err error) bool {
+	return errors.Is(err, syscall.EPIPE) || errors.Is(err, syscall.ECONNRESET)
+}
+
 func disconnectReason(err error) string {
 	if errors.Is(err, io.EOF) {
 		return "eof"
+	}
+	if connClosed(err) {
+		return "closed"
 	}
 	var netErr net.Error
 	if errors.As(err, &netErr) && netErr.Timeout() {
@@ -183,6 +214,13 @@ func (s *Server) processRequest(ctx context.Context, conn *Conn) error {
 	handlerErr := handler(res, req)
 	sendErr := respond(conn, res, handlerErr)
 
+	// A closed connection is not a request error,
+	// it is reported as the disconnect reason.
+	eventErr := cmp.Or(sendErr, handlerErr)
+	if connClosed(sendErr) {
+		eventErr = handlerErr
+	}
+
 	if s.Hooks.OnRequest != nil {
 		s.Hooks.OnRequest(RequestEvent{
 			Conn:           conn,
@@ -190,10 +228,20 @@ func (s *Server) processRequest(ctx context.Context, conn *Conn) error {
 			ResponseHeader: res.Header(),
 			RequestBody:    req.Body(),
 			ResponseBody:   res.Body(),
-			Err:            cmp.Or(sendErr, handlerErr),
+			Err:            eventErr,
 			Latency:        time.Since(startTime),
 			Dropped:        req.Dropped(),
 		})
+	}
+
+	// The queued notifies follow the response,
+	// after the request is logged.
+	if sendErr == nil && handlerErr == nil {
+		for _, n := range res.notifies {
+			if sendErr = conn.SendNotify(n.MsgType, n.Body); sendErr != nil {
+				break
+			}
+		}
 	}
 
 	// A GSF error is sent to the client as the error response
@@ -227,14 +275,14 @@ func (s *Server) readMessage(stream *bufio.ReadWriter) ([]byte, error) {
 
 	if length == 0 {
 		return nil, fmt.Errorf("empty message")
+	} else if length > maxMessageSize {
+		return nil, fmt.Errorf("message size %d is over %d", length, maxMessageSize)
 	}
 
 	data := make([]byte, length)
 	if _, err := io.ReadFull(stream, data); err != nil {
 		return nil, err
-	}
-
-	if data[len(data)-1] != 0 {
+	} else if data[len(data)-1] != 0 {
 		return nil, fmt.Errorf("invalid message")
 	}
 

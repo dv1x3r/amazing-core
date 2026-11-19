@@ -7,17 +7,15 @@ import (
 
 // OutboundNotify is one prepared notify send.
 type OutboundNotify struct {
-	Conn    *gsf.Conn
-	MsgType clientmessagetype.ClientMessageType
-	Body    gsf.Serializable
+	Conn *gsf.Conn
+	gsf.NotifyMessage
 }
 
 // NewOutboundNotify prepares one notify send after hub state is unlocked.
 func NewOutboundNotify(conn *gsf.Conn, msgType clientmessagetype.ClientMessageType, body gsf.Serializable) OutboundNotify {
 	return OutboundNotify{
-		Conn:    conn,
-		MsgType: msgType,
-		Body:    body,
+		Conn:          conn,
+		NotifyMessage: gsf.NotifyMessage{MsgType: msgType, Body: body},
 	}
 }
 
