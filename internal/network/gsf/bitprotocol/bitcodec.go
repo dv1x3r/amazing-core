@@ -38,7 +38,7 @@ The function returns the decoded length and any potential error encountered whil
 */
 func (BitCodec) ReadLength(reader io.ByteReader) (int, error) {
 	length := 0
-	for i := 0; i < 4; i++ {
+	for range 4 {
 		b, err := reader.ReadByte()
 		if err != nil {
 			return 0, err
@@ -93,6 +93,10 @@ type BitReader struct {
 
 func NewBitReader(data []byte) *BitReader {
 	return &BitReader{stream: NewBitStreamWithData(data)}
+}
+
+func (br *BitReader) Remaining() int {
+	return br.stream.lim - br.stream.pos
 }
 
 func (br *BitReader) ReadObject(value gsf.Deserializable) bool {

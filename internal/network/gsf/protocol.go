@@ -1,6 +1,9 @@
 package gsf
 
-import "io"
+import (
+	"fmt"
+	"io"
+)
 
 type Serializable interface {
 	Serialize(writer ProtocolWriter)
@@ -18,6 +21,8 @@ type ProtocolCodec interface {
 }
 
 type ProtocolReader interface {
+	// Remaining returns the number of unread bits.
+	Remaining() int
 	// ReadObject reads value and returns false when the object is null.
 	ReadObject(value Deserializable) bool
 	GetByte() byte
@@ -70,6 +75,7 @@ func ReadSlice[T any](reader ProtocolReader, readFn func() T) []T {
 	if length < 0 {
 		return nil
 	}
+	checkLength(reader, length)
 
 	slice := make([]T, length)
 	for i := range slice {
@@ -96,6 +102,7 @@ func ReadMap[T any](reader ProtocolReader, readFn func() T) map[string]T {
 	if length < 0 {
 		return nil
 	}
+	checkLength(reader, length)
 
 	dict := map[string]T{}
 	for range length {
@@ -116,5 +123,14 @@ func WriteMap[T any](writer ProtocolWriter, dict map[string]T, writeFn func(valu
 	for k, v := range dict {
 		writer.WriteString(k)
 		writeFn(v)
+	}
+}
+
+// checkLength panics on a slice or map length the message cannot hold.
+// It is checked before the allocation. In a worst case scenario, a malformed length would allocate gigabytes.
+func checkLength(reader ProtocolReader, length int32) {
+	remaining := reader.Remaining()
+	if int(length) > remaining {
+		panic(fmt.Sprintf("length %d is out of range: %d bits remaining", length, remaining))
 	}
 }

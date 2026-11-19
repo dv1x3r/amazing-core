@@ -66,7 +66,7 @@ Resize resizes the bitstream buffer to ensure it can accommodate at least the re
 
 The new buffer size is determined by taking the larger value between:
   - Doubling the current buffer size, or
-  - The requested number of bytes (min) plus an additional 8192 bytes for overhead.
+  - The requested number of bits (min) in bytes plus an additional 8192 bytes for overhead.
 */
 func (bs *BitStream) Resize(min int) {
 	minBytes := bs.IndexByte(min+8-1) + 8192
@@ -134,7 +134,7 @@ func (bs *BitStream) PutBytesAligned(a []byte) {
 	}
 
 	if bs.pos+toReserve > bs.lim {
-		bs.Resize(bs.lim + toReserve)
+		bs.Resize(bs.pos + toReserve)
 	}
 
 	copy(bs.buf[indexByte:indexByte+len(a)], a)
@@ -184,8 +184,6 @@ func (bs *BitStream) GetBytesAligned(count int) []byte {
 		return nil
 	}
 
-	a := make([]byte, count)
-
 	indexByte := bs.IndexByte(bs.pos)
 	indexBit := bs.IndexBit(bs.pos)
 	toRead := count * 8
@@ -199,6 +197,7 @@ func (bs *BitStream) GetBytesAligned(count int) []byte {
 		panic("buffer underflow")
 	}
 
+	a := make([]byte, count)
 	copy(a, bs.buf[indexByte:indexByte+count])
 	bs.pos += toRead
 	return a
