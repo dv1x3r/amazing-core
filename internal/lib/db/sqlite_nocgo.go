@@ -13,7 +13,8 @@ import (
 	sqliteLib "modernc.org/sqlite/lib"
 )
 
-const dataSourceArgs = "?_pragma=journal_mode(WAL)&_pragma=foreign_keys(1)&_pragma=busy_timeout(10000)"
+// _txlock=immediate takes the write lock on BEGIN instead of on the first write
+const dataSourceArgs = "?_pragma=journal_mode(WAL)&_pragma=foreign_keys(1)&_pragma=busy_timeout(10000)&_txlock=immediate"
 
 func (s SQLiteStore) openSingleDB() (*sql.DB, error) {
 	return sql.Open("sqlite", s.filePath+dataSourceArgs)

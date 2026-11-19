@@ -12,7 +12,8 @@ import (
 	"github.com/mattn/go-sqlite3"
 )
 
-const dataSourceArgs = "?_journal_mode=WAL&_foreign_keys=1&_busy_timeout=10000"
+// _txlock=immediate takes the write lock on BEGIN instead of on the first write
+const dataSourceArgs = "?_journal_mode=WAL&_foreign_keys=1&_busy_timeout=10000&_txlock=immediate"
 
 func (s SQLiteStore) openSingleDB() (*sql.DB, error) {
 	return sql.Open("sqlite3", s.filePath+dataSourceArgs)
