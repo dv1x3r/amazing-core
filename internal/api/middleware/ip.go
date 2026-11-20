@@ -12,14 +12,16 @@ const IPExtractorKey = "ip"
 func IPExtractor() Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ip := extractIPFromXFFHeader(r)
+			ip := extractIPDirect(r)
 
-			if ip == "" {
-				ip = extractIPFromRealIPHeader(r)
-			}
-
-			if ip == "" {
-				ip = extractIPDirect(r)
+			// Any client can send the client IP headers, only a reverse proxy on the same host
+			// or in the private network (e.g. another docker container) is trusted.
+			if parsed := net.ParseIP(ip); parsed != nil && (parsed.IsLoopback() || parsed.IsPrivate()) {
+				if forwarded := extractIPFromXFFHeader(r); forwarded != "" {
+					ip = forwarded
+				} else if realIP := extractIPFromRealIPHeader(r); realIP != "" {
+					ip = realIP
+				}
 			}
 
 			r = r.WithContext(context.WithValue(r.Context(), IPExtractorKey, ip))

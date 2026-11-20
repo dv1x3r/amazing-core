@@ -25,11 +25,12 @@ type Conn struct {
 	writeMu  sync.Mutex
 }
 
-func NewConn(netConn net.Conn, remoteIP string, stream *bufio.ReadWriter, codec ProtocolCodec, onNotify func(NotifyEvent)) *Conn {
+func NewConn(netConn net.Conn, codec ProtocolCodec, onNotify func(NotifyEvent)) *Conn {
+	remoteIP, _, _ := net.SplitHostPort(netConn.RemoteAddr().String())
 	return &Conn{
 		netConn:  netConn,
 		remoteIP: remoteIP,
-		stream:   stream,
+		stream:   bufio.NewReadWriter(bufio.NewReader(netConn), bufio.NewWriter(netConn)),
 		codec:    codec,
 		onNotify: onNotify,
 	}

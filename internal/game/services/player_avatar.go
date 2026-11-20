@@ -98,16 +98,20 @@ func (s *Service) GetActivePlayerAvatar(ctx context.Context, platform gsf.Platfo
 	return playerAvatar, nil
 }
 
-func (s *Service) SetPlayerActiveAvatar(ctx context.Context, platform gsf.Platform, playerAvatarOID types.OID) (types.PlayerAvatar, error) {
+func (s *Service) SetPlayerActiveAvatar(ctx context.Context, platform gsf.Platform, playerOID, playerAvatarOID types.OID) (types.PlayerAvatar, error) {
 	const op = "game.Service.SetPlayerActiveAvatar"
 
-	// Only the selected avatar of the player is active, every row returns the player OID.
-	var playerOID types.OID
+	// Only the selected avatar of the player is active, an avatar of another player changes nothing.
 	err := s.store.DB().QueryRowContext(ctx, `
 			update player_avatar set is_active = (gsfoid = ?)
-			where player_id = (select player_id from player_avatar where gsfoid = ?)
-			returning (select gsfoid from player where id = player_avatar.player_id);
-		`, playerAvatarOID, playerAvatarOID).Scan(&playerOID)
+			where player_id = (
+				select pa.player_id
+				from player_avatar as pa
+				join player as pl on pl.id = pa.player_id
+				where pa.gsfoid = ? and pl.gsfoid = ?
+			)
+			returning id;
+		`, playerAvatarOID, playerAvatarOID, playerOID).Scan(new(int))
 	if err != nil {
 		return types.PlayerAvatar{}, wrap.IfErr(op, err)
 	}

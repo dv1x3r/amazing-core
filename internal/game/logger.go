@@ -40,7 +40,6 @@ func (l *gsfLogger) OnRequest(event gsf.RequestEvent) {
 	attrs := []any{
 		slog.String("kind", kind),
 		slog.String("remote_ip", event.Conn.RemoteIP()),
-		slog.String("platform", l.platform(event.Conn).String()),
 		slog.Int("result_code", int(event.ResponseHeader.ResultCode)),
 		slog.String("result_code_text", event.ResponseHeader.ResultCodeText()),
 		slog.Int("app_code", int(event.ResponseHeader.AppCode)),
@@ -58,7 +57,7 @@ func (l *gsfLogger) OnRequest(event gsf.RequestEvent) {
 		attrs = append(attrs, slog.String("direction", direction))
 	}
 
-	attrs = l.appendPlayerOID(attrs, event.Conn)
+	attrs = l.appendSession(attrs, event.Conn)
 
 	if debug {
 		attrs = append(attrs, slog.Any("request", event.RequestBody))
@@ -79,7 +78,6 @@ func (l *gsfLogger) OnNotify(event gsf.NotifyEvent) {
 		slog.String("kind", "client_notify"),
 		slog.String("direction", "outbound"),
 		slog.String("remote_ip", event.Conn.RemoteIP()),
-		slog.String("platform", l.platform(event.Conn).String()),
 		slog.Int("flags", int(event.Header.Flags)),
 		slog.Int("svc_class", int(event.Header.SvcClass)),
 		slog.String("svc_class_text", event.Header.ServiceClassText()),
@@ -88,7 +86,7 @@ func (l *gsfLogger) OnNotify(event gsf.NotifyEvent) {
 		slog.String("latency", formatLatency(event.Latency)),
 	}
 
-	attrs = l.appendPlayerOID(attrs, event.Conn)
+	attrs = l.appendSession(attrs, event.Conn)
 
 	if debug {
 		attrs = append(attrs, slog.Any("notify", event.Body))
@@ -108,7 +106,6 @@ func (l *gsfLogger) OnUnhandled(conn *gsf.Conn, header *gsf.Header, data []byte)
 		slog.String("kind", kind),
 		slog.String("direction", "inbound"),
 		slog.String("remote_ip", conn.RemoteIP()),
-		slog.String("platform", l.platform(conn).String()),
 		slog.Int("svc_class", int(header.SvcClass)),
 		slog.String("svc_class_text", header.ServiceClassText()),
 		slog.Int("msg_type", int(header.MsgType)),
@@ -118,7 +115,7 @@ func (l *gsfLogger) OnUnhandled(conn *gsf.Conn, header *gsf.Header, data []byte)
 		slog.String("hex", fmt.Sprintf("%x", data)),
 	}
 
-	attrs = l.appendPlayerOID(attrs, conn)
+	attrs = l.appendSession(attrs, conn)
 
 	l.logger.Info("gsf unhandled", attrs...)
 }
@@ -137,18 +134,16 @@ func (l *gsfLogger) logFunc(err error, debug bool) func(string, ...any) {
 	return l.logger.Info
 }
 
-func (l *gsfLogger) platform(conn *gsf.Conn) gsf.Platform {
-	if s := l.sessions.Get(conn); s != nil {
-		return s.platform
+// appendSession adds the platform and the player of the connection session, one lookup for both.
+func (l *gsfLogger) appendSession(attrs []any, conn *gsf.Conn) []any {
+	s := l.sessions.Get(conn)
+	if s == nil {
+		return append(attrs, slog.String("platform", gsf.PlatformUnknown.String()))
 	}
-	return gsf.PlatformUnknown
-}
-
-func (l *gsfLogger) appendPlayerOID(attrs []any, conn *gsf.Conn) []any {
-	if s := l.sessions.Get(conn); s != nil {
-		attrs = append(attrs, slog.Int64("player_oid", s.playerOID.Int64()))
-	}
-	return attrs
+	return append(attrs,
+		slog.String("platform", s.platform.String()),
+		slog.Int64("player_oid", s.player.OID.Int64()),
+	)
 }
 
 func formatLatency(latency time.Duration) string {

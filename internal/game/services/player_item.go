@@ -98,7 +98,8 @@ func (s *Service) GetOutfitItems(ctx context.Context, platform gsf.Platform, pla
 	return playerItems, wrap.IfErr(op, rows.Err())
 }
 
-func (s *Service) AddOutfitItems(ctx context.Context, outfitOID types.OID, inventoryOIDs, slotOIDs []types.OID) error {
+// AddOutfitItems puts the items into the outfit, only the items and the outfit of the player.
+func (s *Service) AddOutfitItems(ctx context.Context, playerOID, outfitOID types.OID, inventoryOIDs, slotOIDs []types.OID) error {
 	const op = "game.Service.AddOutfitItems"
 
 	if len(inventoryOIDs) == 0 || len(slotOIDs) == 0 || len(inventoryOIDs) != len(slotOIDs) {
@@ -106,26 +107,30 @@ func (s *Service) AddOutfitItems(ctx context.Context, outfitOID types.OID, inven
 	}
 
 	values := make([]string, len(inventoryOIDs))
-	args := make([]any, 0, len(inventoryOIDs)*2+1)
+	args := make([]any, 0, len(inventoryOIDs)*2+2)
 	for i := range inventoryOIDs {
 		values[i] = "(?, ?)"
 		args = append(args, inventoryOIDs[i], slotOIDs[i])
 	}
-	args = append(args, outfitOID)
+	args = append(args, playerOID, outfitOID)
 
 	query := fmt.Sprintf(`
 		with add_items(inventory_oid, slot_oid) as (values %s)
 		update player_item
 		set
-			player_avatar_outfit_id = (select id from player_avatar_outfit where gsfoid = ?),
+			player_avatar_outfit_id = new.outfit_id,
 			avatar_slot_id = new.avatar_slot_id
 		from (
 			select
 				pi.id as player_item_id,
-				avs.id as avatar_slot_id
+				avs.id as avatar_slot_id,
+				po.id as outfit_id
 			from add_items
-				join player_item as pi on pi.gsfoid = add_items.inventory_oid
+				join player as pl on pl.gsfoid = ?
+				join player_item as pi on pi.gsfoid = add_items.inventory_oid and pi.player_id = pl.id
 				join avatar_slot as avs on avs.gsfoid = add_items.slot_oid
+				join player_avatar_outfit as po on po.gsfoid = ?
+				join player_avatar as pa on pa.id = po.player_avatar_id and pa.player_id = pl.id
 		) new
 		where player_item.id = new.player_item_id;
 	`, strings.Join(values, ", "))
@@ -137,7 +142,8 @@ func (s *Service) AddOutfitItems(ctx context.Context, outfitOID types.OID, inven
 	return nil
 }
 
-func (s *Service) RemoveOutfitItems(ctx context.Context, outfitOID types.OID, inventoryOIDs []types.OID) error {
+// RemoveOutfitItems takes the items of the player out of their outfits.
+func (s *Service) RemoveOutfitItems(ctx context.Context, playerOID types.OID, inventoryOIDs []types.OID) error {
 	const op = "game.Service.RemoveOutfitItems"
 
 	if len(inventoryOIDs) == 0 {
@@ -150,7 +156,7 @@ func (s *Service) RemoveOutfitItems(ctx context.Context, outfitOID types.OID, in
 		values[i] = "(?)"
 		args = append(args, inventoryOIDs[i])
 	}
-	args = append(args, outfitOID)
+	args = append(args, playerOID)
 
 	query := fmt.Sprintf(`
 		with remove_items(inventory_oid) as (values %s)
@@ -161,7 +167,8 @@ func (s *Service) RemoveOutfitItems(ctx context.Context, outfitOID types.OID, in
 		from (
 			select pi.id as player_item_id
 			from remove_items
-				join player_item as pi on pi.gsfoid = remove_items.inventory_oid
+				join player as pl on pl.gsfoid = ?
+				join player_item as pi on pi.gsfoid = remove_items.inventory_oid and pi.player_id = pl.id
 		) remove
 		where player_item.id = remove.player_item_id;
 	`, strings.Join(values, ", "))
@@ -173,7 +180,8 @@ func (s *Service) RemoveOutfitItems(ctx context.Context, outfitOID types.OID, in
 	return nil
 }
 
-func (s *Service) ReplaceOutfitItems(ctx context.Context, oldOIDs, newOIDs []types.OID) error {
+// ReplaceOutfitItems swaps the outfits and slots of item pairs, both items of a pair must be of the player.
+func (s *Service) ReplaceOutfitItems(ctx context.Context, playerOID types.OID, oldOIDs, newOIDs []types.OID) error {
 	const op = "game.Service.ReplaceOutfitItems"
 
 	if len(oldOIDs) == 0 || len(newOIDs) == 0 || len(oldOIDs) != len(newOIDs) {
@@ -186,29 +194,36 @@ func (s *Service) ReplaceOutfitItems(ctx context.Context, oldOIDs, newOIDs []typ
 		values[i] = "(?, ?)"
 		args = append(args, oldOIDs[i], newOIDs[i])
 	}
+	args = append(args, playerOID)
 
 	query := fmt.Sprintf(`
-		with pairs(old_oid, new_oid) as (values %s)
+		with
+		pairs(old_oid, new_oid) as (values %s),
+		owned as (
+			select old_item.id as old_id, new_item.id as new_id
+			from pairs
+				join player as pl on pl.gsfoid = ?
+				join player_item as old_item on old_item.gsfoid = pairs.old_oid and old_item.player_id = pl.id
+				join player_item as new_item on new_item.gsfoid = pairs.new_oid and new_item.player_id = pl.id
+		)
 		update player_item
 		set
 			player_avatar_outfit_id = swap.player_avatar_outfit_id,
 			avatar_slot_id = swap.avatar_slot_id
 		from (
 			select
-				old_item.id as id,
+				owned.old_id as id,
 				new_item.player_avatar_outfit_id,
 				new_item.avatar_slot_id
-			from pairs
-				join player_item as old_item on old_item.gsfoid = pairs.old_oid
-				join player_item as new_item on new_item.gsfoid = pairs.new_oid
+			from owned
+				join player_item as new_item on new_item.id = owned.new_id
 			union all
 			select
-				new_item.id as id,
+				owned.new_id as id,
 				old_item.player_avatar_outfit_id,
 				old_item.avatar_slot_id
-			from pairs
-				join player_item as old_item on old_item.gsfoid = pairs.old_oid
-				join player_item as new_item on new_item.gsfoid = pairs.new_oid
+			from owned
+				join player_item as old_item on old_item.id = owned.old_id
 		) swap
 		where player_item.id = swap.id;
 	`, strings.Join(values, ", "))

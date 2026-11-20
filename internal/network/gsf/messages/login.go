@@ -11,8 +11,8 @@ type LoginRequest struct {
 	// Player username.
 	LoginID string
 
-	// Player password.
-	Password string
+	// Player password, hidden from the JSON logs.
+	Password string `json:"-"`
 
 	// The client always sends 1234.
 	SitePIN int32

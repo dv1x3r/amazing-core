@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"syscall"
 	"time"
 
 	"github.com/dv1x3r/amazing-core/data"
@@ -168,10 +169,10 @@ func main() {
 	apiServer := api.NewServer(logger.Get(), routes.NewHandler(apiSvc, apiAuthenticator, logBus), store)
 
 	gameLogger := slog.New(logBus.Handler(logger.Get().Handler()))
-	gameSvc := gameservices.NewService(logger.Get(), store, cfg)
+	gameSvc := gameservices.NewService(logger.Get(), store)
 	gameServer := game.NewServer(gameLogger, gameSvc)
 
-	interruptCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	interruptCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	go func() {

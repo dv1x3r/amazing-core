@@ -2,6 +2,7 @@ package game
 
 import (
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/binary"
 	"strings"
 	"sync"
@@ -17,11 +18,13 @@ const detachedSessionTTL = 5 * time.Minute
 
 // Session is a logged in player.
 type Session struct {
-	playerOID      types.OID
 	platform       gsf.Platform
 	loginName      string
 	sessionOID     types.OID
 	conversationID int64
+
+	// syncToken goes to the client in INIT_LOCATION, it sends it back in SYNC_LOGIN.
+	syncToken string
 
 	// player is the player of the session in the world, its state is guarded by worldsync.World
 	player *worldsync.Player
@@ -51,11 +54,11 @@ func NewSessionManager() *SessionManager {
 // Login starts a new session of the player on the USER connection, an older session of the player is closed.
 func (m *SessionManager) Login(conn *gsf.Conn, player *worldsync.Player, platform gsf.Platform, loginName string) *Session {
 	s := &Session{
-		playerOID:      player.OID,
 		platform:       platform,
 		loginName:      loginName,
 		sessionOID:     types.OID{Number: randomInt63() & (1<<40 - 1)},
 		conversationID: randomInt63(),
+		syncToken:      rand.Text(),
 		player:         player,
 	}
 
@@ -88,12 +91,12 @@ func (m *SessionManager) Relogin(conn *gsf.Conn, sessionOID types.OID, conversat
 	return true
 }
 
-// AttachSync binds the SYNC connection to the session of the player, the client sends no token there.
-func (m *SessionManager) AttachSync(conn *gsf.Conn, playerOID types.OID) *Session {
+// AttachSync binds the SYNC connection to the session of the player, the token must be the one of INIT_LOCATION.
+func (m *SessionManager) AttachSync(conn *gsf.Conn, playerOID types.OID, syncToken string) *Session {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	s, ok := m.byPlayer[playerOID]
-	if !ok || s.expired(time.Now()) {
+	if !ok || s.expired(time.Now()) || subtle.ConstantTimeCompare([]byte(s.syncToken), []byte(syncToken)) != 1 {
 		return nil
 	}
 	m.bindLocked(conn, s, true)
@@ -157,8 +160,8 @@ func (m *SessionManager) unbindLocked(conn *gsf.Conn) {
 // revokeLocked makes the session unreachable by RELOGIN and SYNC_LOGIN, its connections stay bound.
 func (m *SessionManager) revokeLocked(s *Session) {
 	delete(m.byToken, s.sessionOID)
-	if m.byPlayer[s.playerOID] == s {
-		delete(m.byPlayer, s.playerOID)
+	if m.byPlayer[s.player.OID] == s {
+		delete(m.byPlayer, s.player.OID)
 	}
 }
 

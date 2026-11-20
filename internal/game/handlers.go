@@ -5,10 +5,12 @@ import (
 	"errors"
 	"math/rand"
 	"time"
+	"unicode/utf8"
 
 	"github.com/dv1x3r/amazing-core/internal/config"
 	"github.com/dv1x3r/amazing-core/internal/game/services"
 	"github.com/dv1x3r/amazing-core/internal/game/worldsync"
+	"github.com/dv1x3r/amazing-core/internal/lib/ratelimit"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/messages"
@@ -19,19 +21,25 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/clientmessagetype"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/notificationtype"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/queststate"
+
+	"golang.org/x/time/rate"
 )
 
 type Handler struct {
 	svc      *services.Service
 	world    *worldsync.World
 	sessions *SessionManager
+
+	// loginLimiter limits LOGIN by IP, every LOGIN hashes the password and can create a player.
+	loginLimiter *ratelimit.Limiter
 }
 
 func NewHandler(svc *services.Service, sessions *SessionManager, world *worldsync.World) *Handler {
 	return &Handler{
-		svc:      svc,
-		world:    world,
-		sessions: sessions,
+		svc:          svc,
+		world:        world,
+		sessions:     sessions,
+		loginLimiter: ratelimit.New(rate.Every(time.Second), 5, 10*time.Minute),
 	}
 }
 
@@ -57,11 +65,16 @@ const (
 	SCENE_EMPTY          = "OTYwNzA1NTQwOTE2Ng"
 )
 
+const ZONE_SPRING_BAY_OID = 292733975781503755
+
 const (
 	CHAT_PRIVATE_OID       = 1
 	CHAT_PRIVATE_GROUP_OID = 2
 	CHAT_LOCAL_OID         = 3
 )
+
+// maxChatMessageLength is in characters, the real limit of the client chat field is unknown.
+const maxChatMessageLength = 256
 
 // ── General ──────────────────────────────────────────────────────────────────
 
@@ -89,7 +102,7 @@ func (h *Handler) GetSiteFrame(w gsf.ResponseWriter, r *gsf.Request) error {
 		return err
 	}
 	res := &messages.GetSiteFrameResponse{}
-	res.AssetDeliveryURL = h.svc.DeliveryURL()
+	res.AssetDeliveryURL = config.Get().Settings.AssetDeliveryURL
 	res.SiteFrame = siteFrame
 	return w.Write(res)
 }
@@ -100,6 +113,9 @@ func (h *Handler) Login(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.LoginRequest{}
 	if err := r.Read(req); err != nil {
 		return err
+	}
+	if !h.loginLimiter.Allow(r.Conn().RemoteIP()) {
+		return wrap.WithGSFError(errors.New("too many login attempts"), appcode.AUTH)
 	}
 
 	playerOID, err := h.svc.LoginOrCreatePlayer(r.Context(), req.LoginID, req.Password)
@@ -124,7 +140,7 @@ func (h *Handler) Login(w gsf.ResponseWriter, r *gsf.Request) error {
 	res := &messages.LoginResponse{}
 	res.SessionOID = session.sessionOID
 	res.ConversationID = session.conversationID
-	res.AssetDeliveryURL = h.svc.DeliveryURL()
+	res.AssetDeliveryURL = config.Get().Settings.AssetDeliveryURL
 	res.Player = player
 	res.PlayerInfoTO = playerInfo
 
@@ -311,7 +327,7 @@ func (h *Handler) GetInventoryObjects(w gsf.ResponseWriter, r *gsf.Request) erro
 	if err != nil {
 		return err
 	}
-	items, err := h.svc.GetInventoryObjects(r.Context(), session.platform, session.playerOID)
+	items, err := h.svc.GetInventoryObjects(r.Context(), session.platform, session.player.OID)
 	if err != nil {
 		return err
 	}
@@ -343,7 +359,7 @@ func (h *Handler) GetAvatars(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err != nil {
 		return err
 	}
-	avatars, err := h.svc.GetPlayerAvatars(r.Context(), session.platform, session.playerOID)
+	avatars, err := h.svc.GetPlayerAvatars(r.Context(), session.platform, session.player.OID)
 	if err != nil {
 		return err
 	}
@@ -372,13 +388,15 @@ func (h *Handler) UpdatePlayerActiveAvatar(w gsf.ResponseWriter, r *gsf.Request)
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	avatar, err := h.svc.SetPlayerActiveAvatar(r.Context(), h.platform(r), req.PlayerAvatarOID)
+	session, err := h.session(r)
 	if err != nil {
 		return err
 	}
-	if session, err := h.session(r); err == nil {
-		h.world.AppearanceChanged(session.player)
+	avatar, err := h.svc.SetPlayerActiveAvatar(r.Context(), session.platform, session.player.OID, req.PlayerAvatarOID)
+	if err != nil {
+		return err
 	}
+	h.world.AppearanceChanged(session.player)
 	res := &messages.UpdatePlayerActiveAvatarResponse{}
 	res.ActivePlayerAvatar = avatar
 	return w.Write(res)
@@ -408,7 +426,11 @@ func (h *Handler) AddOutfit(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	outfitOID, err := h.svc.CreateOutfit(r.Context(), req.PlayerAvatarOID, req.OutfitNo)
+	session, err := h.session(r)
+	if err != nil {
+		return err
+	}
+	outfitOID, err := h.svc.CreateOutfit(r.Context(), session.player.OID, req.PlayerAvatarOID, req.OutfitNo)
 	if err != nil {
 		return err
 	}
@@ -424,13 +446,14 @@ func (h *Handler) SetCurrentOutfit(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	err := h.svc.SetPlayerActiveOutfit(r.Context(), req.PlayerAvatarOID, req.PlayerAvatarOutfitOID, req.OutfitNo)
+	session, err := h.session(r)
 	if err != nil {
 		return err
 	}
-	if session, err := h.session(r); err == nil {
-		h.world.AppearanceChanged(session.player)
+	if err := h.svc.SetPlayerActiveOutfit(r.Context(), session.player.OID, req.PlayerAvatarOID, req.OutfitNo); err != nil {
+		return err
 	}
+	h.world.AppearanceChanged(session.player)
 	res := &messages.SetCurrentOutfitResponse{}
 	res.IsUpdated = true
 	return w.Write(res)
@@ -457,14 +480,15 @@ func (h *Handler) AddOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	// TODO: ownership check, acceptable slot sheck, outfit oid check
-	err := h.svc.AddOutfitItems(r.Context(), req.PlayerAvatarOutfitOID, req.InventoryOIDs, req.SlotOIDs)
+	session, err := h.session(r)
 	if err != nil {
 		return err
 	}
-	if session, err := h.session(r); err == nil {
-		h.world.AppearanceChanged(session.player)
+	// TODO: acceptable slot check
+	if err := h.svc.AddOutfitItems(r.Context(), session.player.OID, req.PlayerAvatarOutfitOID, req.InventoryOIDs, req.SlotOIDs); err != nil {
+		return err
 	}
+	h.world.AppearanceChanged(session.player)
 	res := &messages.AddOutfitItemsResponse{}
 	res.IsUpdated = true
 	return w.Write(res)
@@ -476,14 +500,15 @@ func (h *Handler) RemoveOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error 
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	// TODO: ownership check, outfit oid check
-	err := h.svc.RemoveOutfitItems(r.Context(), req.PlayerAvatarOutfitOID, req.InventoryOIDs)
+	session, err := h.session(r)
 	if err != nil {
 		return err
 	}
-	if session, err := h.session(r); err == nil {
-		h.world.AppearanceChanged(session.player)
+	// TODO: outfit oid check
+	if err := h.svc.RemoveOutfitItems(r.Context(), session.player.OID, req.InventoryOIDs); err != nil {
+		return err
 	}
+	h.world.AppearanceChanged(session.player)
 	res := &messages.RemoveOutfitItemsResponse{}
 	res.IsUpdated = true
 	return w.Write(res)
@@ -495,14 +520,15 @@ func (h *Handler) ReplaceOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	// TODO: ownership check, acceptable slot sheck, outfit oid check
-	err := h.svc.ReplaceOutfitItems(r.Context(), req.OldInventoryOIDs, req.NewInventoryOIDs)
+	session, err := h.session(r)
 	if err != nil {
 		return err
 	}
-	if session, err := h.session(r); err == nil {
-		h.world.AppearanceChanged(session.player)
+	// TODO: acceptable slot check, outfit oid check
+	if err := h.svc.ReplaceOutfitItems(r.Context(), session.player.OID, req.OldInventoryOIDs, req.NewInventoryOIDs); err != nil {
+		return err
 	}
+	h.world.AppearanceChanged(session.player)
 	res := &messages.ReplaceOutfitItemsResponse{}
 	res.IsUpdated = true
 	return w.Write(res)
@@ -533,21 +559,24 @@ func (h *Handler) InitLocation(w gsf.ResponseWriter, r *gsf.Request) error {
 		return err
 	}
 
+	session, err := h.session(r)
+	if err != nil {
+		return err
+	}
+	h.world.Leave(session.player)
+
 	res := &messages.InitLocationResponse{}
+	res.SyncServerToken = session.syncToken
 	res.SyncServerIP = config.Get().Settings.SyncServerIP
 	res.SyncServerPort = int32(config.Get().Settings.SyncServerPort)
-
-	if session, err := h.session(r); err == nil {
-		h.world.Leave(session.player)
-	}
 
 	// The Home.PlayerMaze.HomeTheme.AssetMap["Scene_Unity3D"] asset drives scene loading via
 	// LoadMazeCommand.cs -> LoadMainScene() -> AssetDownloadManager.cs -> LoadMainScene()
 
-	if req.LocOID.Int64() == 292733975781503755 {
+	if req.LocOID.Int64() == ZONE_SPRING_BAY_OID {
 		// The zone container has the Main_Scene asset and the spawn points of the task items,
 		// SpawnPoints.ParseZone reads them from ZoneManager.currentZone set by this response.
-		zone, err := h.svc.GetZone(r.Context(), h.platform(r), req.LocOID)
+		zone, err := h.svc.GetZone(r.Context(), session.platform, req.LocOID)
 		if err != nil {
 			return err
 		}
@@ -576,14 +605,9 @@ func (h *Handler) InitLocation(w gsf.ResponseWriter, r *gsf.Request) error {
 		container.AssetMap["Scene_Unity3D"] = []types.Asset{scene, emptyScene}
 
 		// ZoneManager takes the yard owner from PlayerHome.PlayerOID and HUDManager requests its details.
-		session, err := h.session(r)
-		if err != nil {
-			return err
-		}
-
 		playerMaze := types.PlayerMaze{
 			Name:       "coremaze",
-			PlayerOID:  session.playerOID,
+			PlayerOID:  session.player.OID,
 			MazePieces: []types.PlayerMazePiece{},
 			HomeTheme:  container,
 		}
@@ -591,7 +615,7 @@ func (h *Handler) InitLocation(w gsf.ResponseWriter, r *gsf.Request) error {
 		res.Home = &types.PlayerHome{
 			PlayerMaze:  playerMaze,
 			HomeTheme:   container,
-			PlayerOID:   session.playerOID,
+			PlayerOID:   session.player.OID,
 			PlayerMazes: []types.PlayerMaze{playerMaze},
 		}
 	}
@@ -633,7 +657,7 @@ func (h *Handler) SyncLogin(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
-	session := h.sessions.AttachSync(r.Conn(), req.UOID)
+	session := h.sessions.AttachSync(r.Conn(), req.UOID, req.Token)
 	if session == nil {
 		return errNoSession
 	}
@@ -672,14 +696,9 @@ func (h *Handler) SyncAction(w gsf.ResponseWriter, r *gsf.Request) error {
 	return nil
 }
 
-// HeartbeatNotify keeps the SYNC connection bound to the session of the player.
+// HeartbeatNotify keeps the SYNC connection alive, only SYNC_LOGIN binds it to a session.
 func (h *Handler) HeartbeatNotify(w gsf.ResponseWriter, r *gsf.Request) error {
-	req := &notify.Heartbeat{}
-	if err := r.Read(req); err != nil {
-		return err
-	}
-	h.sessions.AttachSync(r.Conn(), req.POID)
-	return nil
+	return r.Read(&notify.Heartbeat{})
 }
 
 // ── Social ───────────────────────────────────────────────────────────────────
@@ -724,6 +743,10 @@ func (h *Handler) SendMessage(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
+	// Local chat goes to every player nearby, a modified client could send megabytes.
+	if utf8.RuneCountInString(req.Message) > maxChatMessageLength {
+		return wrap.WithGSFError(errors.New("chat message is too long"), appcode.INPUT)
+	}
 
 	message := req.Message
 	if config.Get().Settings.BroChat {
@@ -747,7 +770,7 @@ func (h *Handler) SendMessage(w gsf.ResponseWriter, r *gsf.Request) error {
 			Msg:          res.FilteredMessage,
 			TypeID:       localChatTypeOID,
 			GroupID:      types.OID{},
-			SenderID:     session.playerOID,
+			SenderID:     session.player.OID,
 			Categories:   res.Categories,
 			OffenceGroup: res.OffenceGroup,
 		})
@@ -888,7 +911,7 @@ func (h *Handler) GetQuestFromParent(w gsf.ResponseWriter, r *gsf.Request) error
 		return err
 	}
 	// NPCController expects a null quest when the NPC offers nothing.
-	res.Quest, err = h.svc.GetNPCQuest(r.Context(), session.platform, session.playerOID, req.ParentOID)
+	res.Quest, err = h.svc.GetNPCQuest(r.Context(), session.platform, session.player.OID, req.ParentOID)
 	if err != nil {
 		return err
 	}
@@ -905,7 +928,7 @@ func (h *Handler) CreateQuest(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err != nil {
 		return err
 	}
-	playerQuestOID, subQuests, err := h.svc.CreatePlayerQuest(r.Context(), session.playerOID, req.QuestOID)
+	playerQuestOID, subQuests, err := h.svc.CreatePlayerQuest(r.Context(), session.player.OID, req.QuestOID)
 	if err != nil {
 		if errors.Is(err, services.ErrQuestNotFound) {
 			return wrap.WithGSFError(err, appcode.NOT_FOUND)
@@ -929,7 +952,7 @@ func (h *Handler) AcceptQuest(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err != nil {
 		return err
 	}
-	if err := h.svc.SetPlayerQuestState(r.Context(), session.playerOID, req.PlayerQuestOID, queststate.ACCEPTED); err != nil {
+	if err := h.svc.SetPlayerQuestState(r.Context(), session.player.OID, req.PlayerQuestOID, queststate.ACCEPTED); err != nil {
 		if errors.Is(err, services.ErrQuestNotFound) {
 			return wrap.WithGSFError(err, appcode.NOT_FOUND)
 		}
@@ -953,7 +976,7 @@ func (h *Handler) StartQuest(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err != nil {
 		return err
 	}
-	if err := h.svc.SetPlayerQuestState(r.Context(), session.playerOID, req.PlayerQuestOID, queststate.STARTED); err != nil {
+	if err := h.svc.SetPlayerQuestState(r.Context(), session.player.OID, req.PlayerQuestOID, queststate.STARTED); err != nil {
 		if errors.Is(err, services.ErrQuestNotFound) {
 			return wrap.WithGSFError(err, appcode.NOT_FOUND)
 		}
@@ -977,14 +1000,14 @@ func (h *Handler) AddQuestItem(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err != nil {
 		return err
 	}
-	completed, err := h.svc.AddPlayerQuestItem(r.Context(), session.playerOID, req.PlayerQuestOID, req.ItemOID, req.Count)
+	completed, err := h.svc.AddPlayerQuestItem(r.Context(), session.player.OID, req.PlayerQuestOID, req.ItemOID, req.Count)
 	if err != nil {
 		return err
 	}
 	if completed {
 		w.Notify(clientmessagetype.NOTIFICATION, &notify.Notification{
 			OID:       types.OID{Number: int64(notificationtype.QUEST_COMPLETED)},
-			POID:      session.playerOID,
+			POID:      session.player.OID,
 			ObjectOID: req.PlayerQuestOID,
 		})
 	}
@@ -1004,14 +1027,14 @@ func (h *Handler) CompleteQuest(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err != nil {
 		return err
 	}
-	closed, parentOID, err := h.svc.ClosePlayerQuest(r.Context(), session.playerOID, req.PlayerQuestOID)
+	closed, parentOID, err := h.svc.ClosePlayerQuest(r.Context(), session.player.OID, req.PlayerQuestOID)
 	if err != nil {
 		return err
 	}
 	if parentOID != nil {
 		w.Notify(clientmessagetype.NOTIFICATION, &notify.Notification{
 			OID:       types.OID{Number: int64(notificationtype.QUEST_COMPLETED)},
-			POID:      session.playerOID,
+			POID:      session.player.OID,
 			ObjectOID: *parentOID,
 		})
 	}
@@ -1035,7 +1058,7 @@ func (h *Handler) AbandonQuest(w gsf.ResponseWriter, r *gsf.Request) error {
 	if req.IsFailed {
 		state = queststate.FAILED
 	}
-	if err := h.svc.AbandonPlayerQuest(r.Context(), session.playerOID, req.PlayerQuestOID, state); err != nil {
+	if err := h.svc.AbandonPlayerQuest(r.Context(), session.player.OID, req.PlayerQuestOID, state); err != nil {
 		if errors.Is(err, services.ErrQuestNotFound) {
 			return wrap.WithGSFError(err, appcode.NOT_FOUND)
 		}

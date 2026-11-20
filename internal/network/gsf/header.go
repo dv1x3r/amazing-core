@@ -51,18 +51,6 @@ func (h *Header) IsNotify() bool {
 	return h.Flags&FlagNotify != 0
 }
 
-func (h *Header) IsDiscardable() bool {
-	return h.Flags&FlagDiscardable != 0
-}
-
-func (h *Header) SetDiscardable(value bool) {
-	if value {
-		h.Flags |= FlagDiscardable
-	} else {
-		h.Flags &^= FlagDiscardable
-	}
-}
-
 func (h *Header) ServiceClassText() string {
 	return serviceclass.ServiceClass(h.SvcClass).String()
 }
@@ -103,7 +91,7 @@ func (h *Header) Serialize(writer ProtocolWriter) {
 		if h.AppCode != 0 {
 			writer.WriteString(h.AppString)
 		}
-		if h.AppCode == 17 {
+		if h.AppCode == int32(appcode.MULT_ERRS) {
 			writer.WriteInt32(int32(len(h.AppCodeArray)))
 			for i := range h.AppCodeArray {
 				writer.WriteInt32(h.AppCodeArray[i].Code)

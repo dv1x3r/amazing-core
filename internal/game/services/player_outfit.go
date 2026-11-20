@@ -44,22 +44,31 @@ func (s *Service) GetOutfits(ctx context.Context, playerAvatarOID, playerOID typ
 	return outfits, wrap.IfErr(op, rows.Err())
 }
 
-func (s *Service) CreateOutfit(ctx context.Context, playerAvatarOID types.OID, outfitNo int16) (types.OID, error) {
+// CreateOutfit creates an outfit of the player avatar, an avatar of another player fails the not null constraint.
+func (s *Service) CreateOutfit(ctx context.Context, playerOID, playerAvatarOID types.OID, outfitNo int16) (types.OID, error) {
 	const op = "game.Service.CreateOutfit"
 	var outfitOID types.OID
 	row := s.store.DB().QueryRowContext(ctx, `
 			insert into player_avatar_outfit (gsfoid, player_avatar_id, outfit_no)
 			values (
 				(select max(gsfoid) + 1 from player_avatar_outfit),
-				(select id from player_avatar where gsfoid = ?),
+				(
+					select pa.id
+					from player_avatar as pa
+					join player as pl on pl.id = pa.player_id
+					where pa.gsfoid = ? and pl.gsfoid = ?
+				),
 				?
 			) returning gsfoid;
-		`, playerAvatarOID, outfitNo)
+		`, playerAvatarOID, playerOID, outfitNo)
 	return outfitOID, wrap.IfErr(op, row.Scan(&outfitOID))
 }
 
-func (s *Service) SetPlayerActiveOutfit(ctx context.Context, playerAvatarOID, playerOutfitOID types.OID, outfitNo int16) error {
+func (s *Service) SetPlayerActiveOutfit(ctx context.Context, playerOID, playerAvatarOID types.OID, outfitNo int16) error {
 	const op = "game.Service.SetPlayerActiveOutfit"
-	_, err := s.store.DB().ExecContext(ctx, "update player_avatar set outfit_no = ? where gsfoid = ?;", outfitNo, playerAvatarOID)
+	_, err := s.store.DB().ExecContext(ctx, `
+			update player_avatar set outfit_no = ?
+			where gsfoid = ? and player_id = (select id from player where gsfoid = ?);
+		`, outfitNo, playerAvatarOID, playerOID)
 	return wrap.IfErr(op, err)
 }

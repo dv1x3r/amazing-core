@@ -1,14 +1,19 @@
 package routes
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/dv1x3r/amazing-core/internal/api/services"
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/w2go/w2"
 )
+
+// cdnWriteTimeout lets a 110 MB asset download at about 0.5 Mbit/s.
+const cdnWriteTimeout = 30 * time.Minute
 
 func (h *Handler) GetBlob(w http.ResponseWriter, r *http.Request) error {
 	data, err := h.svc.GetBlobData(r.Context(), r.PathValue("cdnid"))
@@ -17,9 +22,15 @@ func (h *Handler) GetBlob(w http.ResponseWriter, r *http.Request) error {
 	} else if err != nil {
 		return err
 	}
+	// The server WriteTimeout cuts big assets (up to 110 MB) on slow connections.
+	deadline := time.Now().Add(cdnWriteTimeout)
+	if err := http.NewResponseController(w).SetWriteDeadline(deadline); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/octet-stream")
-	_, err = w.Write(data)
-	return err
+	// ServeContent sends Content-Length and supports Range requests.
+	http.ServeContent(w, r, "", time.Time{}, bytes.NewReader(data))
+	return nil
 }
 
 func (h *Handler) GetBlobMetadata(w http.ResponseWriter, r *http.Request) error {
