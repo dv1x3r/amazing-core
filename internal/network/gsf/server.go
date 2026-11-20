@@ -141,7 +141,7 @@ func (s *Server) Shutdown(ctx context.Context) error {
 func (s *Server) handleConn(ctx context.Context, netConn net.Conn) {
 	stream := bufio.NewReadWriter(bufio.NewReader(netConn), bufio.NewWriter(netConn))
 	remoteAddr, _, _ := net.SplitHostPort(netConn.RemoteAddr().String())
-	conn := NewConn(remoteAddr, stream, s.Codec, s.Hooks.OnNotify)
+	conn := NewConn(netConn, remoteAddr, stream, s.Codec, s.Hooks.OnNotify)
 	if s.Hooks.OnConnect != nil {
 		s.Hooks.OnConnect(conn)
 	}

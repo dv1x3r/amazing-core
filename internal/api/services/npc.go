@@ -71,7 +71,7 @@ func (s *Service) GetNPCGrid(ctx context.Context, req w2.GetGridRequest) (w2.Get
 			sb.Join("zone as z", "z.id = n.zone_id")
 			sb.Join("asset_container as zc", "zc.id = z.container_id")
 			sb.JoinWithOption(sqlbuilder.LeftJoin,
-				"(select npc_id, count(*) as quests from quest group by npc_id) as q",
+				"(select npc_id, count(*) as quests from quest where parent_id is null group by npc_id) as q",
 				"q.npc_id = n.id",
 			)
 			sb.JoinWithOption(sqlbuilder.LeftJoin, containerIconJoin, "icon.container_id = n.container_id and icon.rn = 1")

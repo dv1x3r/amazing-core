@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/dv1x3r/amazing-core/internal/game/worldsync"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
@@ -21,6 +22,9 @@ type Session struct {
 	loginName      string
 	sessionOID     types.OID
 	conversationID int64
+
+	// player is the player of the session in the world, its state is guarded by worldsync.World
+	player *worldsync.Player
 
 	// guarded by SessionManager.mu
 	userConn   *gsf.Conn
@@ -45,23 +49,24 @@ func NewSessionManager() *SessionManager {
 }
 
 // Login starts a new session of the player on the USER connection, an older session of the player is closed.
-func (m *SessionManager) Login(conn *gsf.Conn, playerOID types.OID, platform gsf.Platform, loginName string) *Session {
+func (m *SessionManager) Login(conn *gsf.Conn, player *worldsync.Player, platform gsf.Platform, loginName string) *Session {
 	s := &Session{
-		playerOID:      playerOID,
+		playerOID:      player.OID,
 		platform:       platform,
 		loginName:      loginName,
 		sessionOID:     types.OID{Number: randomInt63() & (1<<40 - 1)},
 		conversationID: randomInt63(),
+		player:         player,
 	}
 
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.removeExpiredLocked(time.Now())
-	if old, ok := m.byPlayer[playerOID]; ok {
+	if old, ok := m.byPlayer[player.OID]; ok {
 		m.removeLocked(old)
 	}
 	m.byToken[s.sessionOID] = s
-	m.byPlayer[playerOID] = s
+	m.byPlayer[player.OID] = s
 	m.bindLocked(conn, s, false)
 	return s
 }
@@ -84,15 +89,15 @@ func (m *SessionManager) Relogin(conn *gsf.Conn, sessionOID types.OID, conversat
 }
 
 // AttachSync binds the SYNC connection to the session of the player, the client sends no token there.
-func (m *SessionManager) AttachSync(conn *gsf.Conn, playerOID types.OID) bool {
+func (m *SessionManager) AttachSync(conn *gsf.Conn, playerOID types.OID) *Session {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	s, ok := m.byPlayer[playerOID]
 	if !ok || s.expired(time.Now()) {
-		return false
+		return nil
 	}
 	m.bindLocked(conn, s, true)
-	return true
+	return s
 }
 
 // Logout closes the session of the connection, it can no longer be restored with RELOGIN.

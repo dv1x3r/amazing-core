@@ -3,7 +3,9 @@
   <h2><i class="fa fa-circle-info"></i> Quests</h2>
 
   <p>
-    A quest is a job offered by an NPC. Only NPC jobs are supported for now.
+    A quest is offered by an NPC: a story quest or a job.
+    <br>
+    Story quests are imported from the cache, a quest with a gap in the cache is skipped.
   </p>
 
   <section>
@@ -34,11 +36,40 @@
   <section>
     <h3>Fields</h3>
     <p>
-      <b>Order</b>: an NPC offers one quest at a time, in the grid order, and starts over after the last one.
+      <b>Order</b>: an NPC offers one quest at a time in the grid order.
+      <br>
+      <b>Repeatable</b>: off for story quests. The NPC offers them first, each until it is completed,
+      then the jobs, and starts the jobs over after the last one.
       <br>
       <b>XP</b>, <b>Coins</b> and <b>NPC Points</b> are the rewards for completing the quest, not given yet.
       <br>
       <b>Cooldown</b>: seconds the NPC offers no quest after this one is completed.
+    </p>
+  </section>
+
+  <section>
+    <h3>Steps</h3>
+    <p>
+      In a quest with steps the NPC dialog comes from the quest,
+      then the client plays the steps one by one in the grid order, without a dialog.
+      <br>
+      A step is a quest definition without texts, the cache does not link it to the parent.
+      The import links the steps right after the parent by the OID, with an item of the parent.
+      <br>
+      The quest is completed when its last step is completed.
+    </p>
+  </section>
+
+  <section>
+    <h3>Rules</h3>
+    <p>
+      The <b>Quest Item</b> containers and amounts the player collects, the server completes the quest
+      when every amount is collected. A quest without rules and steps is never completed.
+      <br>
+      The rules of a step are shown when the step is selected, a quest with steps has no rules.
+      <br>
+      They repeat <code>FinishRules</code> of the quest definition: the client shows its own amounts,
+      keep them the same.
     </p>
   </section>
 

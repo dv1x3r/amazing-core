@@ -15,14 +15,16 @@ import (
 var ErrQuestExists = errors.New("quest with the same container already exists")
 
 type Quest struct {
-	ID        int              `json:"id"`
-	Container w2.Dropdown      `json:"container"`
-	Ordinal   int              `json:"ordinal"`
-	Name      w2.Field[string] `json:"name"`
-	XP        w2.Field[int]    `json:"xp"`
-	Coins     w2.Field[int]    `json:"coins"`
-	NPCPoints w2.Field[int]    `json:"npc_points"`
-	Cooldown  w2.Field[int]    `json:"cooldown"`
+	ID         int              `json:"id"`
+	Container  w2.Dropdown      `json:"container"`
+	Ordinal    int              `json:"ordinal"`
+	Name       w2.Field[string] `json:"name"`
+	XP         w2.Field[int]    `json:"xp"`
+	Coins      w2.Field[int]    `json:"coins"`
+	NPCPoints  w2.Field[int]    `json:"npc_points"`
+	Cooldown   w2.Field[int]    `json:"cooldown"`
+	Repeatable w2.Field[bool]   `json:"repeatable"`
+	Steps      int              `json:"steps"`
 }
 
 func (s *Service) GetQuestGrid(ctx context.Context, req w2.GetGridRequest, npcID int) (w2.GetGridResponse[Quest], error) {
@@ -39,10 +41,12 @@ func (s *Service) GetQuestGrid(ctx context.Context, req w2.GetGridRequest, npcID
 			"q.coins",
 			"q.npc_points",
 			"q.cooldown",
+			"q.repeatable",
+			"(select count(*) from quest as s where s.parent_id = q.id) as steps",
 		},
 		Build: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("asset_container as ac", "ac.id = q.container_id")
-			sb.Where(sb.EQ("q.npc_id", npcID))
+			sb.Where(sb.EQ("q.npc_id", npcID), sb.IsNull("q.parent_id"))
 			sb.OrderByAsc("q.ordinal")
 		},
 		Scan: func(rows *sql.Rows, record *Quest) error {
@@ -56,6 +60,8 @@ func (s *Service) GetQuestGrid(ctx context.Context, req w2.GetGridRequest, npcID
 				&record.Coins,
 				&record.NPCPoints,
 				&record.Cooldown,
+				&record.Repeatable,
+				&record.Steps,
 			)
 		},
 	})
@@ -75,6 +81,7 @@ func (s *Service) CreateQuest(ctx context.Context, req w2.SaveFormRequest[Quest]
 			"coins":        req.Record.Coins.NotNull(),
 			"npc_points":   req.Record.NPCPoints.NotNull(),
 			"cooldown":     req.Record.Cooldown.NotNull(),
+			"repeatable":   req.Record.Repeatable.NotNull(),
 		},
 	})
 	if s.store.IsErrConstraintUnique(err) {
@@ -94,6 +101,7 @@ func (s *Service) UpdateQuest(ctx context.Context, req w2.SaveFormRequest[Quest]
 			"coins":        req.Record.Coins.NotNull(),
 			"npc_points":   req.Record.NPCPoints.NotNull(),
 			"cooldown":     req.Record.Cooldown.NotNull(),
+			"repeatable":   req.Record.Repeatable.NotNull(),
 		},
 		Where: map[string]any{
 			"id": req.Record.ID,

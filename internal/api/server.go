@@ -111,6 +111,13 @@ func NewServer(logger *slog.Logger, handler *routes.Handler, store db.Store) *Se
 	v1.HandleFunc("POST /npc/quest/remove", errorHandler(handler.PostNPCQuestRemove))
 	v1.HandleFunc("POST /npc/quest/reorder", errorHandler(handler.PostNPCQuestReorder))
 
+	v1.HandleFunc("GET /quest/{id}/step/grid", errorHandler(handler.GetQuestStepGrid))
+	v1.HandleFunc("POST /quest/{id}/step/form", errorHandler(handler.PostQuestStepForm))
+
+	v1.HandleFunc("GET /quest/{id}/rule/grid", errorHandler(handler.GetQuestRuleGrid))
+	v1.HandleFunc("POST /quest/{id}/rule/form", errorHandler(handler.PostQuestRuleForm))
+	v1.HandleFunc("POST /quest/rule/remove", errorHandler(handler.PostQuestRuleRemove))
+
 	v1.HandleFunc("GET /oidtype/dropdown", errorHandler(handler.GetOIDTypeDropdown))
 
 	v1.HandleFunc("GET /player/grid", errorHandler(handler.GetPlayerGrid))

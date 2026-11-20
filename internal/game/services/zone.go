@@ -32,7 +32,7 @@ func (s *Service) GetZones(ctx context.Context, platform gsf.Platform) ([]types.
 		zones = append(zones, zone)
 	}
 
-	return zones, nil
+	return zones, wrap.IfErr(op, rows.Err())
 }
 
 // GetZone returns the zone by the OID of its container.

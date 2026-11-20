@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
@@ -13,39 +14,49 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/queststate"
 )
 
-// GetNPCQuest returns the quest the NPC offers to the player, or nil if it offers nothing.
-// The NPC offers the quest after the last completed one by ordinal and starts over after the last one,
-// but nothing until the cooldown of the last completed quest is over.
+// ErrQuestNotFound is a quest or player quest the server does not have,
+// the client also sends the quests of the systems that are not implemented, like fishing and mob quests.
+var ErrQuestNotFound = errors.New("quest not found")
+
+// GetNPCQuest returns the quest the NPC offers to the player with its steps, or nil.
+// Story quests go first by ordinal, each until the player completes it. Then the jobs go in a loop.
+// Nothing is offered during the cooldown of the last completed quest.
 func (s *Service) GetNPCQuest(ctx context.Context, platform gsf.Platform, playerOID, npcOID types.OID) (*types.Quest, error) {
 	const op = "game.Service.GetNPCQuest"
 
+	var questID int
 	var containerID int
 	var quest types.Quest
 	err := s.store.DB().QueryRowContext(ctx, `
 			with
 			npc_quest as (
-				select q.id, q.container_id, q.ordinal, q.cooldown
+				select q.id, q.container_id, q.ordinal, q.cooldown, q.repeatable
 				from quest as q
 				join npc as n on n.id = q.npc_id
 				join asset_container as ac on ac.id = n.container_id
-				where ac.gsfoid = ?
+				where ac.gsfoid = ? and q.parent_id is null
 			),
-			last_quest as (
-				select nq.ordinal, pq.completed_at + nq.cooldown as available_at
+			closed_quest as (
+				select pq.id, pq.quest_id, pq.completed_at
 				from player_quest as pq
 				join player as pl on pl.id = pq.player_id
-				join npc_quest as nq on nq.id = pq.quest_id
 				where pl.gsfoid = ? and pq.completed_at is not null
-				order by pq.completed_at desc, pq.id desc
+			),
+			last_quest as (
+				select nq.ordinal, nq.repeatable, cq.completed_at + nq.cooldown as available_at
+				from closed_quest as cq
+				join npc_quest as nq on nq.id = cq.quest_id
+				order by cq.completed_at desc, cq.id desc
 				limit 1
 			)
-			select nq.container_id, nq.ordinal
+			select nq.id, nq.container_id, nq.ordinal
 			from npc_quest as nq
 			left join last_quest as lq on true
 			where coalesce(lq.available_at, 0) <= unixepoch()
-			order by nq.ordinal <= coalesce(lq.ordinal, 0), nq.ordinal
+				and (nq.repeatable or nq.id not in (select quest_id from closed_quest))
+			order by nq.repeatable, nq.repeatable and coalesce(lq.repeatable, 0) and nq.ordinal <= lq.ordinal, nq.ordinal
 			limit 1;
-		`, npcOID, playerOID).Scan(&containerID, &quest.Ordinal)
+		`, npcOID, playerOID).Scan(&questID, &containerID, &quest.Ordinal)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -53,56 +64,279 @@ func (s *Service) GetNPCQuest(ctx context.Context, platform gsf.Platform, player
 		return nil, wrap.IfErr(op, err)
 	}
 
-	container, err := s.GetAssetContainer(ctx, platform, containerID)
+	quest.AssetContainer, err = s.GetAssetContainer(ctx, platform, containerID)
 	if err != nil {
 		return nil, wrap.IfErr(op, err)
 	}
-	quest.AssetContainer = container
+
+	// The client takes the NPC of a quest from ParentOID.
+	quest.ParentOID = npcOID
+
+	// The client plays the children of a quest as its steps.
+	quest.Children, err = s.getQuestSteps(ctx, platform, questID)
+	if err != nil {
+		return nil, wrap.IfErr(op, err)
+	}
 
 	return &quest, nil
 }
 
-// CreatePlayerQuest creates an AVAILABLE player quest and returns its OID.
-func (s *Service) CreatePlayerQuest(ctx context.Context, playerOID, questOID types.OID) (types.OID, error) {
+func (s *Service) getQuestSteps(ctx context.Context, platform gsf.Platform, questID int) ([]types.Quest, error) {
+	rows, err := s.store.DB().QueryContext(ctx, `
+			select container_id, ordinal from quest where parent_id = ? order by ordinal;
+		`, questID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var steps []types.Quest
+	for rows.Next() {
+		var containerID int
+		var step types.Quest
+		if err := rows.Scan(&containerID, &step.Ordinal); err != nil {
+			return nil, err
+		}
+		if step.AssetContainer, err = s.GetAssetContainer(ctx, platform, containerID); err != nil {
+			return nil, err
+		}
+		steps = append(steps, step)
+	}
+	return steps, rows.Err()
+}
+
+// CreatePlayerQuest creates the player quest and the player quests of its steps.
+// It returns the player quest OID and the step player quest OIDs by step quest OID.
+func (s *Service) CreatePlayerQuest(ctx context.Context, playerOID, questOID types.OID) (types.OID, map[string]types.OID, error) {
 	const op = "game.Service.CreatePlayerQuest"
-	var playerQuestOID types.OID
-	err := s.store.DB().QueryRowContext(ctx, `
-			insert into player_quest (gsfoid, player_id, quest_id, quest_state_id)
-			select
+
+	tx, err := s.store.DB().BeginTx(ctx, nil)
+	if err != nil {
+		return types.OID{}, nil, wrap.IfErr(op, err)
+	}
+	defer tx.Rollback()
+
+	var playerID, questID int
+	err = tx.QueryRowContext(ctx, `
+			select pl.id, q.id
+			from player as pl
+			join quest as q
+			join asset_container as ac on ac.id = q.container_id
+			where pl.gsfoid = ? and ac.gsfoid = ? and q.parent_id is null;
+		`, playerOID, questOID).Scan(&playerID, &questID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return types.OID{}, nil, wrap.IfErr(op, fmt.Errorf("quest %v of player %v: %w", questOID, playerOID, ErrQuestNotFound))
+	}
+	if err != nil {
+		return types.OID{}, nil, wrap.IfErr(op, err)
+	}
+
+	playerQuestID, playerQuestOID, err := insertPlayerQuest(ctx, tx, playerID, questID, nil)
+	if err != nil {
+		return types.OID{}, nil, wrap.IfErr(op, err)
+	}
+
+	type step struct {
+		questID int
+		oid     types.OID
+	}
+	rows, err := tx.QueryContext(ctx, `
+			select q.id, ac.gsfoid
+			from quest as q
+			join asset_container as ac on ac.id = q.container_id
+			where q.parent_id = ?
+			order by q.ordinal;
+		`, questID)
+	if err != nil {
+		return types.OID{}, nil, wrap.IfErr(op, err)
+	}
+	var steps []step
+	for rows.Next() {
+		var st step
+		if err := rows.Scan(&st.questID, &st.oid); err != nil {
+			rows.Close()
+			return types.OID{}, nil, wrap.IfErr(op, err)
+		}
+		steps = append(steps, st)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return types.OID{}, nil, wrap.IfErr(op, err)
+	}
+
+	// The client looks up a step by its quest OID as a decimal string.
+	subQuests := make(map[string]types.OID, len(steps))
+	for _, st := range steps {
+		_, stepOID, err := insertPlayerQuest(ctx, tx, playerID, st.questID, &playerQuestID)
+		if err != nil {
+			return types.OID{}, nil, wrap.IfErr(op, err)
+		}
+		subQuests[strconv.FormatInt(st.oid.Int64(), 10)] = stepOID
+	}
+
+	return playerQuestOID, subQuests, wrap.IfErr(op, tx.Commit())
+}
+
+func insertPlayerQuest(ctx context.Context, tx *sql.Tx, playerID, questID int, parentID *int) (int, types.OID, error) {
+	var id int
+	var oid types.OID
+	err := tx.QueryRowContext(ctx, `
+			insert into player_quest (gsfoid, player_id, quest_id, quest_state_id, parent_id)
+			values (
 				(
 					select coalesce(max(pq.gsfoid) + 1, t.min_oid)
 					from oid_type as t
 					left join player_quest as pq on pq.gsfoid between t.min_oid and t.max_oid
 					where t.id = ?
 				),
-				pl.id,
-				q.id,
-				?
-			from player as pl
-			join quest as q
-			join asset_container as ac on ac.id = q.container_id
-			where pl.gsfoid = ? and ac.gsfoid = ?
-			returning gsfoid;
-		`, oidtype.PLAYER_QUEST, queststate.AVAILABLE, playerOID, questOID).Scan(&playerQuestOID)
-	return playerQuestOID, wrap.IfErr(op, err)
+				?, ?, ?, ?
+			)
+			returning id, gsfoid;
+		`, oidtype.PLAYER_QUEST, playerID, questID, queststate.AVAILABLE, parentID).Scan(&id, &oid)
+	return id, oid, err
 }
 
 // SetPlayerQuestState sets the state of the player quest.
 func (s *Service) SetPlayerQuestState(ctx context.Context, playerOID, playerQuestOID types.OID, state queststate.QuestState) error {
 	const op = "game.Service.SetPlayerQuestState"
-	result, err := s.store.DB().ExecContext(ctx, `
+	err := s.store.DB().QueryRowContext(ctx, `
 			update player_quest set quest_state_id = ?
-			where gsfoid = ? and player_id = (select id from player where gsfoid = ?);
-		`, state, playerQuestOID, playerOID)
+			where gsfoid = ? and player_id = (select id from player where gsfoid = ?)
+			returning id;
+		`, state, playerQuestOID, playerOID).Scan(new(int))
+	if errors.Is(err, sql.ErrNoRows) {
+		return wrap.IfErr(op, fmt.Errorf("player quest %v: %w", playerQuestOID, ErrQuestNotFound))
+	}
+	return wrap.IfErr(op, err)
+}
+
+// AddPlayerQuestItem counts a collected item of a STARTED player quest,
+// the items of other quests and of unknown player quests are ignored.
+// It returns true when every rule amount is collected and the quest becomes COMPLETED.
+func (s *Service) AddPlayerQuestItem(ctx context.Context, playerOID, playerQuestOID, itemOID types.OID, count int32) (bool, error) {
+	const op = "game.Service.AddPlayerQuestItem"
+
+	// The count comes from the client, a non-positive one would undo the progress.
+	if count < 1 {
+		return false, nil
+	}
+
+	tx, err := s.store.DB().BeginTx(ctx, nil)
 	if err != nil {
+		return false, wrap.IfErr(op, err)
+	}
+	defer tx.Rollback()
+
+	var playerQuestID, questID int
+	var state queststate.QuestState
+	err = tx.QueryRowContext(ctx, `
+			select pq.id, pq.quest_id, pq.quest_state_id
+			from player_quest as pq
+			join player as pl on pl.id = pq.player_id
+			where pq.gsfoid = ? and pl.gsfoid = ?;
+		`, playerQuestOID, playerOID).Scan(&playerQuestID, &questID, &state)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, wrap.IfErr(op, err)
+	}
+	if state != queststate.STARTED {
+		return false, nil
+	}
+
+	_, err = tx.ExecContext(ctx, `
+			insert into player_quest_rule (player_quest_id, quest_rule_id, count)
+			select ?, qr.id, ?
+			from quest_rule as qr
+			join asset_container as ac on ac.id = qr.item_container_id
+			where qr.quest_id = ? and ac.gsfoid = ?
+			on conflict (player_quest_id, quest_rule_id) do update set count = count + excluded.count;
+		`, playerQuestID, count, questID, itemOID)
+	if err != nil {
+		return false, wrap.IfErr(op, err)
+	}
+
+	var completed bool
+	err = tx.QueryRowContext(ctx, `
+			select coalesce(min(coalesce(pqr.count, 0) >= qr.amount), 0)
+			from quest_rule as qr
+			left join player_quest_rule as pqr on pqr.quest_rule_id = qr.id and pqr.player_quest_id = ?
+			where qr.quest_id = ?;
+		`, playerQuestID, questID).Scan(&completed)
+	if err != nil {
+		return false, wrap.IfErr(op, err)
+	}
+
+	if completed {
+		_, err = tx.ExecContext(ctx, `update player_quest set quest_state_id = ? where id = ?;`, queststate.COMPLETED, playerQuestID)
+		if err != nil {
+			return false, wrap.IfErr(op, err)
+		}
+	}
+
+	return completed, wrap.IfErr(op, tx.Commit())
+}
+
+// ClosePlayerQuest closes the COMPLETED player quest when the client takes the reward.
+// After the last step it also completes the parent quest and returns its OID.
+// Returns false when the quest is not completed.
+func (s *Service) ClosePlayerQuest(ctx context.Context, playerOID, playerQuestOID types.OID) (bool, *types.OID, error) {
+	const op = "game.Service.ClosePlayerQuest"
+
+	tx, err := s.store.DB().BeginTx(ctx, nil)
+	if err != nil {
+		return false, nil, wrap.IfErr(op, err)
+	}
+	defer tx.Rollback()
+
+	var parentID sql.NullInt64
+	err = tx.QueryRowContext(ctx, `
+			update player_quest set quest_state_id = ?, completed_at = unixepoch()
+			where gsfoid = ? and quest_state_id = ? and player_id = (select id from player where gsfoid = ?)
+			returning parent_id;
+		`, queststate.CLOSED, playerQuestOID, queststate.COMPLETED, playerOID).Scan(&parentID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil, nil
+	}
+	if err != nil {
+		return false, nil, wrap.IfErr(op, err)
+	}
+
+	var parentOID *types.OID
+	if parentID.Valid {
+		var oid types.OID
+		err = tx.QueryRowContext(ctx, `
+				update player_quest set quest_state_id = ?
+				where id = ? and quest_state_id = ?
+					and not exists (select 1 from player_quest where parent_id = ? and quest_state_id != ?)
+				returning gsfoid;
+			`, queststate.COMPLETED, parentID.Int64, queststate.STARTED, parentID.Int64, queststate.CLOSED).Scan(&oid)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return false, nil, wrap.IfErr(op, err)
+		}
+		if err == nil {
+			parentOID = &oid
+		}
+	}
+
+	return true, parentOID, wrap.IfErr(op, tx.Commit())
+}
+
+// AbandonPlayerQuest abandons or fails the player quest and its open steps.
+func (s *Service) AbandonPlayerQuest(ctx context.Context, playerOID, playerQuestOID types.OID, state queststate.QuestState) error {
+	const op = "game.Service.AbandonPlayerQuest"
+	if err := s.SetPlayerQuestState(ctx, playerOID, playerQuestOID, state); err != nil {
 		return wrap.IfErr(op, err)
 	}
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return wrap.IfErr(op, err)
-	}
-	if rowsAffected == 0 {
-		return wrap.IfErr(op, fmt.Errorf("player quest %v not found", playerQuestOID))
-	}
-	return nil
+	_, err := s.store.DB().ExecContext(ctx, `
+			update player_quest set quest_state_id = ?
+			where quest_state_id != ? and parent_id = (
+				select pq.id
+				from player_quest as pq
+				join player as pl on pl.id = pq.player_id
+				where pq.gsfoid = ? and pl.gsfoid = ?
+			);
+		`, state, queststate.CLOSED, playerQuestOID, playerOID)
+	return wrap.IfErr(op, err)
 }

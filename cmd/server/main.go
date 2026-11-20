@@ -169,7 +169,7 @@ func main() {
 
 	gameLogger := slog.New(logBus.Handler(logger.Get().Handler()))
 	gameSvc := gameservices.NewService(logger.Get(), store, cfg)
-	gameServer := game.NewServer(gameLogger, game.NewHandler(gameSvc))
+	gameServer := game.NewServer(gameLogger, gameSvc)
 
 	interruptCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()

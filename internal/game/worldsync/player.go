@@ -1,6 +1,8 @@
 package worldsync
 
 import (
+	"maps"
+	"slices"
 	"time"
 
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
@@ -12,30 +14,60 @@ const (
 	// actionItemAnimate is SyncManager.ActionNotifyType.ItemAnimate.
 	actionItemAnimate = 3
 
-	// itemAnimateThrottle is the minimum interval between relays of a decorative ItemAnimate of the same object.
-	// Level object triggers can fire every frame, while the receiver only restarts the same animation clip.
+	// itemAnimateThrottle drops repeats of the same ItemAnimate, level objects can send it every frame.
 	itemAnimateThrottle = 250 * time.Millisecond
+
+	// noLocation is the location of a player that has not entered one, the OIDs are not negative.
+	noLocation = -1
 )
 
-// Player stores world sync state that survives reconnects and zone joins.
+// Player is the player of a session, it keeps its state between SYNC reconnects.
 type Player struct {
-	OID                 types.OID
-	Conn                *gsf.Conn
-	Location            int64
-	PlayerDetailVersion int64
-	Pos                 []types.Position
-	QTH                 types.QTH
-	SecondQTH           types.QTH
-	Seq                 byte
+	OID types.OID
 
-	// itemAnimates holds the last relay time of decorative ItemAnimate actions by the object path hash.
+	// syncConn is nil when the player is not in the world.
+	syncConn *gsf.Conn
+
+	// location is noLocation until ENTER_BUILDING and while the player travels.
+	location int64
+
+	// detailVersion is the version of the player avatar and outfit, the clients reload them
+	// with GET_OTHER_PLAYER_DETAILS when ADD_PLAYER or CHANGE_OBJECT has another version.
+	detailVersion int64
+
+	pos       []types.Position
+	qth       types.QTH
+	secondQTH types.QTH
+	seq       byte
+
+	// states are the last state actions by stateIndex, ADD_PLAYER sends them to players who join later.
+	states map[int32]types.PlayerActionNotify
+
+	// itemAnimates is the last ItemAnimate time by object, for the throttle.
 	itemAnimates map[string]time.Time
 }
 
-// throttlesItemAnimate reports whether a decorative ItemAnimate of the same object was relayed less than itemAnimateThrottle ago.
-// Actions with isState (stopPlayerMovement objects such as seats) are never throttled.
-// The position is not compared, the receiver finds the object by the path hash only.
+// setState saves a state action: clearState clears its stateIndex slot, isState sets it.
+func (p *Player) setState(action types.PlayerActionNotify) {
+	if action.ClearState {
+		delete(p.states, action.StateIndex)
+	}
+	if action.IsState {
+		if p.states == nil {
+			p.states = map[int32]types.PlayerActionNotify{}
+		}
+		p.states[action.StateIndex] = action
+	}
+}
+
+// actionState returns the state actions for ADD_PLAYER.
+func (p *Player) actionState() []types.PlayerActionNotify {
+	return slices.Collect(maps.Values(p.states))
+}
+
+// throttlesItemAnimate reports whether the same ItemAnimate was sent less than itemAnimateThrottle ago.
 func (p *Player) throttlesItemAnimate(action *notify.Action, now time.Time) bool {
+	// State actions, like sitting, are never throttled.
 	if action.ActionType != actionItemAnimate || action.IsState {
 		return false
 	}
@@ -54,56 +86,56 @@ func (p *Player) throttlesItemAnimate(action *notify.Action, now time.Time) bool
 	return false
 }
 
-// AddPlayerNotify builds the payload used when this player becomes visible.
-func (p *Player) AddPlayerNotify() *notify.AddPlayer {
+// addPlayerNotify is the ADD_PLAYER payload.
+func (p *Player) addPlayerNotify() *notify.AddPlayer {
 	return &notify.AddPlayer{
 		POID:              p.OID,
 		PlayerVillagerOID: types.OID{},
-		Ver:               p.PlayerDetailVersion,
-		LOID:              types.OIDFromInt64(p.Location),
+		Ver:               p.detailVersion,
+		LOID:              types.OIDFromInt64(p.location),
 		LCP:               false,
 		TimeOffset:        0,
 		Pos:               p.firstPosition(),
 		WPos:              nil,
-		QTH:               p.QTH,
-		SecondQTH:         p.SecondQTH,
+		QTH:               p.qth,
+		SecondQTH:         p.secondQTH,
 		Weight:            0,
-		Seq:               p.Seq,
+		Seq:               p.seq,
 		Type:              0,
-		ActionState:       nil,
+		ActionState:       p.actionState(),
 	}
 }
 
-// ChangeObjectNotify builds the payload used to invalidate cached player details.
-func (p *Player) ChangeObjectNotify() *notify.ChangeObject {
+// changeObjectNotify is the CHANGE_OBJECT payload, the clients reload the player details.
+func (p *Player) changeObjectNotify() *notify.ChangeObject {
 	return &notify.ChangeObject{
 		InstanceOID: p.OID,
 		TemplateOID: types.OID{},
 		PlayerOID:   p.OID,
 		VillageOID:  types.OID{},
-		LocationOID: types.OIDFromInt64(p.Location),
-		Ver:         int32(p.PlayerDetailVersion),
+		LocationOID: types.OIDFromInt64(p.location),
+		Ver:         int32(p.detailVersion),
 		Pos:         p.firstPosition(),
-		QTH:         p.QTH,
+		QTH:         p.qth,
 		State:       nil,
 	}
 }
 
-// PlayerMoveNotify builds the payload used to relay this player's latest movement.
-func (p *Player) PlayerMoveNotify() *notify.PlayerMove {
+// playerMoveNotify is the MOVE_PLAYER payload.
+func (p *Player) playerMoveNotify() *notify.PlayerMove {
 	return &notify.PlayerMove{
 		POID:              p.OID,
 		PlayerVillagerOID: types.OID{},
 		LCP:               false,
-		Pos:               append([]types.Position(nil), p.Pos...),
-		QTH:               p.QTH,
-		SecondQTH:         p.SecondQTH,
-		Seq:               p.Seq,
+		Pos:               p.pos,
+		QTH:               p.qth,
+		SecondQTH:         p.secondQTH,
+		Seq:               p.seq,
 	}
 }
 
-// RemovePlayerNotify builds the payload used when this player is no longer visible.
-func (p *Player) RemovePlayerNotify() *notify.RemovePlayer {
+// removePlayerNotify is the REMOVE_PLAYER payload.
+func (p *Player) removePlayerNotify() *notify.RemovePlayer {
 	return &notify.RemovePlayer{
 		POID:              p.OID,
 		PlayerVillagerOID: types.OID{},
@@ -112,10 +144,10 @@ func (p *Player) RemovePlayerNotify() *notify.RemovePlayer {
 	}
 }
 
-// firstPosition returns the latest primary position, or zero when no movement arrived yet.
+// firstPosition returns the first position, or zero before ENTER_BUILDING.
 func (p *Player) firstPosition() types.Position {
-	if len(p.Pos) == 0 {
+	if len(p.pos) == 0 {
 		return types.Position{}
 	}
-	return p.Pos[0]
+	return p.pos[0]
 }

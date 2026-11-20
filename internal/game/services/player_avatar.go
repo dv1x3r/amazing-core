@@ -101,33 +101,14 @@ func (s *Service) GetActivePlayerAvatar(ctx context.Context, platform gsf.Platfo
 func (s *Service) SetPlayerActiveAvatar(ctx context.Context, platform gsf.Platform, playerAvatarOID types.OID) (types.PlayerAvatar, error) {
 	const op = "game.Service.SetPlayerActiveAvatar"
 
-	tx, err := s.store.DB().BeginTx(ctx, nil)
-	if err != nil {
-		return types.PlayerAvatar{}, wrap.IfErr(op, err)
-	}
-	defer tx.Rollback()
-
-	var playerAvatarID, playerID int
+	// Only the selected avatar of the player is active, every row returns the player OID.
 	var playerOID types.OID
-	row := tx.QueryRowContext(ctx, `
-			select pa.id, pa.player_id, pl.gsfoid
-			from player_avatar as pa
-			join player as pl on pl.id = pa.player_id
-			where pa.gsfoid = ?;
-		`, playerAvatarOID)
-	if err := row.Scan(&playerAvatarID, &playerID, &playerOID); err != nil {
-		return types.PlayerAvatar{}, wrap.IfErr(op, err)
-	}
-
-	if _, err := tx.ExecContext(ctx, `
-		update player_avatar
-		set is_active = case when id = ? then 1 else 0 end
-		where player_id = ?;
-	`, playerAvatarID, playerID); err != nil {
-		return types.PlayerAvatar{}, wrap.IfErr(op, err)
-	}
-
-	if err := tx.Commit(); err != nil {
+	err := s.store.DB().QueryRowContext(ctx, `
+			update player_avatar set is_active = (gsfoid = ?)
+			where player_id = (select player_id from player_avatar where gsfoid = ?)
+			returning (select gsfoid from player where id = player_avatar.player_id);
+		`, playerAvatarOID, playerAvatarOID).Scan(&playerOID)
+	if err != nil {
 		return types.PlayerAvatar{}, wrap.IfErr(op, err)
 	}
 

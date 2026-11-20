@@ -5,26 +5,26 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/clientmessagetype"
 )
 
-// OutboundNotify is one prepared notify send.
-type OutboundNotify struct {
-	Conn *gsf.Conn
+// outboundNotify is a notify to send to a SYNC connection.
+type outboundNotify struct {
+	conn *gsf.Conn
 	gsf.NotifyMessage
 }
 
-// NewOutboundNotify prepares one notify send after hub state is unlocked.
-func NewOutboundNotify(conn *gsf.Conn, msgType clientmessagetype.ClientMessageType, body gsf.Serializable) OutboundNotify {
-	return OutboundNotify{
-		Conn:          conn,
-		NotifyMessage: gsf.NotifyMessage{MsgType: msgType, Body: body},
+func newOutboundNotify(conn *gsf.Conn, msgType clientmessagetype.ClientMessageType, body gsf.Serializable) outboundNotify {
+	return outboundNotify{
+		conn: conn,
+		NotifyMessage: gsf.NotifyMessage{
+			MsgType: msgType,
+			Body:    body,
+		},
 	}
 }
 
-// SendAll sends prepared notifies in order.
-func SendAll(notifies []OutboundNotify) error {
-	for _, notify := range notifies {
-		if err := notify.Conn.SendNotify(notify.MsgType, notify.Body); err != nil {
-			return err
-		}
+// sendAll sends the notifies in order. A failed send is not the sender's error,
+// the OnNotify hook logs it and the dead connection is closed by its own read loop.
+func sendAll(notifies []outboundNotify) {
+	for _, n := range notifies {
+		_ = n.conn.SendNotify(n.MsgType, n.Body)
 	}
-	return nil
 }

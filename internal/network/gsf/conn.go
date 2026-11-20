@@ -3,6 +3,7 @@ package gsf
 import (
 	"bufio"
 	"bytes"
+	"net"
 	"sync"
 	"time"
 
@@ -11,7 +12,12 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/serviceclass"
 )
 
+// writeTimeout closes a connection whose client stops reading,
+// so a send to it does not block the senders of other players.
+const writeTimeout = 10 * time.Second
+
 type Conn struct {
+	netConn  net.Conn
 	remoteIP string
 	stream   *bufio.ReadWriter
 	codec    ProtocolCodec
@@ -19,8 +25,9 @@ type Conn struct {
 	writeMu  sync.Mutex
 }
 
-func NewConn(remoteIP string, stream *bufio.ReadWriter, codec ProtocolCodec, onNotify func(NotifyEvent)) *Conn {
+func NewConn(netConn net.Conn, remoteIP string, stream *bufio.ReadWriter, codec ProtocolCodec, onNotify func(NotifyEvent)) *Conn {
 	return &Conn{
+		netConn:  netConn,
 		remoteIP: remoteIP,
 		stream:   stream,
 		codec:    codec,
@@ -46,7 +53,13 @@ func (c *Conn) Send(header *Header, body Serializable) error {
 	c.writeMu.Lock()
 	defer c.writeMu.Unlock()
 
-	return c.writeMessage(writer)
+	c.netConn.SetWriteDeadline(time.Now().Add(writeTimeout))
+	if err := c.writeMessage(writer); err != nil {
+		// The buffered writer keeps the error, the read loop ends and reports the disconnect.
+		c.netConn.Close()
+		return err
+	}
+	return nil
 }
 
 func (c *Conn) SendNotify(msgType clientmessagetype.ClientMessageType, body Serializable) error {
