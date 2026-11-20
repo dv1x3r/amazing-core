@@ -25,6 +25,7 @@ type Config struct {
 		SyncServerIP     string `json:"syncServerIP"`
 		SyncServerPort   int    `json:"syncServerPort"`
 		BroChat          bool   `json:"brochat"`
+		Winter           bool   `json:"winter"`
 	} `json:"settings"`
 	Storage struct {
 		Blob struct {

@@ -3,7 +3,6 @@ package game
 import (
 	"database/sql"
 	"errors"
-	"math/rand"
 	"time"
 	"unicode/utf8"
 
@@ -64,8 +63,6 @@ const (
 	SCENE_HOMELOT_WINTER = "OTQ1MDc3NTY0MjEyNg"
 	SCENE_EMPTY          = "OTYwNzA1NTQwOTE2Ng"
 )
-
-const ZONE_SPRING_BAY_OID = 292733975781503755
 
 const (
 	CHAT_PRIVATE_OID       = 1
@@ -570,54 +567,64 @@ func (h *Handler) InitLocation(w gsf.ResponseWriter, r *gsf.Request) error {
 	res.SyncServerIP = config.Get().Settings.SyncServerIP
 	res.SyncServerPort = int32(config.Get().Settings.SyncServerPort)
 
+	// The zone container has the Main_Scene asset and the spawn points of the task items,
+	// SpawnPoints.ParseZone reads them from ZoneManager.currentZone set by this response.
+	zone, err := h.svc.GetZone(r.Context(), session.platform, req.LocOID)
+	if err == nil {
+		// One instance per zone, its OID is the zone OID, like ZoneManager.defaultCurrentHomeZone.
+		res.ZoneInstance = &types.ZoneInstance{OID: req.LocOID, Zone: zone}
+		return w.Write(res)
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		return err
+	}
+
+	// Not a zone: the location of a home is the OID of its owner, the visitors send it too.
+	ownerOID := req.LocOID
+	if _, err := h.svc.GetPlayerInfoTO(r.Context(), ownerOID); errors.Is(err, sql.ErrNoRows) {
+		return wrap.WithGSFError(err, appcode.NOT_FOUND)
+	} else if err != nil {
+		return err
+	}
+
 	// The Home.PlayerMaze.HomeTheme.AssetMap["Scene_Unity3D"] asset drives scene loading via
 	// LoadMazeCommand.cs -> LoadMainScene() -> AssetDownloadManager.cs -> LoadMainScene()
 
-	if req.LocOID.Int64() == ZONE_SPRING_BAY_OID {
-		// The zone container has the Main_Scene asset and the spawn points of the task items,
-		// SpawnPoints.ParseZone reads them from ZoneManager.currentZone set by this response.
-		zone, err := h.svc.GetZone(r.Context(), session.platform, req.LocOID)
-		if err != nil {
-			return err
-		}
-		res.ZoneInstance = &types.ZoneInstance{Zone: zone}
+	cdnid := SCENE_HOMELOT_SMALL
+	if config.Get().Settings.Winter {
+		cdnid = SCENE_HOMELOT_WINTER
+	}
 
-	} else {
-		cdnid := SCENE_HOMELOT_SMALL
-		if rand.Intn(2) == 1 {
-			cdnid = SCENE_HOMELOT_WINTER
-		}
+	scene, err := h.svc.GetAssetByCDNID(r.Context(), cdnid)
+	if err != nil {
+		return err
+	}
 
-		scene, err := h.svc.GetAssetByCDNID(r.Context(), cdnid)
-		if err != nil {
-			return err
-		}
+	// EmptyScene has the shared scene objects (AngleViewCamera, RadialMenuManager, MiniMap),
+	// LoadMazeCommand loads it additively after the Main_Scene.
+	emptyScene, err := h.svc.GetAssetByCDNID(r.Context(), SCENE_EMPTY)
+	if err != nil {
+		return err
+	}
 
-		// EmptyScene has the shared scene objects (AngleViewCamera, RadialMenuManager, MiniMap),
-		// LoadMazeCommand loads it additively after the Main_Scene.
-		emptyScene, err := h.svc.GetAssetByCDNID(r.Context(), SCENE_EMPTY)
-		if err != nil {
-			return err
-		}
+	container := types.AssetContainer{}
+	container.AssetMap = types.AssetMap{}
+	container.AssetMap["Scene_Unity3D"] = []types.Asset{scene, emptyScene}
 
-		container := types.AssetContainer{}
-		container.AssetMap = types.AssetMap{}
-		container.AssetMap["Scene_Unity3D"] = []types.Asset{scene, emptyScene}
+	// ZoneManager takes the yard owner from PlayerHome.PlayerOID and LoadMazeCommand from PlayerMaze.PlayerOID,
+	// ENTER_BUILDING then sends it as the location.
+	playerMaze := types.PlayerMaze{
+		Name:       "coremaze",
+		PlayerOID:  ownerOID,
+		MazePieces: []types.PlayerMazePiece{},
+		HomeTheme:  container,
+	}
 
-		// ZoneManager takes the yard owner from PlayerHome.PlayerOID and HUDManager requests its details.
-		playerMaze := types.PlayerMaze{
-			Name:       "coremaze",
-			PlayerOID:  session.player.OID,
-			MazePieces: []types.PlayerMazePiece{},
-			HomeTheme:  container,
-		}
-
-		res.Home = &types.PlayerHome{
-			PlayerMaze:  playerMaze,
-			HomeTheme:   container,
-			PlayerOID:   session.player.OID,
-			PlayerMazes: []types.PlayerMaze{playerMaze},
-		}
+	res.Home = &types.PlayerHome{
+		PlayerMaze:  playerMaze,
+		HomeTheme:   container,
+		PlayerOID:   ownerOID,
+		PlayerMazes: []types.PlayerMaze{playerMaze},
 	}
 
 	return w.Write(res)
@@ -645,60 +652,6 @@ func (h *Handler) EnterBuilding(w gsf.ResponseWriter, r *gsf.Request) error {
 	}
 	res := &messages.EnterBuildingResponse{}
 	return w.Write(res)
-}
-
-// ── Sync ─────────────────────────────────────────────────────────────────────
-
-// SyncLogin authenticates the player on the SYNC server.
-// The SYNC server handles real-time positional and social updates.
-// It also handles RELOGIN, the client sends it with the same payload after the connection is restored.
-func (h *Handler) SyncLogin(w gsf.ResponseWriter, r *gsf.Request) error {
-	req := &messages.SyncLoginRequest{}
-	if err := r.Read(req); err != nil {
-		return err
-	}
-	session := h.sessions.AttachSync(r.Conn(), req.UOID, req.Token)
-	if session == nil {
-		return errNoSession
-	}
-	h.world.Join(session.player, r.Conn())
-	res := &messages.SyncLoginResponse{}
-	return w.Write(res)
-}
-
-// MovePlayer receives local player movement and relays it to other sync peers.
-func (h *Handler) MovePlayer(w gsf.ResponseWriter, r *gsf.Request) error {
-	req := &notify.Move{}
-	if err := r.Read(req); err != nil {
-		return err
-	}
-	session := h.sessions.Get(r.Conn())
-	if session == nil {
-		return nil
-	}
-	h.world.Move(session.player, req)
-	return nil
-}
-
-// SyncAction receives a local player action and relays it to other sync peers.
-func (h *Handler) SyncAction(w gsf.ResponseWriter, r *gsf.Request) error {
-	req := &notify.Action{}
-	if err := r.Read(req); err != nil {
-		return err
-	}
-	session := h.sessions.Get(r.Conn())
-	if session == nil {
-		return nil
-	}
-	if h.world.Action(session.player, req) {
-		r.MarkDropped()
-	}
-	return nil
-}
-
-// HeartbeatNotify keeps the SYNC connection alive, only SYNC_LOGIN binds it to a session.
-func (h *Handler) HeartbeatNotify(w gsf.ResponseWriter, r *gsf.Request) error {
-	return r.Read(&notify.Heartbeat{})
 }
 
 // ── Social ───────────────────────────────────────────────────────────────────
