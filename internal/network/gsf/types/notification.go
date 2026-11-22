@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/notificationtype"
 )
 
-// Notification is a notification definition.
+// Notification is a notification definition: its category, type and email flag.
 type Notification struct {
 	OID              OID
 	Category         NotificationCategory

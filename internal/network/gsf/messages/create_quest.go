@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// CreateQuestRequest requests a quest initialization.
+// CreateQuestRequest contains the quest the player takes.
 type CreateQuestRequest struct {
 	QuestOID types.OID
 }
@@ -14,7 +14,7 @@ func (req *CreateQuestRequest) Deserialize(reader gsf.ProtocolReader) {
 	reader.ReadObject(&req.QuestOID)
 }
 
-// CreateQuestResponse contains new quest ID's.
+// CreateQuestResponse contains the new player quest and the player quests of its steps.
 type CreateQuestResponse struct {
 	PlayerQuestOID    types.OID
 	IsLocation        bool

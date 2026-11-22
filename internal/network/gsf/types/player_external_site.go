@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// PlayerExternalSite is an external account link on a player profile.
+// PlayerExternalSite is an external account linked to the player profile.
 type PlayerExternalSite struct {
 	OID          OID
 	CreateDate   gsf.UnixTime

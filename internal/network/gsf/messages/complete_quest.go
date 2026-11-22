@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// CompleteQuestRequest requests a quest completion.
+// CompleteQuestRequest contains the player quest to complete.
 type CompleteQuestRequest struct {
 	PlayerQuestOID types.OID
 	QuestOID       types.OID
@@ -18,7 +18,7 @@ func (req *CompleteQuestRequest) Deserialize(reader gsf.ProtocolReader) {
 	reader.ReadObject(&req.LocationOID)
 }
 
-// CompleteQuestResponse contains completed quest status.
+// CompleteQuestResponse contains the completion result and the quest rewards.
 type CompleteQuestResponse struct {
 	IsCompleted bool
 	GiftBox     types.GiftBox

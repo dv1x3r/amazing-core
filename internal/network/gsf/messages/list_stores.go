@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// ListStoresRequest requests the stores of a zone or of an NPC.
+// ListStoresRequest contains the zone or the NPC of the stores.
 type ListStoresRequest struct {
 	ZoneOID types.OID
 	NPCOID  types.OID
@@ -16,7 +16,7 @@ func (req *ListStoresRequest) Deserialize(reader gsf.ProtocolReader) {
 	reader.ReadObject(&req.NPCOID)
 }
 
-// ListStoresResponse contains the stores, the client takes the first one.
+// ListStoresResponse contains the stores.
 type ListStoresResponse struct {
 	Stores []types.Store
 }

@@ -11,7 +11,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
 )
 
-// OID is the GSF object identifier split into class, type, server, and number.
+// OID is the GSF object ID: class, type, server and number.
 type OID struct {
 	Class  byte
 	Type   byte

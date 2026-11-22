@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// PlayerInfoTO contains account and policy data returned during login.
+// PlayerInfoTO is the account, chat and policy flags of the player.
 type PlayerInfoTO struct {
 	TierOID                    OID
 	PlayerName                 string

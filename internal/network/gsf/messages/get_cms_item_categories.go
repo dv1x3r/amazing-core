@@ -5,14 +5,14 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// GetCMSItemCategoriesRequest requests the CMS item category lookup.
+// GetCMSItemCategoriesRequest is empty.
 type GetCMSItemCategoriesRequest struct {
 }
 
 func (req *GetCMSItemCategoriesRequest) Deserialize(reader gsf.ProtocolReader) {
 }
 
-// GetCMSItemCategoriesResponse contains CMS item category definitions.
+// GetCMSItemCategoriesResponse contains the item categories.
 type GetCMSItemCategoriesResponse struct {
 	ItemCategories []types.ItemCategory
 }

@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// AddOutfitRequest requests a new player outfit creation.
+// AddOutfitRequest contains the avatar and the number of the new outfit.
 type AddOutfitRequest struct {
 	PlayerAvatarOID types.OID
 	OutfitNo        int16
@@ -16,7 +16,7 @@ func (req *AddOutfitRequest) Deserialize(reader gsf.ProtocolReader) {
 	req.OutfitNo = reader.ReadInt16()
 }
 
-// AddOutfitResponse contains OID for the new outfit instance.
+// AddOutfitResponse contains the new outfit and its number.
 type AddOutfitResponse struct {
 	PlayerAvatarOutfitOID types.OID
 	OutfitNo              int16

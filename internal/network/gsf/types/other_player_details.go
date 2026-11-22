@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// OtherPlayerDetails is the profile payload used to spawn a remote sync player.
+// OtherPlayerDetails is the Zing, the clothes and the profile of another player.
 type OtherPlayerDetails struct {
 	PlayerAvatar      PlayerAvatar
 	Clothing          []PlayerItem

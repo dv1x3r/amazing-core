@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// QTH is a compact orientation tuple used by GSF movement data.
+// QTH is a compact orientation of a moving player.
 type QTH struct {
 	SW bool
 	SX bool

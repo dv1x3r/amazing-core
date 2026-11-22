@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// PlayerStats is a player avatar statistic entry.
+// PlayerStats is a statistic value of a player avatar.
 type PlayerStats struct {
 	OID             OID
 	PlayerAvatarOID OID

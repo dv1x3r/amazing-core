@@ -5,13 +5,14 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// GetNPCRelationshipLevelsRequest requests the points of the relationship levels.
+// GetNPCRelationshipLevelsRequest is empty.
 type GetNPCRelationshipLevelsRequest struct{}
 
 func (req *GetNPCRelationshipLevelsRequest) Deserialize(reader gsf.ProtocolReader) {}
 
-// GetNPCRelationshipLevelsResponse contains the points of the relationship levels, NPCStoreSVCS iterates the list.
+// GetNPCRelationshipLevelsResponse contains the points of the relationship levels.
 type GetNPCRelationshipLevelsResponse struct {
+	// Levels is never nil, NPCStoreSVCS iterates it.
 	Levels []types.NPCRelationshipLevel
 }
 

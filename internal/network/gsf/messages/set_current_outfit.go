@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// SetCurrentOutfitRequest selects the player's active outfit.
+// SetCurrentOutfitRequest contains the outfit to wear.
 type SetCurrentOutfitRequest struct {
 	PlayerAvatarOID       types.OID
 	PlayerAvatarOutfitOID types.OID
@@ -18,7 +18,7 @@ func (req *SetCurrentOutfitRequest) Deserialize(reader gsf.ProtocolReader) {
 	req.OutfitNo = reader.ReadInt16()
 }
 
-// SetCurrentOutfitResponse contains the update status.
+// SetCurrentOutfitResponse contains whether the outfit was changed.
 type SetCurrentOutfitResponse struct {
 	IsUpdated bool
 }

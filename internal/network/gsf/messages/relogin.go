@@ -5,9 +5,9 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// ReloginRequest restores the USER session after a reconnect,
-// with the session OID and conversation ID from the LOGIN response.
+// ReloginRequest contains the session to restore after a reconnect.
 type ReloginRequest struct {
+	// SessionOID and ConversationID come from the LOGIN response.
 	SessionOID     types.OID
 	ConversationID int64
 	LoginName      string
@@ -19,7 +19,7 @@ func (req *ReloginRequest) Deserialize(reader gsf.ProtocolReader) {
 	req.LoginName = reader.ReadString()
 }
 
-// ReloginResponse acknowledges the restored USER session.
+// ReloginResponse is empty.
 type ReloginResponse struct {
 }
 

@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// Zone is a rule-backed playable area definition.
+// Zone is a zone with its rules, size, buildings and capacity.
 type Zone struct {
 	RuleContainer
 	Dimensions Dimensions

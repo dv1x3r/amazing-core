@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// Player is the client-visible player session object.
+// Player is the player with its active avatar, home and play state.
 type Player struct {
 	OID                 OID
 	CreateDate          gsf.UnixTime

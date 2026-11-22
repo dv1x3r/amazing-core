@@ -166,6 +166,18 @@ func (w *World) Chat(sender *Player, chat *notify.Chat) {
 	})
 }
 
+// KeepAlive sends the empty interest list to every live player, so an idle SYNC connection gets data:
+// the client closes it after 60 seconds without data (GSFSocketBase.SocketReceiveTimeout) and logs in again.
+func (w *World) KeepAlive() {
+	w.send(func() []outboundNotify {
+		outbound := make([]outboundNotify, 0, len(w.livePlayers))
+		for _, player := range w.livePlayers {
+			outbound = append(outbound, newOutboundNotify(player.syncConn, clientmessagetype.INT_LIST, &notify.InterestList{}))
+		}
+		return outbound
+	})
+}
+
 // send builds the notifies under the lock and sends them after unlocking it.
 func (w *World) send(build func() []outboundNotify) {
 	w.mu.Lock()

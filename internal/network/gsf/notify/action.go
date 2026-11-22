@@ -5,8 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// Action is the payload for GSFActionNotify.
-// The client sends it from SyncManager.SyncActionNotify while in a zone: jumps, animations, fishing, held items, quest states.
+// Action is a player action, e.g. a jump, an animation or fishing, with its target and position.
 type Action struct {
 	ActionOID *types.OID
 	TargetOID *types.OID

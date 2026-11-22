@@ -5,14 +5,14 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// GetChatChannelTypesRequest requests available chat channel definitions.
+// GetChatChannelTypesRequest is empty.
 type GetChatChannelTypesRequest struct {
 }
 
 func (req *GetChatChannelTypesRequest) Deserialize(reader gsf.ProtocolReader) {
 }
 
-// GetChatChannelTypesResponse contains available chat channel definitions.
+// GetChatChannelTypesResponse contains the chat channel types.
 type GetChatChannelTypesResponse struct {
 	ChatChannelTypes []types.ChatChannelType
 }

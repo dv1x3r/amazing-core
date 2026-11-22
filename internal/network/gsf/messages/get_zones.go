@@ -5,14 +5,14 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// GetZonesRequest requests available zone definitions.
+// GetZonesRequest is empty.
 type GetZonesRequest struct {
 }
 
 func (req *GetZonesRequest) Deserialize(reader gsf.ProtocolReader) {
 }
 
-// GetZonesResponse contains available zone definitions.
+// GetZonesResponse contains the zones.
 type GetZonesResponse struct {
 	Zones []types.Zone
 }

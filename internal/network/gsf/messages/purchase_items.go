@@ -5,10 +5,11 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// PurchaseItemsRequest buys the products of a store, RequestedQuantity and RequestedPrice are set by the client.
+// PurchaseItemsRequest contains the store products to buy or sell.
 type PurchaseItemsRequest struct {
 	StoreOID types.OID
-	Items    []types.StoreItem
+	// Items with RequestedQuantity -1 are sold.
+	Items []types.StoreItem
 }
 
 func (req *PurchaseItemsRequest) Deserialize(reader gsf.ProtocolReader) {
@@ -20,8 +21,9 @@ func (req *PurchaseItemsRequest) Deserialize(reader gsf.ProtocolReader) {
 	})
 }
 
-// PurchaseItemsResponse contains the purchase result, PurchaseResponse 0 is a success.
+// PurchaseItemsResponse contains the purchase result and the bought or sold items.
 type PurchaseItemsResponse struct {
+	// PurchaseResponse is 0 on success, 163 INVALID_PURCHASES, 164 INSUFFICIENT_FUNDS.
 	PurchaseResponse            int32
 	ReturnedPlayerItems         []types.PlayerItem
 	PurchasedPlayerItems        []types.PlayerItem

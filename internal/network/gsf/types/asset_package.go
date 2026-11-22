@@ -2,8 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// AssetPackage is an asset container that is referenced by another asset container.
-// Contains an additional tag used to conditionally load assets depending on which maze the player is entering.
+// AssetPackage is an extra asset container that loads only in the mazes with its tag.
 type AssetPackage struct {
 	AssetContainer
 	PTag        string

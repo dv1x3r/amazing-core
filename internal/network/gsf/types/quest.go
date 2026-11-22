@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// Quest is a quest definition instance.
+// Quest is a quest definition with its rules, items and steps.
 type Quest struct {
 	RuleContainer
 	SingleSession   bool

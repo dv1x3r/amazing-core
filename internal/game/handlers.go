@@ -70,7 +70,7 @@ const maxChatMessageLength = 256
 
 // ── General ──────────────────────────────────────────────────────────────────
 
-// GetClientVersionInfo validates the client name and version. Requested on game start.
+// GetClientVersionInfo lets the game start, the client checks its version against the reply on launch.
 func (h *Handler) GetClientVersionInfo(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetClientVersionInfoRequest{}
 	if err := r.Read(req); err != nil {
@@ -83,7 +83,7 @@ func (h *Handler) GetClientVersionInfo(w gsf.ResponseWriter, r *gsf.Request) err
 	return w.Write(res)
 }
 
-// GetSiteFrame sends the main asset container with core assets. Requested on login.
+// GetSiteFrame gives the client the core assets and the CDN address it loads every other asset from.
 func (h *Handler) GetSiteFrame(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetSiteFrameRequest{}
 	if err := r.Read(req); err != nil {
@@ -99,8 +99,8 @@ func (h *Handler) GetSiteFrame(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// Login handles client login, records client platform data, and returns
-// the player's active avatar and asset delivery configuration.
+// Login opens the player session and gives the client its player, active avatar and asset address.
+// It also stores the client platform, the asset containers are picked by it.
 func (h *Handler) Login(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.LoginRequest{}
 	if err := r.Read(req); err != nil {
@@ -150,7 +150,7 @@ func loginAppCode(err error) appcode.AppCode {
 	}
 }
 
-// Logout acknowledges the client logout request.
+// Logout closes the session of the connection when the player leaves the game.
 func (h *Handler) Logout(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.LogoutRequest{}
 	if err := r.Read(req); err != nil {
@@ -161,9 +161,8 @@ func (h *Handler) Logout(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// Relogin binds the new USER connection to the session after the client reconnects.
-// The client sends the session OID and conversation ID from the LOGIN response,
-// an unknown session gets the SESSION app code and GSFSession switches to SessionExpired.
+// Relogin keeps the session after a reconnect by binding the new USER connection to it.
+// An unknown session gets the SESSION app code, and the client treats the session as expired.
 func (h *Handler) Relogin(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.ReloginRequest{}
 	if err := r.Read(req); err != nil {
@@ -176,7 +175,7 @@ func (h *Handler) Relogin(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// Heartbeat keeps the USER server session alive and refreshes stats/time payloads.
+// Heartbeat keeps the USER connection alive and gives the client the server time.
 func (h *Handler) Heartbeat(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.HeartbeatRequest{}
 	if err := r.Read(req); err != nil {
@@ -190,7 +189,7 @@ func (h *Handler) Heartbeat(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// GetTiers fetches all subscription tiers on initial login.
+// GetTiers answers the login with no subscription tiers, tiers are not implemented.
 func (h *Handler) GetTiers(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetTiersRequest{}
 	if err := r.Read(req); err != nil {
@@ -201,10 +200,31 @@ func (h *Handler) GetTiers(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
+// GetRequiredExperience lets the level-up reward play, RewardSequenceScriptLevelUp reads the asset map of the level.
+// Experience is not implemented, so the level is an empty container.
+func (h *Handler) GetRequiredExperience(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.GetRequiredExperienceRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	res := &messages.GetRequiredExperienceResponse{}
+	res.PlayerExperienceLevel.Level = req.Level
+	res.PlayerExperienceLevel.AssetMap = types.AssetMap{}
+	res.PlayerExperienceLevel.AssetPackages = []types.AssetPackage{}
+	return w.Write(res)
+}
+
+// GetStatsType answers PlayerStatsUpdater with no statistic types, statistics are not implemented.
+func (h *Handler) GetStatsType(w gsf.ResponseWriter, r *gsf.Request) error {
+	if err := r.Read(&messages.GetStatsTypeRequest{}); err != nil {
+		return err
+	}
+	return w.Write(&messages.GetStatsTypeResponse{})
+}
+
 // ── Registration ─────────────────────────────────────────────────────────────
 
-// GetRandomNames sends random Zing names or family name parts.
-// Requested during the new player registration or Zing rename.
+// GetRandomNames offers random Zing names and family name parts at registration and on Zing rename.
 func (h *Handler) GetRandomNames(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetRandomNamesRequest{}
 	if err := r.Read(req); err != nil {
@@ -219,8 +239,7 @@ func (h *Handler) GetRandomNames(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// ValidateName checks if Zing name is polite enough.
-// Requested on Zing name submission.
+// ValidateName lets the client accept a new Zing name, the name filter is a stub.
 func (h *Handler) ValidateName(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.ValidateNameRequest{}
 	if err := r.Read(req); err != nil {
@@ -233,7 +252,7 @@ func (h *Handler) ValidateName(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// SelectPlayerName acknowledges the selected family name during registration.
+// SelectPlayerName lets the registration continue, every family name is accepted.
 func (h *Handler) SelectPlayerName(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.SelectPlayerNameRequest{}
 	if err := r.Read(req); err != nil {
@@ -243,7 +262,7 @@ func (h *Handler) SelectPlayerName(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// CheckUsername handles the registration username availability request.
+// CheckUsername lets the registration continue, every username is free for now.
 func (h *Handler) CheckUsername(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.CheckUsernameRequest{}
 	if err := r.Read(req); err != nil {
@@ -253,7 +272,7 @@ func (h *Handler) CheckUsername(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// RegisterPlayer handles the player account registration request.
+// RegisterPlayer lets the registration finish, the player is created at the first login.
 func (h *Handler) RegisterPlayer(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.RegisterPlayerRequest{}
 	if err := r.Read(req); err != nil {
@@ -266,8 +285,7 @@ func (h *Handler) RegisterPlayer(w gsf.ResponseWriter, r *gsf.Request) error {
 
 // ── Inventory ────────────────────────────────────────────────────────────────
 
-// GetPublicItemCategories sends public item categories to classify temporary player items.
-// Requested during the new player registration.
+// GetPublicItemCategories lets the registration classify the temporary items of the new player.
 func (h *Handler) GetPublicItemCategories(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetPublicItemCategoriesRequest{}
 	if err := r.Read(req); err != nil {
@@ -282,8 +300,8 @@ func (h *Handler) GetPublicItemCategories(w gsf.ResponseWriter, r *gsf.Request) 
 	return w.Write(res)
 }
 
-// GetCMSItemCategories fetches the main item-category lookup into the InventoryManager.itemCategories.
-// Systems rely on that to map category OIDs to item types such as Clothing, Decoration, Yard, MazePiece, and so on.
+// GetCMSItemCategories lets the client map item categories to item types like Clothing, Decoration or Yard,
+// the inventory and the item placement depend on it.
 func (h *Handler) GetCMSItemCategories(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetCMSItemCategoriesRequest{}
 	if err := r.Read(req); err != nil {
@@ -298,7 +316,7 @@ func (h *Handler) GetCMSItemCategories(w gsf.ResponseWriter, r *gsf.Request) err
 	return w.Write(res)
 }
 
-// GetBuildObjects fetches player-owned build objects.
+// GetBuildObjects answers the builder with no maze pieces, maze pieces are not implemented.
 func (h *Handler) GetBuildObjects(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetBuildObjectsRequest{}
 	if err := r.Read(req); err != nil {
@@ -309,7 +327,7 @@ func (h *Handler) GetBuildObjects(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// GetInventoryObjects fetches player-owned objects for the inventory grid.
+// GetInventoryObjects fills the inventory with the items the player has not placed, attached or worn.
 func (h *Handler) GetInventoryObjects(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetInventoryObjectsRequest{}
 	if err := r.Read(req); err != nil {
@@ -328,7 +346,7 @@ func (h *Handler) GetInventoryObjects(w gsf.ResponseWriter, r *gsf.Request) erro
 	return w.Write(res)
 }
 
-// GetPublicItemsByOIDs handles requests for public item definitions by OIDs.
+// GetPublicItemsByOIDs answers with no item definitions, the request is not implemented.
 func (h *Handler) GetPublicItemsByOIDs(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetPublicItemsByOIDsRequest{}
 	if err := r.Read(req); err != nil {
@@ -341,7 +359,7 @@ func (h *Handler) GetPublicItemsByOIDs(w gsf.ResponseWriter, r *gsf.Request) err
 
 // ── Avatars ──────────────────────────────────────────────────────────────────
 
-// GetAvatars fetches the list of player avatars. The returned list is stored in AvatarManager.Instance.GSFPlayerAvatars.
+// GetAvatars gives the client the Zings of the player for the avatar switcher.
 func (h *Handler) GetAvatars(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetAvatarsRequest{}
 	if err := r.Read(req); err != nil {
@@ -360,10 +378,7 @@ func (h *Handler) GetAvatars(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// GetAvatarItems fetches item instances owned by the active player avatar.
-// This handler was used before outfit presets were implemented, probably.
-// It is retained for backwards compatibility and may be repurposed for active avatar effects.
-// Clothing should be managed with GetOutfitItems instead.
+// GetAvatarItems answers an old clothing request with no items, the clothes come from GetOutfitItems.
 func (h *Handler) GetAvatarItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetAvatarItemsRequest{}
 	if err := r.Read(req); err != nil {
@@ -374,7 +389,7 @@ func (h *Handler) GetAvatarItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// UpdatePlayerActiveAvatar handles the active-avatar change request and returns avatar data.
+// UpdatePlayerActiveAvatar saves the Zing the player switched to and shows it to the players nearby.
 func (h *Handler) UpdatePlayerActiveAvatar(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.UpdatePlayerActiveAvatarRequest{}
 	if err := r.Read(req); err != nil {
@@ -396,8 +411,7 @@ func (h *Handler) UpdatePlayerActiveAvatar(w gsf.ResponseWriter, r *gsf.Request)
 
 // ── Outfits ──────────────────────────────────────────────────────────────────
 
-// GetOutfits fetches the saved outfits for a given player avatar.
-// The results are stored as PresetOutfits on the AvatarAssets object.
+// GetOutfits gives the dressing room the saved outfits of a Zing.
 func (h *Handler) GetOutfits(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetOutfitsRequest{}
 	if err := r.Read(req); err != nil {
@@ -412,7 +426,7 @@ func (h *Handler) GetOutfits(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// AddOutfit creates a new player outfit instance.
+// AddOutfit saves a new outfit of a Zing in the dressing room.
 func (h *Handler) AddOutfit(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.AddOutfitRequest{}
 	if err := r.Read(req); err != nil {
@@ -432,7 +446,7 @@ func (h *Handler) AddOutfit(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// SetCurrentOutfit handles the active-outfit change request and returns the update status.
+// SetCurrentOutfit saves which outfit the Zing wears.
 func (h *Handler) SetCurrentOutfit(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.SetCurrentOutfitRequest{}
 	if err := r.Read(req); err != nil {
@@ -451,7 +465,7 @@ func (h *Handler) SetCurrentOutfit(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// GetOutfitItems fetches the item instances associated with a player avatar outfit.
+// GetOutfitItems tells the client what a Zing wears in an outfit.
 func (h *Handler) GetOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetOutfitItemsRequest{}
 	if err := r.Read(req); err != nil {
@@ -466,7 +480,7 @@ func (h *Handler) GetOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// AddOutfitItems handles the item assign request and returns the update status.
+// AddOutfitItems saves the clothes the player puts on.
 func (h *Handler) AddOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.AddOutfitItemsRequest{}
 	if err := r.Read(req); err != nil {
@@ -486,7 +500,7 @@ func (h *Handler) AddOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// RemoveOutfitItems handles the item removal request and returns the update status.
+// RemoveOutfitItems saves the clothes the player takes off.
 func (h *Handler) RemoveOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.RemoveOutfitItemsRequest{}
 	if err := r.Read(req); err != nil {
@@ -506,7 +520,7 @@ func (h *Handler) RemoveOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error 
 	return w.Write(res)
 }
 
-// ReplaceOutfitItems handles the item swap request and returns the update status.
+// ReplaceOutfitItems saves the clothes the player swaps in the same slots.
 func (h *Handler) ReplaceOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.ReplaceOutfitItemsRequest{}
 	if err := r.Read(req); err != nil {
@@ -528,8 +542,7 @@ func (h *Handler) ReplaceOutfitItems(w gsf.ResponseWriter, r *gsf.Request) error
 
 // ── Location ─────────────────────────────────────────────────────────────────
 
-// GetZones fetches the list of available zones.
-// The list is stored in ZoneManager.Instance.zones.
+// GetZones gives the client the zones it loads the world and the NPC spawn points from.
 func (h *Handler) GetZones(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetZonesRequest{}
 	if err := r.Read(req); err != nil {
@@ -544,7 +557,7 @@ func (h *Handler) GetZones(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// InitLocation sends the player home location data and the address of the SYNC server.
+// InitLocation loads the location of the player and tells the client where the SYNC server is.
 func (h *Handler) InitLocation(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.InitLocationRequest{}
 	if err := r.Read(req); err != nil {
@@ -585,7 +598,7 @@ func (h *Handler) InitLocation(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// GetMazeItems fetches the items placed in the player maze, the visitors get them too.
+// GetMazeItems furnishes the yard or a house interior, for the owner and for the visitors.
 func (h *Handler) GetMazeItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetMazeItemsRequest{}
 	if err := r.Read(req); err != nil {
@@ -600,7 +613,8 @@ func (h *Handler) GetMazeItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// PlaceMazeItem places an item of the player in a maze of the player, IsUpdated is false for an item or a maze of another player.
+// PlaceMazeItem saves where the player put an item in the yard or a house.
+// IsUpdated is false for an item or a maze of another player.
 func (h *Handler) PlaceMazeItem(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.PlaceMazeItemRequest{}
 	if err := r.Read(req); err != nil {
@@ -617,7 +631,7 @@ func (h *Handler) PlaceMazeItem(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(&messages.PlaceMazeItemResponse{IsUpdated: err == nil})
 }
 
-// RemoveMazeItem takes a placed item of the player back to the inventory.
+// RemoveMazeItem saves that the player took an item back to the inventory.
 func (h *Handler) RemoveMazeItem(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.RemoveMazeItemRequest{}
 	if err := r.Read(req); err != nil {
@@ -634,7 +648,7 @@ func (h *Handler) RemoveMazeItem(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(&messages.RemoveMazeItemResponse{IsUpdated: err == nil})
 }
 
-// RemoveAndDetachMazeItem takes an item on a mount of its parent back to the inventory.
+// RemoveAndDetachMazeItem saves that the player took an item off its parent, e.g. when a house is emptied.
 func (h *Handler) RemoveAndDetachMazeItem(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.RemoveAndDetachMazeItemRequest{}
 	if err := r.Read(req); err != nil {
@@ -651,7 +665,23 @@ func (h *Handler) RemoveAndDetachMazeItem(w gsf.ResponseWriter, r *gsf.Request) 
 	return w.Write(&messages.RemoveAndDetachMazeItemResponse{IsUpdated: err == nil})
 }
 
-// AttachSingleItem puts an item of the player on a mount of a parent item of the player, a door or a window on a house.
+// DetachItems takes the upgrades off a house before its sale, the client sells them first.
+func (h *Handler) DetachItems(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.DetachItemsRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	session, err := h.session(r)
+	if err != nil {
+		return err
+	}
+	if err := h.svc.DetachMazeItems(r.Context(), session.player.OID, req.ParentOID, req.ChildItems); err != nil {
+		return err
+	}
+	return w.Write(&messages.DetachItemsResponse{})
+}
+
+// AttachSingleItem saves a door or a window the player put on a house.
 func (h *Handler) AttachSingleItem(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.AttachSingleItemRequest{}
 	if err := r.Read(req); err != nil {
@@ -676,7 +706,7 @@ func (h *Handler) AttachSingleItem(w gsf.ResponseWriter, r *gsf.Request) error {
 	})
 }
 
-// EnterBuilding puts the player into the location the client has loaded, at its spawn point.
+// EnterBuilding moves the player into the loaded location, so the players nearby see it at the spawn point.
 func (h *Handler) EnterBuilding(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.EnterBuildingRequest{}
 	if err := r.Read(req); err != nil {
@@ -689,9 +719,17 @@ func (h *Handler) EnterBuilding(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
+// GetAllBuildings answers the zone load with no buildings, buildings are not implemented.
+func (h *Handler) GetAllBuildings(w gsf.ResponseWriter, r *gsf.Request) error {
+	if err := r.Read(&messages.GetAllBuildingsRequest{}); err != nil {
+		return err
+	}
+	return w.Write(&messages.GetAllBuildingsResponse{Buildings: []types.Building{}})
+}
+
 // ── Social ───────────────────────────────────────────────────────────────────
 
-// GetOtherPlayerDetails fetches the profile payload used by the client to spawn a remote player.
+// GetOtherPlayerDetails lets the client draw another player: its Zing, clothes and name.
 func (h *Handler) GetOtherPlayerDetails(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetOtherPlayerDetailsRequest{}
 	if err := r.Read(req); err != nil {
@@ -710,7 +748,7 @@ func (h *Handler) GetOtherPlayerDetails(w gsf.ResponseWriter, r *gsf.Request) er
 	return w.Write(res)
 }
 
-// GetChatChannelTypes fetches the available chat channel type definitions.
+// GetChatChannelTypes enables the chat, the client maps the channel OIDs to its channels.
 func (h *Handler) GetChatChannelTypes(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetChatChannelTypesRequest{}
 	if err := r.Read(req); err != nil {
@@ -725,7 +763,7 @@ func (h *Handler) GetChatChannelTypes(w gsf.ResponseWriter, r *gsf.Request) erro
 	return w.Write(res)
 }
 
-// SendMessage accepts a chat message and broadcasts local chat to players in same location.
+// SendMessage delivers a local chat message to the players in the same location.
 func (h *Handler) SendMessage(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.SendMessageRequest{}
 	if err := r.Read(req); err != nil {
@@ -767,7 +805,7 @@ func (h *Handler) SendMessage(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// GetAnnouncements fetches login announcements to be displayed to the player on entry.
+// GetAnnouncements answers the login with no announcements, they are not implemented.
 func (h *Handler) GetAnnouncements(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetAnnouncementsRequest{}
 	if err := r.Read(req); err != nil {
@@ -778,8 +816,7 @@ func (h *Handler) GetAnnouncements(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// GetOnlineStatuses fetches the online statuses of the player’s friends.
-// The result is stored in FriendManager.Instance.statusList.
+// GetOnlineStatuses answers the friend list with no online statuses, friends are not implemented.
 func (h *Handler) GetOnlineStatuses(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetOnlineStatusesRequest{}
 	if err := r.Read(req); err != nil {
@@ -790,11 +827,50 @@ func (h *Handler) GetOnlineStatuses(w gsf.ResponseWriter, r *gsf.Request) error 
 	return w.Write(res)
 }
 
+// GetFriendshipRequestCounts answers the friend list with no requests, friends are not implemented.
+func (h *Handler) GetFriendshipRequestCounts(w gsf.ResponseWriter, r *gsf.Request) error {
+	if err := r.Read(&messages.GetFriendshipRequestCountsRequest{}); err != nil {
+		return err
+	}
+	return w.Write(&messages.GetFriendshipRequestCountsResponse{})
+}
+
+// ListLimits answers the friend list with no limits, friends are not implemented.
+func (h *Handler) ListLimits(w gsf.ResponseWriter, r *gsf.Request) error {
+	if err := r.Read(&messages.ListLimitsRequest{}); err != nil {
+		return err
+	}
+	return w.Write(&messages.ListLimitsResponse{})
+}
+
+// GetHomeInvitations answers the inbox with no home invitations, they are not implemented.
+func (h *Handler) GetHomeInvitations(w gsf.ResponseWriter, r *gsf.Request) error {
+	if err := r.Read(&messages.GetHomeInvitationsRequest{}); err != nil {
+		return err
+	}
+	return w.Write(&messages.GetHomeInvitationsResponse{})
+}
+
+// GetNotificationByPlayerID answers the inbox with no stored notifications, they are not implemented.
+func (h *Handler) GetNotificationByPlayerID(w gsf.ResponseWriter, r *gsf.Request) error {
+	if err := r.Read(&messages.GetNotificationByPlayerIDRequest{}); err != nil {
+		return err
+	}
+	return w.Write(&messages.GetNotificationByPlayerIDResponse{})
+}
+
+// GetCrispActions answers with no Crisp actions, they are not implemented.
+func (h *Handler) GetCrispActions(w gsf.ResponseWriter, r *gsf.Request) error {
+	if err := r.Read(&messages.GetCrispActionsRequest{}); err != nil {
+		return err
+	}
+	return w.Write(&messages.GetCrispActionsResponse{})
+}
+
 // ── NPC and Quests ───────────────────────────────────────────────────────────
 
-// GetPlayerNPCs fetches the NPCs for the player zone.
-// SpawnPoints.Instance.ParseZone(NPCManager.HardCodedZoneId) is called beforehand to set up spawn points.
-// This requires the NPC zone to have been returned by GetZones.
+// GetPlayerNPCs spawns the NPCs of the zone.
+// The client parses the spawn points of the zone from GetZones before it.
 func (h *Handler) GetPlayerNPCs(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetPlayerNPCsRequest{}
 	if err := r.Read(req); err != nil {
@@ -809,7 +885,7 @@ func (h *Handler) GetPlayerNPCs(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// GetRuleCountList fetches rule counter values for the requested objects.
+// GetRuleCountList gives the rule counters, NPCsDownloader picks the NPC spawn point by one.
 func (h *Handler) GetRuleCountList(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetRuleCountListRequest{}
 	if err := r.Read(req); err != nil {
@@ -830,7 +906,7 @@ func (h *Handler) GetRuleCountList(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// GetRuleInfo fetches the rules of an object. Task requests them for a quest before the quest dialog.
+// GetRuleInfo lets the quest dialog open, the quest rules are not sent yet.
 func (h *Handler) GetRuleInfo(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetRuleInfoRequest{}
 	if err := r.Read(req); err != nil {
@@ -844,7 +920,7 @@ func (h *Handler) GetRuleInfo(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// GetRuleInstanceInfo fetches the rules of an instance. Task requests them for a player quest on accept.
+// GetRuleInstanceInfo lets the player accept a quest, the quest rules are not sent yet.
 func (h *Handler) GetRuleInstanceInfo(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetRuleInstanceInfoRequest{}
 	if err := r.Read(req); err != nil {
@@ -856,7 +932,7 @@ func (h *Handler) GetRuleInstanceInfo(w gsf.ResponseWriter, r *gsf.Request) erro
 	return w.Write(res)
 }
 
-// GetNPCRelationships returns the relationships of the player with the NPCs, NPCManager requests them on the zone load and after a reward.
+// GetNPCRelationships fills the relationship meters of the NPCs, on the zone load and after a reward.
 func (h *Handler) GetNPCRelationships(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetNPCRelationshipsRequest{}
 	if err := r.Read(req); err != nil {
@@ -873,7 +949,7 @@ func (h *Handler) GetNPCRelationships(w gsf.ResponseWriter, r *gsf.Request) erro
 	return w.Write(&messages.GetNPCRelationshipsResponse{Relationships: relationships})
 }
 
-// GetNPCRelationshipLevels returns the points of the relationship levels, none: they are unknown.
+// GetNPCRelationshipLevels answers with no relationship levels, their points are unknown.
 func (h *Handler) GetNPCRelationshipLevels(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(&messages.GetNPCRelationshipLevelsRequest{}); err != nil {
 		return err
@@ -881,7 +957,7 @@ func (h *Handler) GetNPCRelationshipLevels(w gsf.ResponseWriter, r *gsf.Request)
 	return w.Write(&messages.GetNPCRelationshipLevelsResponse{Levels: []types.NPCRelationshipLevel{}})
 }
 
-// GetNPCsWithQuestOffer returns the NPCs that offer a quest to the player, TaskGUI.TriggerAlert shows the portrait of one.
+// GetNPCsWithQuestOffer lets the task alert show the portrait of an NPC with a quest for the player.
 func (h *Handler) GetNPCsWithQuestOffer(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(&messages.GetNPCsWithQuestOfferRequest{}); err != nil {
 		return err
@@ -897,7 +973,7 @@ func (h *Handler) GetNPCsWithQuestOffer(w gsf.ResponseWriter, r *gsf.Request) er
 	return w.Write(&messages.GetNPCsWithQuestOfferResponse{NPCs: npcs})
 }
 
-// GetPlayerQuests returns the player quests of the NPC, none for now.
+// GetPlayerQuests answers the NPC with no player quests, the quest history is not implemented.
 func (h *Handler) GetPlayerQuests(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetPlayerQuestsRequest{}
 	if err := r.Read(req); err != nil {
@@ -908,7 +984,7 @@ func (h *Handler) GetPlayerQuests(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// GetPlayerQuestsByOIDs returns the player quests by OIDs, none for now.
+// GetPlayerQuestsByOIDs answers with no player quests, the quest history is not implemented.
 func (h *Handler) GetPlayerQuestsByOIDs(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetPlayerQuestsByOIDsRequest{}
 	if err := r.Read(req); err != nil {
@@ -919,7 +995,7 @@ func (h *Handler) GetPlayerQuestsByOIDs(w gsf.ResponseWriter, r *gsf.Request) er
 	return w.Write(res)
 }
 
-// GetQuestFromParent fetches the quest offered by the parent (e.g. NPC).
+// GetQuestFromParent tells the client which quest an NPC offers now.
 func (h *Handler) GetQuestFromParent(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetQuestFromParentRequest{}
 	if err := r.Read(req); err != nil {
@@ -947,7 +1023,7 @@ func (h *Handler) GetQuestFromParent(w gsf.ResponseWriter, r *gsf.Request) error
 	return w.Write(res)
 }
 
-// CreateQuest creates a player quest for the quest the player has taken, and the player quests of its steps.
+// CreateQuest starts the quest the player took: the player quest and the player quests of its steps.
 func (h *Handler) CreateQuest(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.CreateQuestRequest{}
 	if err := r.Read(req); err != nil {
@@ -971,7 +1047,7 @@ func (h *Handler) CreateQuest(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// AcceptQuest accepts the player quest.
+// AcceptQuest saves that the player accepted the quest.
 func (h *Handler) AcceptQuest(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.AcceptQuestRequest{}
 	if err := r.Read(req); err != nil {
@@ -995,7 +1071,7 @@ func (h *Handler) AcceptQuest(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// StartQuest starts the player quest, the spawned items are sent back as is.
+// StartQuest saves the start of the quest, the client spawns the quest items from the reply.
 func (h *Handler) StartQuest(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.StartQuestRequest{}
 	if err := r.Read(req); err != nil {
@@ -1018,8 +1094,8 @@ func (h *Handler) StartQuest(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// AddQuestItem counts the collected quest item.
-// When every item amount is collected, the QuestCompleted notification follows the response.
+// AddQuestItem counts a collected quest item for the task counter.
+// When every amount is collected, the QuestCompleted notification follows the response.
 func (h *Handler) AddQuestItem(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.AddQuestItemRequest{}
 	if err := r.Read(req); err != nil {
@@ -1045,7 +1121,7 @@ func (h *Handler) AddQuestItem(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// CompleteQuest closes the completed player quest when the client takes the reward.
+// CompleteQuest closes the player quest when the player takes the reward.
 // After the last step, the QuestCompleted notification of its quest follows the response.
 func (h *Handler) CompleteQuest(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.CompleteQuestRequest{}
@@ -1073,7 +1149,7 @@ func (h *Handler) CompleteQuest(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// AbandonQuest abandons or fails the player quest and its open steps, the NPC offers the quest again.
+// AbandonQuest drops or fails the player quest and its open steps, so the NPC offers the quest again.
 func (h *Handler) AbandonQuest(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.AbandonQuestRequest{}
 	if err := r.Read(req); err != nil {
@@ -1098,7 +1174,39 @@ func (h *Handler) AbandonQuest(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// GetCMSNotifications returns the notification definitions.
+// GetPlayerMissions answers with no missions, achievements and collections are not implemented.
+func (h *Handler) GetPlayerMissions(w gsf.ResponseWriter, r *gsf.Request) error {
+	if err := r.Read(&messages.GetPlayerMissionsRequest{}); err != nil {
+		return err
+	}
+	return w.Write(&messages.GetPlayerMissionsResponse{PlayerMissions: []types.PlayerQuest{}})
+}
+
+// GetCMSMissions answers with no mission definitions, missions are not implemented.
+func (h *Handler) GetCMSMissions(w gsf.ResponseWriter, r *gsf.Request) error {
+	if err := r.Read(&messages.GetCMSMissionsRequest{}); err != nil {
+		return err
+	}
+	return w.Write(&messages.GetCMSMissionsResponse{Missions: []types.Quest{}})
+}
+
+// QuestEventInProgress answers with no mob quest events, mob quests are not implemented.
+func (h *Handler) QuestEventInProgress(w gsf.ResponseWriter, r *gsf.Request) error {
+	if err := r.Read(&messages.QuestEventInProgressRequest{}); err != nil {
+		return err
+	}
+	return w.Write(&messages.QuestEventInProgressResponse{})
+}
+
+// AddEvent accepts a rule engine event of the player, e.g. an item use, events give no rewards yet.
+func (h *Handler) AddEvent(w gsf.ResponseWriter, r *gsf.Request) error {
+	if err := r.Read(&messages.AddEventRequest{}); err != nil {
+		return err
+	}
+	return w.Write(&messages.AddEventResponse{QuestAwardElements: []types.QuestAwardElement{}})
+}
+
+// GetCMSNotifications gives the notification definitions the client shows the notifications with.
 func (h *Handler) GetCMSNotifications(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetCMSNotificationsRequest{}
 	if err := r.Read(req); err != nil {
@@ -1118,7 +1226,7 @@ func (h *Handler) GetCMSNotifications(w gsf.ResponseWriter, r *gsf.Request) erro
 	return w.Write(res)
 }
 
-// GetAssetsByOIDs fetches the asset containers by OIDs, e.g. the quest items.
+// GetAssetsByOIDs lets the client load the asset containers it knows only by OID, e.g. the quest items.
 func (h *Handler) GetAssetsByOIDs(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetAssetsByOIDsRequest{}
 	if err := r.Read(req); err != nil {
@@ -1135,7 +1243,7 @@ func (h *Handler) GetAssetsByOIDs(w gsf.ResponseWriter, r *gsf.Request) error {
 
 // ── Store ────────────────────────────────────────────────────────────────────
 
-// GetStoreItems fetches the items placed in store.
+// GetStoreItems fills a store window with its products.
 func (h *Handler) GetStoreItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetStoreItemsRequest{}
 	if err := r.Read(req); err != nil {
@@ -1155,7 +1263,7 @@ func (h *Handler) GetStoreItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// ListStores returns the store of the NPC, NPCController shows the NPC Shop button when there is one.
+// ListStores gives an NPC its store, NPCController shows the NPC Shop button only when there is one.
 // Every NPC has the same store with every item.
 func (h *Handler) ListStores(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.ListStoresRequest{}
@@ -1178,8 +1286,8 @@ func (h *Handler) ListStores(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// GetAllStoreItems returns the products of the store for free: every item in the NPC store,
-// the items of the requested subcategory in the World Shop.
+// GetAllStoreItems fills a store with free products: every item in an NPC store,
+// the items of the opened subcategory in the World Shop.
 func (h *Handler) GetAllStoreItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetAllStoreItemsRequest{}
 	if err := r.Read(req); err != nil {
@@ -1204,7 +1312,7 @@ func (h *Handler) GetAllStoreItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// GetStoreThemes returns the World Shop categories and subcategories, the other stores have none.
+// GetStoreThemes builds the World Shop categories and subcategories, the other stores have none.
 func (h *Handler) GetStoreThemes(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetStoreThemesRequest{}
 	if err := r.Read(req); err != nil {
@@ -1222,7 +1330,7 @@ func (h *Handler) GetStoreThemes(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// EnterStore acknowledges the store window opening.
+// EnterStore answers the opening of a store window, nothing is tracked.
 func (h *Handler) EnterStore(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(&messages.EnterStoreRequest{}); err != nil {
 		return err
@@ -1230,7 +1338,7 @@ func (h *Handler) EnterStore(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(&messages.EnterStoreResponse{})
 }
 
-// ExitStore acknowledges the store window closing.
+// ExitStore answers the closing of a store window, nothing is tracked.
 func (h *Handler) ExitStore(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(&messages.ExitStoreRequest{}); err != nil {
 		return err
@@ -1238,7 +1346,7 @@ func (h *Handler) ExitStore(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(&messages.ExitStoreResponse{})
 }
 
-// PurchaseItems gives the player the bought items, the store is free.
+// PurchaseItems buys or sells store products, the store is free.
 // The client reads every list of the response, so they are never null.
 func (h *Handler) PurchaseItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.PurchaseItemsRequest{}
@@ -1260,6 +1368,20 @@ func (h *Handler) PurchaseItems(w gsf.ResponseWriter, r *gsf.Request) error {
 		ProcessedStoreItems:         []types.StoreItem{},
 		AvatarAdoptionItems:         []types.PlayerItem{},
 	}
+	// A sale is a purchase of the buyback products with RequestedQuantity -1, the client never mixes it with a purchase
+	// (WorldShopSVCS.SellProductItem, House.DoSellUpgrades).
+	if len(req.Items) > 0 && req.Items[0].RequestedQuantity < 0 {
+		items, err := h.svc.SellStoreItems(r.Context(), session.platform, session.player.OID, req.Items)
+		if errors.Is(err, services.ErrStoreItemNotFound) {
+			res.PurchaseResponse = purchaseInvalid
+			return w.Write(res)
+		}
+		if err != nil {
+			return err
+		}
+		res.ReturnedPlayerItems = items
+		return w.Write(res)
+	}
 	items, mazes, err := h.svc.BuyStoreItems(r.Context(), session.platform, session.player.OID, req.Items)
 	if errors.Is(err, services.ErrStoreItemNotFound) {
 		res.PurchaseResponse = purchaseInvalid
@@ -1273,10 +1395,27 @@ func (h *Handler) PurchaseItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
+// GetStoreItemsForItems lets the player sell an item: it gives the sell card and the price of a house with its upgrades.
+func (h *Handler) GetStoreItemsForItems(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.GetStoreItemsForItemsRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	session, err := h.session(r)
+	if err != nil {
+		return err
+	}
+	storeItem, err := h.svc.GetBuybackItem(r.Context(), session.platform, session.player.OID, req.ItemOID)
+	if err != nil {
+		return err
+	}
+	return w.Write(&messages.GetStoreItemsForItemsResponse{StoreItem: storeItem})
+}
+
 // purchaseInvalid is the INVALID_PURCHASES purchase response, NPCStoreSVCS shows "not enabled for purchase".
 const purchaseInvalid = 163
 
-// GetCurrencies returns the currencies, the store windows need the Coinz name of the price currency.
+// GetCurrencies lets the store windows show prices, they need the Coinz name of the price currency.
 func (h *Handler) GetCurrencies(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(&messages.GetCurrenciesRequest{}); err != nil {
 		return err
@@ -1288,7 +1427,7 @@ func (h *Handler) GetCurrencies(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(&messages.GetCurrenciesResponse{Currencies: currencies})
 }
 
-// GetPlayerStats returns the player statistics, none for now, the player has no money and the store is free.
+// GetPlayerStats answers with no statistics, the player has no money and the store is free.
 func (h *Handler) GetPlayerStats(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(&messages.GetPlayerStatsRequest{}); err != nil {
 		return err

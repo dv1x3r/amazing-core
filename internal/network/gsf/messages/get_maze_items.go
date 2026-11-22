@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// GetMazeItemsRequest requests item instances placed in a player maze.
+// GetMazeItemsRequest contains the player maze of the items.
 type GetMazeItemsRequest struct {
 	PlayerMazeOID types.OID
 	PlayerOID     types.OID
@@ -16,7 +16,7 @@ func (req *GetMazeItemsRequest) Deserialize(reader gsf.ProtocolReader) {
 	reader.ReadObject(&req.PlayerOID)
 }
 
-// GetMazeItemsResponse contains item instances placed in a player maze.
+// GetMazeItemsResponse contains the items placed in the player maze.
 type GetMazeItemsResponse struct {
 	MazeItems []types.PlayerItem
 }

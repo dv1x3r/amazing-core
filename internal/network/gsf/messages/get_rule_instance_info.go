@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// GetRuleInstanceInfoRequest requests the rules of an instance, e.g. a player quest.
+// GetRuleInstanceInfoRequest contains the instance of the rules, e.g. a player quest.
 type GetRuleInstanceInfoRequest struct {
 	InstanceOID types.OID
 	TemplateOID types.OID

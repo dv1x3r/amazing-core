@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// NPC is a non-player character definition sent to the client.
+// NPC is an NPC with its rules, zone, spawn point and relationship with the player.
 type NPC struct {
 	RuleContainer
 	ZoneOID            OID

@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// HeartbeatRequest is the periodic USER server keepalive payload.
+// HeartbeatRequest contains the player position and inactivity time.
 type HeartbeatRequest struct {
 	RunPercent     float32
 	XCoordinate    float32
@@ -22,7 +22,7 @@ func (req *HeartbeatRequest) Deserialize(reader gsf.ProtocolReader) {
 	req.InactivityTime = reader.ReadInt64()
 }
 
-// HeartbeatResponse refreshes player stats, server time, and queued notifications.
+// HeartbeatResponse contains the player statistics, the server time and the queued notifications.
 type HeartbeatResponse struct {
 	PlayerStats       []types.PlayerStats
 	CurrentServerTime gsf.UnixTime

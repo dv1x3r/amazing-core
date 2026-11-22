@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// ChangeObject is the payload for GSFChangeObjectNotify.
+// ChangeObject is a changed object of a player, e.g. its new look, with its position and state.
 type ChangeObject struct {
 	InstanceOID types.OID
 	TemplateOID types.OID

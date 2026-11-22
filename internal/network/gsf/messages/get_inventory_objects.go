@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// GetInventoryObjectsRequest requests player-owned items for the inventory grid.
+// GetInventoryObjectsRequest contains the categories or the items of the inventory to return.
 type GetInventoryObjectsRequest struct {
 	ContainerOID     types.OID
 	ItemCategoryOIDs []types.OID
@@ -26,7 +26,7 @@ func (req *GetInventoryObjectsRequest) Deserialize(reader gsf.ProtocolReader) {
 	})
 }
 
-// GetInventoryObjectsResponse contains player-owned items for the inventory grid.
+// GetInventoryObjectsResponse contains the inventory items of the player.
 type GetInventoryObjectsResponse struct {
 	PlayerItems []types.PlayerItem
 }

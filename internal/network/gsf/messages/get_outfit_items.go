@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// GetOutfitItemsRequest requests item instances assigned to an avatar outfit.
+// GetOutfitItemsRequest contains the outfit of the items.
 type GetOutfitItemsRequest struct {
 	PlayerAvatarOutfitOID types.OID
 	PlayerOID             types.OID
@@ -16,7 +16,7 @@ func (req *GetOutfitItemsRequest) Deserialize(reader gsf.ProtocolReader) {
 	reader.ReadObject(&req.PlayerOID)
 }
 
-// GetOutfitItemsResponse contains item instances assigned to an avatar outfit.
+// GetOutfitItemsResponse contains the items of the outfit.
 type GetOutfitItemsResponse struct {
 	OutfitItems []types.PlayerItem
 }

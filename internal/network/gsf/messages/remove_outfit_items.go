@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// RemoveOutfitItemsRequest requests the outfit item removal.
+// RemoveOutfitItemsRequest contains the items to take out of the outfit.
 type RemoveOutfitItemsRequest struct {
 	PlayerAvatarOutfitOID types.OID
 	InventoryOIDs         []types.OID
@@ -20,7 +20,7 @@ func (req *RemoveOutfitItemsRequest) Deserialize(reader gsf.ProtocolReader) {
 	})
 }
 
-// RemoveOutfitItemsResponse contains the removal status.
+// RemoveOutfitItemsResponse contains whether the outfit was updated.
 type RemoveOutfitItemsResponse struct {
 	IsUpdated bool
 }

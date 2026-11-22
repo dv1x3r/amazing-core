@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// GiftBox is the asset container send as a reward.
+// GiftBox is a reward box with its assets.
 type GiftBox struct {
 	AssetContainer
 	CreateDate gsf.UnixTime

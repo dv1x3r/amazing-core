@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// GetPlayerQuestsRequest requests quests for NPC.
+// GetPlayerQuestsRequest contains the NPC and the page of the player quests.
 type GetPlayerQuestsRequest struct {
 	Limit  int32
 	Offset int32
@@ -20,7 +20,7 @@ func (req *GetPlayerQuestsRequest) Deserialize(reader gsf.ProtocolReader) {
 	reader.ReadObject(&req.NPCOID)
 }
 
-// GetPlayerQuestsResponse contains quest records for the requested NPC.
+// GetPlayerQuestsResponse contains the player quests of the NPC.
 type GetPlayerQuestsResponse struct {
 	PlayerQuests []types.PlayerQuest
 }

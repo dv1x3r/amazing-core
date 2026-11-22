@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// GetCMSNotificationsRequest requests the notification definitions.
+// GetCMSNotificationsRequest is empty.
 type GetCMSNotificationsRequest struct{}
 
 func (req *GetCMSNotificationsRequest) Deserialize(reader gsf.ProtocolReader) {

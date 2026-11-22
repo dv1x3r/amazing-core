@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// GetStoreItemsRequest requests item instances placed in a store.
+// GetStoreItemsRequest contains the store and the category of the products.
 type GetStoreItemsRequest struct {
 	StoreOID            types.OID
 	CategoryOID         types.OID
@@ -20,7 +20,7 @@ func (req *GetStoreItemsRequest) Deserialize(reader gsf.ProtocolReader) {
 	req.CompletionEventName = reader.ReadString()
 }
 
-// GetStoreItemsResponse contains item instances placed in a store.
+// GetStoreItemsResponse contains the products of the store.
 type GetStoreItemsResponse struct {
 	StoreItems []types.StoreItem
 }

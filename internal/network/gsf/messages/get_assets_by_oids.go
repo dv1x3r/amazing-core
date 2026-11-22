@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// GetAssetsByOIDsRequest requests asset containers by OIDs.
+// GetAssetsByOIDsRequest contains the OIDs of the asset containers.
 type GetAssetsByOIDsRequest struct {
 	OIDs []types.OID
 }

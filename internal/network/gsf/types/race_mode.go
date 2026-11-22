@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// RaceMode identifies the player's current race mode.
+// RaceMode is the race mode of the player.
 type RaceMode struct {
 	OID  OID
 	Name string

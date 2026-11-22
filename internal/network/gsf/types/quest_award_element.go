@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// QuestAwardElement is a quest award instance.
+// QuestAwardElement is one quest reward: an item, an avatar, a maze or points.
 type QuestAwardElement struct {
 	OID            OID
 	Delta          int32

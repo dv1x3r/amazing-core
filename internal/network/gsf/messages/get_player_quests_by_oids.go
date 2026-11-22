@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// GetPlayerQuestsByOIDsRequest requests quest definitions by OIDs.
+// GetPlayerQuestsByOIDsRequest contains the OIDs of the quests.
 type GetPlayerQuestsByOIDsRequest struct {
 	QuestOIDs []types.OID
 }
@@ -18,7 +18,7 @@ func (req *GetPlayerQuestsByOIDsRequest) Deserialize(reader gsf.ProtocolReader) 
 	})
 }
 
-// GetPlayerQuestsByOIDsResponse contains quest definitions for the requested OIDs.
+// GetPlayerQuestsByOIDsResponse contains the player quests of the quests.
 type GetPlayerQuestsByOIDsResponse struct {
 	PlayerQuests []types.PlayerQuest
 }

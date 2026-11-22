@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// AddOutfitItemsRequest requests the outfit item assign.
+// AddOutfitItemsRequest contains the items to put into the outfit slots.
 type AddOutfitItemsRequest struct {
 	PlayerAvatarOutfitOID types.OID
 	InventoryOIDs         []types.OID
@@ -26,7 +26,7 @@ func (req *AddOutfitItemsRequest) Deserialize(reader gsf.ProtocolReader) {
 	})
 }
 
-// AddOutfitItemsResponse contains the assign status.
+// AddOutfitItemsResponse contains whether the outfit was updated.
 type AddOutfitItemsResponse struct {
 	IsUpdated bool
 }

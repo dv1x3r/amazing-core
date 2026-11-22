@@ -12,7 +12,6 @@ import (
 	"github.com/dv1x3r/w2go/w2db"
 )
 
-// ErrMazeItemNotFound is a change of an item, a parent item or a maze the player does not own.
 var ErrMazeItemNotFound = errors.New("maze item not found")
 
 // houseMazeName is the name of a house interior, the client does not read it:
@@ -26,8 +25,6 @@ const (
 	sceneEmpty         = "OTYwNzA1NTQwOTE2Ng"
 )
 
-// GetPlayerHome returns the home of the owner: the yard maze with the yard scene and the house interiors.
-// An unknown owner is sql.ErrNoRows.
 func (s *Service) GetPlayerHome(ctx context.Context, platform gsf.Platform, ownerOID types.OID, winter bool) (*types.PlayerHome, error) {
 	const op = "game.Service.GetPlayerHome"
 
@@ -122,7 +119,6 @@ func (s *Service) GetPlayerHome(ctx context.Context, platform gsf.Platform, owne
 	}, nil
 }
 
-// GetMazeItems returns the items placed in the maze of the owner, the items on the mounts of an item are its attached items.
 func (s *Service) GetMazeItems(ctx context.Context, platform gsf.Platform, mazeOID, ownerOID types.OID) ([]types.PlayerItem, error) {
 	const op = "game.Service.GetMazeItems"
 
@@ -204,7 +200,6 @@ func (s *Service) GetMazeItems(ctx context.Context, platform gsf.Platform, mazeO
 	return items, nil
 }
 
-// PlaceMazeItem puts the item of the player in the maze of the player at the position, off the mount it was on.
 func (s *Service) PlaceMazeItem(ctx context.Context, playerOID, itemOID, mazeOID types.OID, position types.ObjectPosition, rotation string) error {
 	const op = "game.Service.PlaceMazeItem"
 	result, err := s.store.DB().ExecContext(ctx, `
@@ -231,7 +226,6 @@ func (s *Service) PlaceMazeItem(ctx context.Context, playerOID, itemOID, mazeOID
 	return nil
 }
 
-// AttachMazeItem puts the item of the player on the mount of the parent item, off the maze it was in.
 func (s *Service) AttachMazeItem(ctx context.Context, playerOID, parentOID, itemOID types.OID, ordinal int32) error {
 	const op = "game.Service.AttachMazeItem"
 	result, err := s.store.DB().ExecContext(ctx, `
@@ -257,9 +251,6 @@ func (s *Service) AttachMazeItem(ctx context.Context, playerOID, parentOID, item
 	return nil
 }
 
-// RemoveMazeItem takes the placed or attached item of the player back to the inventory.
-// The items on its mounts stay on it: MazeManager.PickupItem keeps the doors and the upgrades on a picked up house,
-// the client takes them off one by one (REMOVE_AND_DETACH_MAZE_ITEM) when the house is emptied.
 func (s *Service) RemoveMazeItem(ctx context.Context, playerOID, itemOID types.OID) error {
 	const op = "game.Service.RemoveMazeItem"
 	result, err := s.store.DB().ExecContext(ctx, `
@@ -281,7 +272,22 @@ func (s *Service) RemoveMazeItem(ctx context.Context, playerOID, itemOID types.O
 	return nil
 }
 
-// insertPlayerYard creates the yard maze of a new player.
+func (s *Service) DetachMazeItems(ctx context.Context, playerOID, parentOID types.OID, itemOIDs []types.OID) error {
+	const op = "game.Service.DetachMazeItems"
+	for _, itemOID := range itemOIDs {
+		_, err := s.store.DB().ExecContext(ctx, `
+				update player_item
+				set parent_player_item_id = null, ordinal = null
+				where gsfoid = ? and player_id = (select id from player where gsfoid = ?)
+					and parent_player_item_id = (select id from player_item where gsfoid = ?);
+			`, itemOID, playerOID, parentOID)
+		if err != nil {
+			return wrap.IfErr(op, err)
+		}
+	}
+	return nil
+}
+
 func (s *Service) insertPlayerYard(ctx context.Context, tx *sql.Tx, playerID int) error {
 	const op = "game.Service.insertPlayerYard"
 	_, err := tx.ExecContext(ctx, `

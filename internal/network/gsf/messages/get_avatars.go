@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// GetAvatarsRequest requests the player's avatar list.
+// GetAvatarsRequest contains the page and the filter of the player avatars.
 type GetAvatarsRequest struct {
 	// Start index, 0.
 	Start int32
@@ -27,7 +27,7 @@ func (req *GetAvatarsRequest) Deserialize(reader gsf.ProtocolReader) {
 	})
 }
 
-// GetAvatarsResponse contains player avatar records.
+// GetAvatarsResponse contains the player avatars.
 type GetAvatarsResponse struct {
 	Avatars []types.PlayerAvatar
 }

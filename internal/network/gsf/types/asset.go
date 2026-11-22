@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// Asset is a single resource file, such as Unity asset bundle, treenode, json, image, or audio file.
+// Asset is one CDN file: its type, name, group and size.
 type Asset struct {
 	// OID identifier.
 	OID OID

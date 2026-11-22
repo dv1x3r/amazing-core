@@ -5,14 +5,14 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// GetOnlineStatusesRequest requests friend online status values.
+// GetOnlineStatusesRequest is empty.
 type GetOnlineStatusesRequest struct {
 }
 
 func (req *GetOnlineStatusesRequest) Deserialize(reader gsf.ProtocolReader) {
 }
 
-// GetOnlineStatusesResponse contains friend online status values.
+// GetOnlineStatusesResponse contains the online statuses of the friends.
 type GetOnlineStatusesResponse struct {
 	OnlineStatuses []types.OnlineStatus
 }

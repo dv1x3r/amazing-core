@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// AssetContainer is a group of assets. It can contain multiple assets and/or asset packages.
+// AssetContainer is the OID of an object with its assets and asset packages.
 type AssetContainer struct {
 	// OID identifier.
 	OID OID

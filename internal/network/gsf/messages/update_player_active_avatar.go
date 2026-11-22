@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// UpdatePlayerActiveAvatarRequest selects the player's active avatar.
+// UpdatePlayerActiveAvatarRequest contains the avatar to make active.
 type UpdatePlayerActiveAvatarRequest struct {
 	PlayerAvatarOID types.OID
 }
@@ -14,7 +14,7 @@ func (req *UpdatePlayerActiveAvatarRequest) Deserialize(reader gsf.ProtocolReade
 	reader.ReadObject(&req.PlayerAvatarOID)
 }
 
-// UpdatePlayerActiveAvatarResponse contains the newly active player avatar.
+// UpdatePlayerActiveAvatarResponse contains the new active avatar.
 type UpdatePlayerActiveAvatarResponse struct {
 	ActivePlayerAvatar types.PlayerAvatar
 }

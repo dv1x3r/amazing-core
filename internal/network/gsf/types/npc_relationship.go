@@ -2,22 +2,23 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// NPCRelationship is the relationship of the player with an NPC, NPCManager.listRelationships keeps it by NPCOID.
-// The level picks the name of the NPC Relationship_Text, the meter of NPCRadialMenu is (Points - MinPoints) / (MaxPoints - MinPoints).
+// NPCRelationship is the relationship of the player with an NPC: its level, points and meter range.
 type NPCRelationship struct {
-	OID             OID
-	CreateDate      gsf.UnixTime
-	PlayerOID       OID
-	NPCOID          OID
+	OID        OID
+	CreateDate gsf.UnixTime
+	PlayerOID  OID
+	NPCOID     OID
+	// Level picks the name from the NPC Relationship_Text.
 	Level           int16
 	Points          int32
 	LastInteraction gsf.UnixTime
 	UnlockDate      gsf.UnixTime
 	Friend          bool
 	Ordinal         int32
-	MinPoints       int32
-	MaxPoints       int32
-	IsNew           bool
+	// The NPCRadialMenu meter is (Points - MinPoints) / (MaxPoints - MinPoints).
+	MinPoints int32
+	MaxPoints int32
+	IsNew     bool
 }
 
 func (r *NPCRelationship) Serialize(writer gsf.ProtocolWriter) {
@@ -52,7 +53,7 @@ func (r *NPCRelationship) Deserialize(reader gsf.ProtocolReader) {
 	r.IsNew = reader.ReadBool()
 }
 
-// NPCRelationshipLevel is the points of the relationship level of an NPC.
+// NPCRelationshipLevel is the points of one relationship level of an NPC.
 type NPCRelationshipLevel struct {
 	OID               OID
 	Level             int32

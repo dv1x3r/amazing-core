@@ -20,10 +20,8 @@ var StoreOID = types.OID{Class: 4, Type: 72, Server: 0, Number: 1}
 // WorldShopOID is WorldShopSVCS.WORLD_SHOP_STORE_ID, it sells the items of the requested subcategory.
 var WorldShopOID = types.OID{Class: 4, Type: 72, Server: 0, Number: 2946993}
 
-// ErrStoreItemNotFound is a purchase of an item the store does not have.
 var ErrStoreItemNotFound = errors.New("store item not found")
 
-// GetCurrencies returns the Coinz currency, the store prices are in Coinz.
 func (s *Service) GetCurrencies(ctx context.Context, platform gsf.Platform) ([]types.Currency, error) {
 	const op = "game.Service.GetCurrencies"
 	var containerID int
@@ -38,7 +36,6 @@ func (s *Service) GetCurrencies(ctx context.Context, platform gsf.Platform) ([]t
 	return []types.Currency{{AssetContainer: container, IsDefault: gsf.NewNullable(true)}}, nil
 }
 
-// GetStoreThemes returns the World Shop categories and subcategories.
 func (s *Service) GetStoreThemes(ctx context.Context, platform gsf.Platform) ([]types.StoreTheme, error) {
 	const op = "game.Service.GetStoreThemes"
 	type row struct {
@@ -73,8 +70,6 @@ func (s *Service) GetStoreThemes(ctx context.Context, platform gsf.Platform) ([]
 	return themes, nil
 }
 
-// GetStoreItems returns the items as free store products, of one subcategory when themeOID is set.
-// The house upgrades are sold by their house only.
 func (s *Service) GetStoreItems(ctx context.Context, platform gsf.Platform, themeOID *types.OID) ([]types.StoreItem, error) {
 	const op = "game.Service.GetStoreItems"
 
@@ -129,8 +124,6 @@ func (s *Service) GetStoreItems(ctx context.Context, platform gsf.Platform, them
 	return storeItems, nil
 }
 
-// BuyStoreItems gives the player one of every requested item and returns the new player items,
-// and the interiors of the bought houses, WorldShopSVCS adds them with ZoneManager.AddMazes.
 func (s *Service) BuyStoreItems(ctx context.Context, platform gsf.Platform, playerOID types.OID, storeItems []types.StoreItem) ([]types.PlayerItem, []types.PlayerMaze, error) {
 	const op = "game.Service.BuyStoreItems"
 
@@ -228,8 +221,124 @@ func (s *Service) BuyStoreItems(ctx context.Context, platform gsf.Platform, play
 	return playerItems, mazes, nil
 }
 
-// GetHouseUpgrades returns the upgrades of the house of the player above its stage, the next one first,
-// the house is the store (House.UpdateUpgradeItems), the stage is the number of the attached upgrades.
+func (s *Service) GetBuybackItem(ctx context.Context, platform gsf.Platform, playerOID, itemOID types.OID) (*types.StoreItem, error) {
+	const op = "game.Service.GetBuybackItem"
+
+	var itemID int
+	err := s.store.DB().QueryRowContext(ctx, `
+			select i.id
+			from item as i
+			join asset_container as ac on ac.id = i.container_id
+			where ac.gsfoid = ? and exists (
+				select 1
+				from player_item as pi
+				join player as pl on pl.id = pi.player_id
+				where pi.item_id = i.id and pl.gsfoid = ?
+			);
+		`, itemOID, playerOID).Scan(&itemID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, wrap.IfErr(op, err)
+	}
+
+	currencies, err := s.GetCurrencies(ctx, platform)
+	if err != nil {
+		return nil, wrap.IfErr(op, err)
+	}
+	item, err := s.GetItem(ctx, platform, itemID)
+	if err != nil {
+		return nil, wrap.IfErr(op, err)
+	}
+	storeItem := &types.StoreItem{
+		ObjectOID:     item.OID,
+		StoreOID:      StoreOID,
+		Quantity:      -1, // GSFStoreItem.UNLIMITED
+		PurchaseLimit: -1,
+		Price:         0,
+		CurrencyOID:   currencies[0].OID,
+		IsBuyBack:     true,
+		Item:          item,
+		Currency:      currencies[0],
+	}
+	storeItem.OID = item.OID
+	storeItem.AssetMap = types.AssetMap{}
+	storeItem.AssetPackages = []types.AssetPackage{}
+	return storeItem, nil
+}
+
+func (s *Service) SellStoreItems(ctx context.Context, platform gsf.Platform, playerOID types.OID, storeItems []types.StoreItem) ([]types.PlayerItem, error) {
+	const op = "game.Service.SellStoreItems"
+
+	tx, err := s.store.DB().BeginTx(ctx, nil)
+	if err != nil {
+		return nil, wrap.IfErr(op, err)
+	}
+	defer tx.Rollback()
+
+	var itemIDs []int
+	var playerItemOIDs []types.OID
+	for _, storeItem := range storeItems {
+		var playerItemID, itemID int
+		var playerItemOID types.OID
+		var quantity int64
+		err := tx.QueryRowContext(ctx, `
+				select pi.id, pi.gsfoid, pi.item_id, pi.quantity
+				from player_item as pi
+				join player as pl on pl.id = pi.player_id
+				join item as i on i.id = pi.item_id
+				join asset_container as ac on ac.id = i.container_id
+				where pl.gsfoid = ? and ac.gsfoid = ? and pi.player_maze_id is null and pi.parent_player_item_id is null
+				order by pi.player_avatar_outfit_id is not null,
+					exists (select 1 from player_item as c where c.parent_player_item_id = pi.id),
+					exists (
+						select 1
+						from player_maze as pm
+						join player_item as m on m.player_maze_id = pm.id
+						where pm.player_item_id = pi.id
+					),
+					pi.id desc
+				limit 1;
+			`, playerOID, storeItem.ObjectOID).Scan(&playerItemID, &playerItemOID, &itemID, &quantity)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, wrap.IfErr(op, fmt.Errorf("item %v: %w", storeItem.ObjectOID, ErrStoreItemNotFound))
+		}
+		if err != nil {
+			return nil, wrap.IfErr(op, err)
+		}
+		if quantity > 1 {
+			_, err = tx.ExecContext(ctx, "update player_item set quantity = quantity - 1 where id = ?;", playerItemID)
+		} else {
+			_, err = tx.ExecContext(ctx, "delete from player_item where id = ?;", playerItemID)
+		}
+		if err != nil {
+			return nil, wrap.IfErr(op, err)
+		}
+		itemIDs = append(itemIDs, itemID)
+		playerItemOIDs = append(playerItemOIDs, playerItemOID)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, wrap.IfErr(op, err)
+	}
+
+	playerItems := make([]types.PlayerItem, 0, len(itemIDs))
+	for i, itemID := range itemIDs {
+		item, err := s.GetItem(ctx, platform, itemID)
+		if err != nil {
+			return nil, wrap.IfErr(op, err)
+		}
+		playerItems = append(playerItems, types.PlayerItem{
+			OID:       playerItemOIDs[i],
+			Item:      item,
+			PlayerOID: playerOID,
+			Quantity:  1,
+		})
+	}
+	return playerItems, nil
+}
+
 func (s *Service) GetHouseUpgrades(ctx context.Context, platform gsf.Platform, playerOID, houseOID types.OID) ([]types.StoreItem, error) {
 	const op = "game.Service.GetHouseUpgrades"
 

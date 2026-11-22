@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// GetPlayerNPCsRequest requests NPCs for a player and zone.
+// GetPlayerNPCsRequest contains the player and the zone of the NPCs.
 type GetPlayerNPCsRequest struct {
 	PlayerOID types.OID
 	ZoneOID   types.OID
@@ -16,7 +16,7 @@ func (req *GetPlayerNPCsRequest) Deserialize(reader gsf.ProtocolReader) {
 	reader.ReadObject(&req.ZoneOID)
 }
 
-// GetPlayerNPCsResponse contains NPC records for the requested zone.
+// GetPlayerNPCsResponse contains the NPCs of the zone.
 type GetPlayerNPCsResponse struct {
 	NPCs []types.NPC
 }

@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// GetQuestFromParentRequest requests quest for parent.
+// GetQuestFromParentRequest contains the parent, e.g. an NPC, and the quest type.
 type GetQuestFromParentRequest struct {
 	ParentOID       types.OID
 	ParentHierarchy string
@@ -18,7 +18,7 @@ func (req *GetQuestFromParentRequest) Deserialize(reader gsf.ProtocolReader) {
 	reader.ReadObject(&req.QuestTypeOID)
 }
 
-// GetQuestFromParentResponse contains quest record for parent.
+// GetQuestFromParentResponse contains the quest the parent offers.
 type GetQuestFromParentResponse struct {
 	Quest *types.Quest
 }

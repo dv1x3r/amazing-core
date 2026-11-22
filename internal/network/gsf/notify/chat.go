@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// Chat is the payload for GSFChatNotify.
+// Chat is a chat message with its sender and channel.
 type Chat struct {
 	Msg          string
 	TypeID       types.OID

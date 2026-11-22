@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// InitLocationRequest requests location data for the selected location.
+// InitLocationRequest contains the location to load.
 type InitLocationRequest struct {
 	// Player OID for home zone, and 292733975781503755 for Spring Bay zone.
 	LocOID types.OID
@@ -15,7 +15,7 @@ func (req *InitLocationRequest) Deserialize(reader gsf.ProtocolReader) {
 	reader.ReadObject(&req.LocOID)
 }
 
-// InitLocationResponse contains location data and SYNC server connection details.
+// InitLocationResponse contains the location data and the SYNC server address.
 type InitLocationResponse struct {
 	ZoneInstance *types.ZoneInstance
 	Village      *types.Village

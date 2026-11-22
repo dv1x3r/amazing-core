@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// PlayerItem is a player-owned item instance.
+// PlayerItem is an item of the player and where it is: inventory, outfit, maze or parent.
 type PlayerItem struct {
 	OID        OID
 	Item       Item

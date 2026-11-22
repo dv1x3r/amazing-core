@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// VillageItem is an item placement within a village.
+// VillageItem is an item placed in a village.
 type VillageItem struct {
 	OID        OID
 	PlayerOID  OID

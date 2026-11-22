@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// GetOtherPlayerDetailsRequest fetches profile data needed to spawn a remote player.
+// GetOtherPlayerDetailsRequest contains the other player.
 type GetOtherPlayerDetailsRequest struct {
 	PlayerOID types.OID
 }
@@ -14,7 +14,7 @@ func (req *GetOtherPlayerDetailsRequest) Deserialize(reader gsf.ProtocolReader) 
 	reader.ReadObject(&req.PlayerOID)
 }
 
-// GetOtherPlayerDetailsResponse returns profile data needed to spawn a remote player.
+// GetOtherPlayerDetailsResponse contains the Zing, the clothes and the profile of the other player.
 type GetOtherPlayerDetailsResponse struct {
 	OtherPlayerDetails types.OtherPlayerDetails
 }

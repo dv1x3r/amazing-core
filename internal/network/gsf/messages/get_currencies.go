@@ -5,12 +5,12 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// GetCurrenciesRequest requests the currency definitions.
+// GetCurrenciesRequest is empty.
 type GetCurrenciesRequest struct{}
 
 func (req *GetCurrenciesRequest) Deserialize(reader gsf.ProtocolReader) {}
 
-// GetCurrenciesResponse contains the currency definitions, the client reads the currency name from its Text asset.
+// GetCurrenciesResponse contains the currencies.
 type GetCurrenciesResponse struct {
 	Currencies []types.Currency
 }

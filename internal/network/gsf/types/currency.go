@@ -2,6 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
+// Currency is a currency with its assets and statistic type.
 type Currency struct {
 	AssetContainer
 	StatsTypeOID OID

@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// OIDLongPair pairs an object OID with an optional int64 value.
+// OIDLongPair is an OID with an optional number.
 type OIDLongPair struct {
 	A OID
 	B gsf.Null[int64]

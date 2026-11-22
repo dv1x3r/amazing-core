@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/onlinestatusvalue"
 )
 
-// OnlineStatus maps a player object ID to an online status value.
+// OnlineStatus is a player OID and its online status.
 type OnlineStatus struct {
 	OID   OID
 	Value onlinestatusvalue.OnlineStatusValue

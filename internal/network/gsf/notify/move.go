@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// Move is the payload for GSFMoveNotify.
+// Move is the movement of the player: its path and rotation.
 type Move struct {
 	Pos       []types.Position
 	QTH       types.QTH

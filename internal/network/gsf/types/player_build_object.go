@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// PlayerBuildObject is a player-owned maze piece.
+// PlayerBuildObject is a maze piece of the player and its maze.
 type PlayerBuildObject struct {
 	OID             OID
 	MazePiece       MazePiece

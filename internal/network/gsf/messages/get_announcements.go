@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// GetAnnouncementsRequest requests login announcements for the player.
+// GetAnnouncementsRequest contains the announcement filter.
 type GetAnnouncementsRequest struct {
 	UnMarked bool
 }
@@ -14,7 +14,7 @@ func (req *GetAnnouncementsRequest) Deserialize(reader gsf.ProtocolReader) {
 	req.UnMarked = reader.ReadBool()
 }
 
-// GetAnnouncementsResponse contains announcements displayed during login.
+// GetAnnouncementsResponse contains the login announcements.
 type GetAnnouncementsResponse struct {
 	Announcements []types.Announcement
 }

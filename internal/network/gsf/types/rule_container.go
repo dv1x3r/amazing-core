@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// RuleContainer combines an asset container with rule metadata.
+// RuleContainer is an asset container with its rules and lock flags.
 type RuleContainer struct {
 	AssetContainer
 	RuleProperty    RuleProperty

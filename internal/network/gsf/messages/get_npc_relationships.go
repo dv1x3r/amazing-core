@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// GetNPCRelationshipsRequest requests the relationships of the player with the NPCs of a zone, of all NPCs without a zone.
+// GetNPCRelationshipsRequest contains the zone of the NPCs, nil for every NPC.
 type GetNPCRelationshipsRequest struct {
 	ZoneOID *types.OID
 }
@@ -17,8 +17,9 @@ func (req *GetNPCRelationshipsRequest) Deserialize(reader gsf.ProtocolReader) {
 	}
 }
 
-// GetNPCRelationshipsResponse contains the relationships, NPCManager iterates the list, so it is never null.
+// GetNPCRelationshipsResponse contains the relationships of the player with the NPCs.
 type GetNPCRelationshipsResponse struct {
+	// Relationships is never nil, NPCManager iterates it.
 	Relationships []types.NPCRelationship
 }
 

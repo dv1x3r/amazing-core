@@ -5,14 +5,14 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// GetTiersRequest requests subscription tier definitions.
+// GetTiersRequest is empty.
 type GetTiersRequest struct {
 }
 
 func (req *GetTiersRequest) Deserialize(reader gsf.ProtocolReader) {
 }
 
-// GetTiersResponse contains subscription tier definitions.
+// GetTiersResponse contains the subscription tiers.
 type GetTiersResponse struct {
 	Tiers []types.Tier
 }

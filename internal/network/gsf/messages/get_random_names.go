@@ -2,7 +2,7 @@ package messages
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// GetRandomNamesRequest requests generated name parts by name-part type.
+// GetRandomNamesRequest contains the amount and the part type of the names.
 type GetRandomNamesRequest struct {
 	// Number of names to return.
 	Amount int32
@@ -17,7 +17,7 @@ func (req *GetRandomNamesRequest) Deserialize(reader gsf.ProtocolReader) {
 	req.NamePartType = reader.ReadString()
 }
 
-// GetRandomNamesResponse contains generated name parts.
+// GetRandomNamesResponse contains the random name parts.
 type GetRandomNamesResponse struct {
 	Names []string
 }

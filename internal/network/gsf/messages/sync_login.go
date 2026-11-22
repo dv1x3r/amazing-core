@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// SyncLoginRequest authenticates the player with the SYNC server.
+// SyncLoginRequest contains the player and the token for the SYNC server.
 type SyncLoginRequest struct {
 	UOID types.OID
 
@@ -21,7 +21,7 @@ func (req *SyncLoginRequest) Deserialize(reader gsf.ProtocolReader) {
 	req.MaxVisSize = reader.ReadInt32()
 }
 
-// SyncLoginResponse acknowledges SYNC server authentication.
+// SyncLoginResponse is empty.
 type SyncLoginResponse struct {
 }
 

@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// AbandonQuestRequest requests to abandon or fail a quest.
+// AbandonQuestRequest contains the player quest to abandon or fail.
 type AbandonQuestRequest struct {
 	PlayerQuestOID types.OID
 	QuestOID       types.OID
@@ -20,7 +20,7 @@ func (req *AbandonQuestRequest) Deserialize(reader gsf.ProtocolReader) {
 	req.IsFailed = reader.ReadBool()
 }
 
-// AbandonQuestResponse contains abandoned quest status.
+// AbandonQuestResponse contains whether the quest was abandoned.
 type AbandonQuestResponse struct {
 	IsAbandoned bool
 }

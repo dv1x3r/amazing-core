@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// RemovePlayer is the payload for GSFRemovePlayerNotify.
+// RemovePlayer is a player that leaves the location nearby.
 type RemovePlayer struct {
 	// POID is the player OID.
 	POID types.OID

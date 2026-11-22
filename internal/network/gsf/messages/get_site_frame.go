@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// GetSiteFrameRequest requests the core site frame asset container.
+// GetSiteFrameRequest contains the type of the site frame.
 type GetSiteFrameRequest struct {
 	// The client always sends 1.
 	TypeValue int32
@@ -31,7 +31,7 @@ func (req *GetSiteFrameRequest) Deserialize(reader gsf.ProtocolReader) {
 	req.IsPreviewEnabled = reader.ReadBool()
 }
 
-// GetSiteFrameResponse contains the core site frame and asset delivery URL.
+// GetSiteFrameResponse contains the site frame and the asset delivery URL.
 type GetSiteFrameResponse struct {
 	// Contains the core assets for the current platform.
 	SiteFrame types.SiteFrame

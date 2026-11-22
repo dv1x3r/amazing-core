@@ -6,7 +6,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/sessionstatus"
 )
 
-// LoginRequest is the client login payload sent to the USER server.
+// LoginRequest contains the login credentials and the client environment.
 type LoginRequest struct {
 	// Player username.
 	LoginID string
@@ -43,7 +43,7 @@ func (req *LoginRequest) Deserialize(reader gsf.ProtocolReader) {
 	req.CNL = reader.ReadString()
 }
 
-// LoginResponse is the server payload that initializes the client session.
+// LoginResponse contains the player, the session and the server settings.
 type LoginResponse struct {
 	SiteInfo       types.SiteInfo
 	Status         sessionstatus.SessionStatus

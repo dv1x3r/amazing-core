@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// Position is a four-component GSF position tuple.
+// Position is a movement position: x, y, z and t.
 type Position struct {
 	X int32
 	Y int32

@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// QuestItem is a quest item instance.
+// QuestItem is a quest item with its rules and item.
 type QuestItem struct {
 	RuleContainer
 	Item Item

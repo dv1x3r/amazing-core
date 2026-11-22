@@ -8,9 +8,8 @@ import (
 
 // ── Sync ─────────────────────────────────────────────────────────────────────
 
-// SyncLogin authenticates the player on the SYNC server.
-// The SYNC server handles real-time positional and social updates.
-// It also handles RELOGIN, the client sends it with the same payload after the connection is restored.
+// SyncLogin binds the SYNC connection to the session, so the player sees the other players and is seen.
+// The client also sends it as RELOGIN after the SYNC connection is restored.
 func (h *Handler) SyncLogin(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.SyncLoginRequest{}
 	if err := r.Read(req); err != nil {
@@ -25,7 +24,7 @@ func (h *Handler) SyncLogin(w gsf.ResponseWriter, r *gsf.Request) error {
 	return w.Write(res)
 }
 
-// MovePlayer receives local player movement and relays it to other sync peers.
+// MovePlayer relays the movement of the player to the players nearby.
 func (h *Handler) MovePlayer(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &notify.Move{}
 	if err := r.Read(req); err != nil {
@@ -39,7 +38,7 @@ func (h *Handler) MovePlayer(w gsf.ResponseWriter, r *gsf.Request) error {
 	return nil
 }
 
-// SyncAction receives a local player action and relays it to other sync peers.
+// SyncAction relays the actions of the player, e.g. animations, to the players nearby.
 func (h *Handler) SyncAction(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &notify.Action{}
 	if err := r.Read(req); err != nil {
@@ -55,7 +54,7 @@ func (h *Handler) SyncAction(w gsf.ResponseWriter, r *gsf.Request) error {
 	return nil
 }
 
-// HeartbeatNotify keeps the SYNC connection alive, only SYNC_LOGIN binds it to a session.
+// HeartbeatNotify keeps the server idle timeout from closing the SYNC connection.
 func (h *Handler) HeartbeatNotify(w gsf.ResponseWriter, r *gsf.Request) error {
 	return r.Read(&notify.Heartbeat{})
 }

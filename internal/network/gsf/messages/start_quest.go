@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// StartQuestRequest requests a quest start.
+// StartQuestRequest contains the player quest to start and its spawned items.
 type StartQuestRequest struct {
 	PlayerQuestOID types.OID
 	QuestOID       types.OID
@@ -24,7 +24,7 @@ func (req *StartQuestRequest) Deserialize(reader gsf.ProtocolReader) {
 	})
 }
 
-// StartQuestResponse contains started quest status.
+// StartQuestResponse contains the start result and the spawned items.
 type StartQuestResponse struct {
 	IsStarted        bool
 	SpawnedItems     []types.SpawnedItem

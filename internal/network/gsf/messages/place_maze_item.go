@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// PlaceMazeItemRequest places an inventory item in a player maze, MazeManager sends it when an item is dropped or moved.
+// PlaceMazeItemRequest contains the item to place and its position in the player maze.
 type PlaceMazeItemRequest struct {
 	InventoryOID       types.OID
 	PlayerMazeOID      types.OID
@@ -27,7 +27,7 @@ func (req *PlaceMazeItemRequest) Deserialize(reader gsf.ProtocolReader) {
 	req.DynamicAttributes = gsf.ReadSlice(reader, reader.ReadString)
 }
 
-// PlaceMazeItemResponse tells whether the item was placed.
+// PlaceMazeItemResponse contains whether the item was placed.
 type PlaceMazeItemResponse struct {
 	IsUpdated bool
 }

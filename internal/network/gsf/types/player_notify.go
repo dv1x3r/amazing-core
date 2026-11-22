@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// PlayerNotify is a queued player notification returned by HEARTBEAT.
+// PlayerNotify is a queued notification for the player.
 type PlayerNotify struct {
 	FromPlayerOID   OID
 	ToPlayerOID     OID

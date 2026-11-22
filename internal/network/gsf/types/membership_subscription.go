@@ -2,6 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
+// MembershipSubscription is a membership with its assets, SKU and duration.
 type MembershipSubscription struct {
 	AssetContainer
 	SKU      string

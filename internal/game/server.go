@@ -22,12 +22,16 @@ import (
 // After LOGIN the client sends HEARTBEAT and HEARTBEAT_NOTIFY every 60 seconds.
 const idleTimeout = 10 * time.Minute
 
+// syncKeepAlive is shorter than the 60 seconds the client waits for data on the SYNC connection.
+const syncKeepAlive = 30 * time.Second
+
 // Server is the game server, it owns the sessions and the world, the handlers get them from it.
 type Server struct {
 	logger   *slog.Logger
 	server   *gsf.Server
 	sessions *SessionManager
 	world    *worldsync.World
+	stop     chan struct{}
 }
 
 func NewServer(logger *slog.Logger, svc *services.Service) *Server {
@@ -35,6 +39,7 @@ func NewServer(logger *slog.Logger, svc *services.Service) *Server {
 		logger:   logger,
 		sessions: NewSessionManager(),
 		world:    worldsync.NewWorld(),
+		stop:     make(chan struct{}),
 	}
 	handler := NewHandler(svc, s.sessions, s.world)
 
@@ -95,8 +100,10 @@ func NewServer(logger *slog.Logger, svc *services.Service) *Server {
 	handleUser(usermessagetype.PLACE_MAZE_ITEM, handler.PlaceMazeItem)
 	handleUser(usermessagetype.REMOVE_MAZE_ITEM, handler.RemoveMazeItem)
 	handleUser(usermessagetype.REMOVE_AND_DETACH_MAZE_ITEM, handler.RemoveAndDetachMazeItem)
+	handleUser(usermessagetype.DETACH_ITEMS, handler.DetachItems)
 	handleUser(usermessagetype.ATTACH_SINGLE_ITEM, handler.AttachSingleItem)
 	handleUser(usermessagetype.ENTER_BUILDING, handler.EnterBuilding)
+	handleUser(usermessagetype.GET_ALL_BUILDINGS, handler.GetAllBuildings)
 
 	// ── Sync ─────────────────────────────────────────────────────────────────────
 	handleSync(syncmessagetype.LOGIN, handler.SyncLogin)
@@ -111,6 +118,11 @@ func NewServer(logger *slog.Logger, svc *services.Service) *Server {
 	handleUser(usermessagetype.SEND_MESSAGE, handler.SendMessage)
 	handleUser(usermessagetype.GET_ANNOUNCEMENTS, handler.GetAnnouncements)
 	handleUser(usermessagetype.GET_ONLINE_STATUSES, handler.GetOnlineStatuses)
+	handleUser(usermessagetype.GET_FRIENDSHIP_REQUEST_COUNTS, handler.GetFriendshipRequestCounts)
+	handleUser(usermessagetype.LIST_LIMITS, handler.ListLimits)
+	handleUser(usermessagetype.GET_HOME_INVITATIONS, handler.GetHomeInvitations)
+	handleUser(usermessagetype.GET_NOTIFICATION_BY_PLAYER_ID, handler.GetNotificationByPlayerID)
+	handleUser(usermessagetype.GET_CRISP_ACTIONS, handler.GetCrispActions)
 
 	// ── NPC and Quests ───────────────────────────────────────────────────────────
 	handleUser(usermessagetype.GET_PLAYER_NPCS, handler.GetPlayerNPCs)
@@ -121,6 +133,10 @@ func NewServer(logger *slog.Logger, svc *services.Service) *Server {
 	handleUser(usermessagetype.GET_NPC_RELATIONSHIP_LEVELS, handler.GetNPCRelationshipLevels)
 	handleUser(usermessagetype.GET_NPCS_WITH_QUEST_OFFER, handler.GetNPCsWithQuestOffer)
 	handleUser(usermessagetype.GET_PLAYER_QUESTS, handler.GetPlayerQuests)
+	handleUser(usermessagetype.GET_PLAYER_MISSIONS, handler.GetPlayerMissions)
+	handleUser(usermessagetype.GET_CMS_MISSIONS, handler.GetCMSMissions)
+	handleUser(usermessagetype.QUEST_EVENT_IN_PROGRESS, handler.QuestEventInProgress)
+	handleUser(usermessagetype.ADD_EVENT, handler.AddEvent)
 	handleUser(usermessagetype.GET_PLAYER_QUESTS_BY_QUEST_IDS, handler.GetPlayerQuestsByOIDs)
 	handleUser(usermessagetype.GET_QUEST_FROM_PARENT, handler.GetQuestFromParent)
 	handleUser(usermessagetype.CREATE_QUEST, handler.CreateQuest)
@@ -140,8 +156,11 @@ func NewServer(logger *slog.Logger, svc *services.Service) *Server {
 	handleUser(usermessagetype.ENTER_STORE, handler.EnterStore)
 	handleUser(usermessagetype.EXIT_STORE, handler.ExitStore)
 	handleUser(usermessagetype.PURCHASE_ITEMS, handler.PurchaseItems)
+	handleUser(usermessagetype.GET_STORE_ITEMS_FOR_ITEMS, handler.GetStoreItemsForItems)
 	handleUser(usermessagetype.GET_CURRENCIES, handler.GetCurrencies)
 	handleUser(usermessagetype.GET_PLAYER_STATS, handler.GetPlayerStats)
+	handleUser(usermessagetype.GET_REQUIRED_EXPERIENCE, handler.GetRequiredExperience)
+	handleUser(usermessagetype.GET_STATS_TYPE, handler.GetStatsType)
 
 	gsfLogger := newGSFLogger(logger, s.sessions)
 
@@ -170,6 +189,7 @@ func NewServer(logger *slog.Logger, svc *services.Service) *Server {
 func (s *Server) ListenAndServe(address string) {
 	s.server.Addr = address
 	s.logger.Info("starting the game server on " + address)
+	go s.keepSyncAlive()
 	if err := s.server.ListenAndServe(); err != nil {
 		if !errors.Is(err, net.ErrClosed) {
 			s.logger.Error(err.Error())
@@ -179,7 +199,21 @@ func (s *Server) ListenAndServe(address string) {
 
 func (s *Server) Shutdown(ctx context.Context) {
 	s.logger.Info("shutting down the game server")
+	close(s.stop)
 	if err := s.server.Shutdown(ctx); err != nil {
 		s.logger.Error(err.Error())
+	}
+}
+
+func (s *Server) keepSyncAlive() {
+	ticker := time.NewTicker(syncKeepAlive)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			s.world.KeepAlive()
+		case <-s.stop:
+			return
+		}
 	}
 }

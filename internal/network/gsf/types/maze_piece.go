@@ -2,6 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
+// MazePiece is a maze piece with its assets, build time and category.
 type MazePiece struct {
 	AssetContainer
 	BuildTime        int32

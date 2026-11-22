@@ -5,14 +5,14 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// GetBuildObjectsRequest requests build objects.
+// GetBuildObjectsRequest is empty.
 type GetBuildObjectsRequest struct {
 }
 
 func (req *GetBuildObjectsRequest) Deserialize(reader gsf.ProtocolReader) {
 }
 
-// GetBuildObjectsResponse contains player-owned build objects.
+// GetBuildObjectsResponse contains the maze pieces of the player.
 type GetBuildObjectsResponse struct {
 	PlayerBuildObjects []types.PlayerBuildObject
 }

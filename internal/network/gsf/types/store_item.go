@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// StoreItem is a store item instance.
+// StoreItem is a store product with its item, price and the client request.
 type StoreItem struct {
 	RuleContainer
 	ObjectOID         OID

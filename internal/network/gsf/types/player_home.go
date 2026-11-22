@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// PlayerHome contains home maze and theme data returned for location init.
+// PlayerHome is the home maze, the theme and the mazes of a player.
 type PlayerHome struct {
 	PlayerMaze   PlayerMaze
 	PlayerName   string

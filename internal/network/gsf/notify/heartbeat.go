@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// Heartbeat is the SYNC server keepalive notify payload.
+// Heartbeat is the player of the SYNC keepalive.
 type Heartbeat struct {
 	// POID is the player OID carried by the sync heartbeat.
 	POID types.OID

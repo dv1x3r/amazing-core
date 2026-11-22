@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// SendMessageRequest is the client chat send payload.
+// SendMessageRequest contains the chat message and its recipient.
 type SendMessageRequest struct {
 	Message           string
 	TypeID            types.OID
@@ -20,7 +20,7 @@ func (req *SendMessageRequest) Deserialize(reader gsf.ProtocolReader) {
 	reader.ReadObject(&req.PlayerChatGroupID)
 }
 
-// SendMessageResponse returns the moderated chat message payload.
+// SendMessageResponse contains the filtered chat message.
 type SendMessageResponse struct {
 	CrispDataTO     *types.CrispDataTO
 	FilteredMessage string

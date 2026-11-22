@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// ReplaceOutfitItemsRequest requests the outfit item swap.
+// ReplaceOutfitItemsRequest contains the item pairs to swap in the outfit.
 type ReplaceOutfitItemsRequest struct {
 	PlayerAvatarOutfitOID types.OID
 	OldInventoryOIDs      []types.OID
@@ -26,7 +26,7 @@ func (req *ReplaceOutfitItemsRequest) Deserialize(reader gsf.ProtocolReader) {
 	})
 }
 
-// ReplaceOutfitItemsResponse contains the swap status.
+// ReplaceOutfitItemsResponse contains whether the outfit was updated.
 type ReplaceOutfitItemsResponse struct {
 	IsUpdated bool
 }

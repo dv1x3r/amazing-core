@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// ObjectPosition is a three-dimensional integer object position.
+// ObjectPosition is the integer position of an object.
 type ObjectPosition struct {
 	X int32
 	Y int32

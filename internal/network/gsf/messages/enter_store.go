@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// EnterStoreRequest is sent when the store window opens.
+// EnterStoreRequest contains the opened store.
 type EnterStoreRequest struct {
 	StoreOID types.OID
 }
@@ -14,7 +14,7 @@ func (req *EnterStoreRequest) Deserialize(reader gsf.ProtocolReader) {
 	reader.ReadObject(&req.StoreOID)
 }
 
-// EnterStoreResponse acknowledges the store enter.
+// EnterStoreResponse is empty.
 type EnterStoreResponse struct{}
 
 func (res *EnterStoreResponse) Serialize(writer gsf.ProtocolWriter) {}

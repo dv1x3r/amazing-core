@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// Notification is the payload for GSFNotificationNotify.
+// Notification is a notification for the player, e.g. QuestCompleted, with its subject.
 type Notification struct {
 	// OID is the notification definition OID from GET_CMS_NOTIFICATIONS.
 	OID types.OID

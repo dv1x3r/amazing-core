@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// AttachSingleItemRequest puts an item on a mount of a parent item, a door or a window on a house.
+// AttachSingleItemRequest contains the item to put on a mount of the parent item.
 type AttachSingleItemRequest struct {
 	ParentOID types.OID
 	ChildOID  types.OID
@@ -19,7 +19,7 @@ func (req *AttachSingleItemRequest) Deserialize(reader gsf.ProtocolReader) {
 	req.Ordinal = reader.ReadInt32()
 }
 
-// AttachSingleItemResponse repeats the attached item, the client does not read it.
+// AttachSingleItemResponse contains the attached item and its mount.
 type AttachSingleItemResponse struct {
 	ParentOID  types.OID
 	ChildOID   types.OID

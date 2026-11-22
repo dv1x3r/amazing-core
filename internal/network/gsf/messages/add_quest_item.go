@@ -5,12 +5,12 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// AddQuestItemRequest adds collected items to a player quest.
-// ItemOID is the Quest Item container OID (the item gsfoid of the quest Treenode).
+// AddQuestItemRequest contains the collected quest items and where they were collected.
 type AddQuestItemRequest struct {
-	PlayerQuestOID       types.OID
-	QuestOID             types.OID
-	ItemInstanceUUID     string
+	PlayerQuestOID   types.OID
+	QuestOID         types.OID
+	ItemInstanceUUID string
+	// ItemOID is the Quest Item container of the quest Treenode.
 	ItemOID              types.OID
 	Count                int32
 	SpawnPoint           string
@@ -37,7 +37,7 @@ func (req *AddQuestItemRequest) Deserialize(reader gsf.ProtocolReader) {
 	reader.ReadObject(&req.PlacedObjectPosition)
 }
 
-// AddQuestItemResponse acknowledges the collected items, the client updates the task counter on it.
+// AddQuestItemResponse contains the quest inventory OIDs of the collected items.
 type AddQuestItemResponse struct {
 	QuestInventoryOIDs []types.OID
 }

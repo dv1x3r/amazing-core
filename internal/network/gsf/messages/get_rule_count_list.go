@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// GetRuleCountListRequest requests rule counter values.
+// GetRuleCountListRequest contains the objects and the expressions to count.
 type GetRuleCountListRequest struct {
 	Items       []types.OID
 	Expressions []string
@@ -24,7 +24,7 @@ func (req *GetRuleCountListRequest) Deserialize(reader gsf.ProtocolReader) {
 	req.Evaluate = reader.ReadBool()
 }
 
-// GetRuleCountListResponse contains rule counter values paired with the requested OIDs.
+// GetRuleCountListResponse contains the counts of the requested objects.
 type GetRuleCountListResponse struct {
 	ItemPairs []types.OIDLongPair
 }

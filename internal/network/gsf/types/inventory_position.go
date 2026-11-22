@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// InventoryPosition describes an item position and rotation in inventory data.
+// InventoryPosition is the position and the rotation of an item.
 type InventoryPosition struct {
 	ObjectPosition ObjectPosition
 	Rotation       string

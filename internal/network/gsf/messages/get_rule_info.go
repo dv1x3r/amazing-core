@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// GetRuleInfoRequest requests the rules of an object, e.g. a quest.
+// GetRuleInfoRequest contains the object of the rules, e.g. a quest.
 type GetRuleInfoRequest struct {
 	ObjectOID types.OID
 	Details   bool

@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// PlayerQuest is a quest instance for a player.
+// PlayerQuest is a quest of the player with its state and dates.
 type PlayerQuest struct {
 	OID                   OID
 	CreateDate            gsf.UnixTime

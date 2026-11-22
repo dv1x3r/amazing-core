@@ -1,4 +1,4 @@
 package types
 
-// AssetMap maps asset type names to the assets in that group.
+// AssetMap is the assets of a container by asset type name.
 type AssetMap map[string][]Asset

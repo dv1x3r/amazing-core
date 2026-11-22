@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// SpawnedItem is an item instance spawned at the specific position.
+// SpawnedItem is a quest item spawned at a position.
 type SpawnedItem struct {
 	InstanceUUID      string
 	ItemOID           OID

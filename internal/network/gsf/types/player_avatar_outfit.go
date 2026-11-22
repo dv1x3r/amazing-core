@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// PlayerAvatarOutfit identifies a saved outfit preset for a player avatar.
+// PlayerAvatarOutfit is an outfit number of a player avatar.
 type PlayerAvatarOutfit struct {
 	OID             OID
 	PlayerOID       OID

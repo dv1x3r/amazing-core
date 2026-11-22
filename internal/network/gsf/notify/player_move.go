@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// PlayerMove is the payload for GSFPlayerMoveNotify.
+// PlayerMove is the movement of a player nearby: its path and rotation.
 type PlayerMove struct {
 	// POID is the player OID.
 	POID types.OID

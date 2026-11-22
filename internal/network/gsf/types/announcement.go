@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// Announcement is a client-visible announcement with asset and ordering data.
+// Announcement is a login announcement with its assets and order.
 type Announcement struct {
 	AssetContainer
 	CreateTS gsf.UnixTime

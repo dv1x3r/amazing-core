@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// Store is a store of an NPC or of a zone.
+// Store is a store of a zone or an NPC with its assets.
 type Store struct {
 	AssetContainer
 	CreateDate gsf.UnixTime

@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// AddPlayer is the payload for GSFAddPlayerNotify.
+// AddPlayer is a player that appears nearby: its position, rotation and action states.
 type AddPlayer struct {
 	// POID is the player OID.
 	POID types.OID

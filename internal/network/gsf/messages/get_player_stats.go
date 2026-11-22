@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// GetPlayerStatsRequest requests the player statistics, the stores read the player money from them.
+// GetPlayerStatsRequest is empty.
 type GetPlayerStatsRequest struct{}
 
 func (req *GetPlayerStatsRequest) Deserialize(reader gsf.ProtocolReader) {}

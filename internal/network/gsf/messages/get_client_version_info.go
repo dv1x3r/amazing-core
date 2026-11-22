@@ -2,7 +2,7 @@ package messages
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// GetClientVersionInfoRequest identifies the client requesting version policy.
+// GetClientVersionInfoRequest contains the client name.
 type GetClientVersionInfoRequest struct {
 	// The client always sends "AmazingWorld".
 	ClientName string
@@ -12,7 +12,7 @@ func (req *GetClientVersionInfoRequest) Deserialize(reader gsf.ProtocolReader) {
 	req.ClientName = reader.ReadString()
 }
 
-// GetClientVersionInfoResponse contains the accepted client version policy.
+// GetClientVersionInfoResponse contains the accepted client versions.
 type GetClientVersionInfoResponse struct {
 	// ClientVersionInfo string in "<version>.<forceUpdate>" format, e.g. "133852.true".
 	//

@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// PlayerActionNotify describes a player action notification on the SYNC server.
+// PlayerActionNotify is a player action with its target and position.
 type PlayerActionNotify struct {
 	// POID is the player OID.
 	POID OID

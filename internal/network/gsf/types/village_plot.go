@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// VillagePlot is a plot assignment within a village.
+// VillagePlot is a plot of a village and its owner.
 type VillagePlot struct {
 	OID         OID
 	CreateDate  gsf.UnixTime

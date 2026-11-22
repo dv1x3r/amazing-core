@@ -2,7 +2,7 @@ package types
 
 import "github.com/dv1x3r/amazing-core/internal/network/gsf"
 
-// PlayerSetting is a named player setting value.
+// PlayerSetting is a named setting of the player.
 type PlayerSetting struct {
 	OID         OID
 	PlayerOID   OID

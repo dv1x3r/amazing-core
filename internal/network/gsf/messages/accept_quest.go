@@ -5,7 +5,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 )
 
-// AcceptQuestRequest requests a quest acceptance.
+// AcceptQuestRequest contains the player quest to accept.
 type AcceptQuestRequest struct {
 	PlayerQuestOID types.OID
 	QuestOID       types.OID
@@ -18,7 +18,7 @@ func (req *AcceptQuestRequest) Deserialize(reader gsf.ProtocolReader) {
 	reader.ReadObject(&req.LocationOID)
 }
 
-// AcceptQuestResponse contains accepted quest status.
+// AcceptQuestResponse contains the acceptance result and the joined players.
 type AcceptQuestResponse struct {
 	IsAccepted    bool
 	CanStart      bool
