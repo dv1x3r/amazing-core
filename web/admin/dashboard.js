@@ -166,6 +166,15 @@ const dashboardSidebar = new w2sidebar({
           },
         },
         {
+          id: 'store-themes',
+          text: 'Store Themes',
+          icon: 'fa fa-store',
+          onClick: async function() {
+            const module = await import('./widgets/store_themes.js')
+            setDashboardWidget(module.createStoreThemeLayout)
+          },
+        },
+        {
           id: 'random-names',
           text: 'Random Names',
           icon: 'fa fa-dice',

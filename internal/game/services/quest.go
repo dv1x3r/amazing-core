@@ -12,6 +12,7 @@ import (
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/oidtype"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types/queststate"
+	"github.com/dv1x3r/w2go/w2db"
 )
 
 // ErrQuestNotFound is a quest or player quest the server does not have,
@@ -82,27 +83,28 @@ func (s *Service) GetNPCQuest(ctx context.Context, platform gsf.Platform, player
 }
 
 func (s *Service) getQuestSteps(ctx context.Context, platform gsf.Platform, questID int) ([]types.Quest, error) {
-	rows, err := s.store.DB().QueryContext(ctx, `
-			select container_id, ordinal from quest where parent_id = ? order by ordinal;
-		`, questID)
+	type row struct {
+		containerID int
+		step        types.Quest
+	}
+	stepRows, err := w2db.SelectContext(ctx, s.store.DB(), w2db.SelectOptions[row]{
+		Query: "select container_id, ordinal from quest where parent_id = ? order by ordinal;",
+		Args:  []any{questID},
+		Scan:  func(rows *sql.Rows, r *row) error { return rows.Scan(&r.containerID, &r.step.Ordinal) },
+	})
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
 	var steps []types.Quest
-	for rows.Next() {
-		var containerID int
-		var step types.Quest
-		if err := rows.Scan(&containerID, &step.Ordinal); err != nil {
-			return nil, err
-		}
-		if step.AssetContainer, err = s.GetAssetContainer(ctx, platform, containerID); err != nil {
+	for _, r := range stepRows {
+		step := r.step
+		if step.AssetContainer, err = s.GetAssetContainer(ctx, platform, r.containerID); err != nil {
 			return nil, err
 		}
 		steps = append(steps, step)
 	}
-	return steps, rows.Err()
+	return steps, nil
 }
 
 // CreatePlayerQuest creates the player quest and the player quests of its steps.
@@ -131,6 +133,19 @@ func (s *Service) CreatePlayerQuest(ctx context.Context, playerOID, questOID typ
 		return types.OID{}, nil, wrap.IfErr(op, err)
 	}
 
+	// The NPC offers a quest again when the player left it open, e.g. after a disconnect,
+	// the earlier open player quest of it and its steps are abandoned.
+	_, err = tx.ExecContext(ctx, `
+			update player_quest set quest_state_id = ?
+			where player_id = ? and quest_state_id in (?, ?, ?, ?)
+				and (quest_id = ? or parent_id in (select id from player_quest where player_id = ? and quest_id = ?));
+		`, queststate.CLOSED_ABANDONED, playerID,
+		queststate.AVAILABLE, queststate.ACCEPTED, queststate.COMPLETED, queststate.STARTED,
+		questID, playerID, questID)
+	if err != nil {
+		return types.OID{}, nil, wrap.IfErr(op, err)
+	}
+
 	playerQuestID, playerQuestOID, err := insertPlayerQuest(ctx, tx, playerID, questID, nil)
 	if err != nil {
 		return types.OID{}, nil, wrap.IfErr(op, err)
@@ -140,27 +155,18 @@ func (s *Service) CreatePlayerQuest(ctx context.Context, playerOID, questOID typ
 		questID int
 		oid     types.OID
 	}
-	rows, err := tx.QueryContext(ctx, `
+	steps, err := w2db.SelectContext(ctx, tx, w2db.SelectOptions[step]{
+		Query: `
 			select q.id, ac.gsfoid
 			from quest as q
 			join asset_container as ac on ac.id = q.container_id
 			where q.parent_id = ?
 			order by q.ordinal;
-		`, questID)
+		`,
+		Args: []any{questID},
+		Scan: func(rows *sql.Rows, st *step) error { return rows.Scan(&st.questID, &st.oid) },
+	})
 	if err != nil {
-		return types.OID{}, nil, wrap.IfErr(op, err)
-	}
-	var steps []step
-	for rows.Next() {
-		var st step
-		if err := rows.Scan(&st.questID, &st.oid); err != nil {
-			rows.Close()
-			return types.OID{}, nil, wrap.IfErr(op, err)
-		}
-		steps = append(steps, st)
-	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
 		return types.OID{}, nil, wrap.IfErr(op, err)
 	}
 
@@ -326,17 +332,33 @@ func (s *Service) ClosePlayerQuest(ctx context.Context, playerOID, playerQuestOI
 // AbandonPlayerQuest abandons or fails the player quest and its open steps.
 func (s *Service) AbandonPlayerQuest(ctx context.Context, playerOID, playerQuestOID types.OID, state queststate.QuestState) error {
 	const op = "game.Service.AbandonPlayerQuest"
-	if err := s.SetPlayerQuestState(ctx, playerOID, playerQuestOID, state); err != nil {
+
+	tx, err := s.store.DB().BeginTx(ctx, nil)
+	if err != nil {
 		return wrap.IfErr(op, err)
 	}
-	_, err := s.store.DB().ExecContext(ctx, `
+	defer tx.Rollback()
+
+	var playerQuestID int
+	err = tx.QueryRowContext(ctx, `
 			update player_quest set quest_state_id = ?
-			where quest_state_id != ? and parent_id = (
-				select pq.id
-				from player_quest as pq
-				join player as pl on pl.id = pq.player_id
-				where pq.gsfoid = ? and pl.gsfoid = ?
-			);
-		`, state, queststate.CLOSED, playerQuestOID, playerOID)
-	return wrap.IfErr(op, err)
+			where gsfoid = ? and player_id = (select id from player where gsfoid = ?)
+			returning id;
+		`, state, playerQuestOID, playerOID).Scan(&playerQuestID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return wrap.IfErr(op, fmt.Errorf("player quest %v: %w", playerQuestOID, ErrQuestNotFound))
+	}
+	if err != nil {
+		return wrap.IfErr(op, err)
+	}
+
+	_, err = tx.ExecContext(ctx, `
+			update player_quest set quest_state_id = ?
+			where parent_id = ? and quest_state_id != ?;
+		`, state, playerQuestID, queststate.CLOSED)
+	if err != nil {
+		return wrap.IfErr(op, err)
+	}
+
+	return wrap.IfErr(op, tx.Commit())
 }

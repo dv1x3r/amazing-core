@@ -2,18 +2,24 @@ package services
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
-	"strings"
 
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
+	"github.com/dv1x3r/w2go/w2db"
 )
 
 func (s *Service) GetInventoryObjects(ctx context.Context, platform gsf.Platform, playerOID types.OID) ([]types.PlayerItem, error) {
 	const op = "game.Service.GetInventoryObjects"
 
-	rows, err := s.store.DB().QueryContext(ctx, `
+	type row struct {
+		itemID     int
+		playerItem types.PlayerItem
+	}
+	itemRows, err := w2db.SelectContext(ctx, s.store.DB(), w2db.SelectOptions[row]{
+		Query: `
 			select
 				pi.item_id,
 				pi.gsfoid as player_item_gsfoid,
@@ -21,40 +27,46 @@ func (s *Service) GetInventoryObjects(ctx context.Context, platform gsf.Platform
 				pi.quantity as quantity
 			from player_item as pi
 			join player as pl on pl.id = pi.player_id
-			where pl.gsfoid = ? and pi.player_avatar_outfit_id is null;
-		`, playerOID)
+			where pl.gsfoid = ? and pi.player_avatar_outfit_id is null
+				and pi.player_maze_id is null and pi.parent_player_item_id is null;
+		`,
+		Args: []any{playerOID},
+		Scan: func(rows *sql.Rows, r *row) error {
+			return rows.Scan(
+				&r.itemID,
+				&r.playerItem.OID,
+				&r.playerItem.PlayerOID,
+				&r.playerItem.Quantity,
+			)
+		},
+	})
 	if err != nil {
 		return nil, wrap.IfErr(op, err)
 	}
-	defer rows.Close()
 
-	playerItems := []types.PlayerItem{}
-	for rows.Next() {
-		var itemID int
-		var playerItem types.PlayerItem
-		if err := rows.Scan(
-			&itemID,
-			&playerItem.OID,
-			&playerItem.PlayerOID,
-			&playerItem.Quantity,
-		); err != nil {
-			return playerItems, wrap.IfErr(op, err)
-		}
-		item, err := s.GetItem(ctx, platform, itemID)
+	playerItems := make([]types.PlayerItem, 0, len(itemRows))
+	for _, r := range itemRows {
+		item, err := s.GetItem(ctx, platform, r.itemID)
 		if err != nil {
 			return playerItems, wrap.IfErr(op, err)
 		}
+		playerItem := r.playerItem
 		playerItem.Item = item
 		playerItems = append(playerItems, playerItem)
 	}
 
-	return playerItems, wrap.IfErr(op, rows.Err())
+	return playerItems, nil
 }
 
 func (s *Service) GetOutfitItems(ctx context.Context, platform gsf.Platform, playerAvatarOutfitOID, playerOID types.OID) ([]types.PlayerItem, error) {
 	const op = "game.Service.GetOutfitItems"
 
-	rows, err := s.store.DB().QueryContext(ctx, `
+	type row struct {
+		itemID     int
+		playerItem types.PlayerItem
+	}
+	itemRows, err := w2db.SelectContext(ctx, s.store.DB(), w2db.SelectOptions[row]{
+		Query: `
 			select
 				pi.item_id,
 				pi.gsfoid as player_item_gsfoid,
@@ -67,79 +79,67 @@ func (s *Service) GetOutfitItems(ctx context.Context, platform gsf.Platform, pla
 			join player_avatar_outfit as po on po.id = pi.player_avatar_outfit_id
 			join avatar_slot as avs on avs.id = pi.avatar_slot_id
 			where po.gsfoid = ? and pl.gsfoid = ?;
-		`, playerAvatarOutfitOID, playerOID)
+		`,
+		Args: []any{playerAvatarOutfitOID, playerOID},
+		Scan: func(rows *sql.Rows, r *row) error {
+			return rows.Scan(
+				&r.itemID,
+				&r.playerItem.OID,
+				&r.playerItem.PlayerOID,
+				&r.playerItem.PlayerAvatarOutfitOID,
+				&r.playerItem.SlotOID,
+				&r.playerItem.Quantity,
+			)
+		},
+	})
 	if err != nil {
 		return nil, wrap.IfErr(op, err)
 	}
-	defer rows.Close()
 
-	playerItems := []types.PlayerItem{}
-	for rows.Next() {
-		var itemID int
-		var playerItem types.PlayerItem
-		if err := rows.Scan(
-			&itemID,
-			&playerItem.OID,
-			&playerItem.PlayerOID,
-			&playerItem.PlayerAvatarOutfitOID,
-			&playerItem.SlotOID,
-			&playerItem.Quantity,
-		); err != nil {
-			return playerItems, wrap.IfErr(op, err)
-		}
-		item, err := s.GetItem(ctx, platform, itemID)
+	playerItems := make([]types.PlayerItem, 0, len(itemRows))
+	for _, r := range itemRows {
+		item, err := s.GetItem(ctx, platform, r.itemID)
 		if err != nil {
 			return playerItems, wrap.IfErr(op, err)
 		}
+		playerItem := r.playerItem
 		playerItem.Item = item
 		playerItems = append(playerItems, playerItem)
 	}
 
-	return playerItems, wrap.IfErr(op, rows.Err())
+	return playerItems, nil
 }
 
 // AddOutfitItems puts the items into the outfit, only the items and the outfit of the player.
 func (s *Service) AddOutfitItems(ctx context.Context, playerOID, outfitOID types.OID, inventoryOIDs, slotOIDs []types.OID) error {
 	const op = "game.Service.AddOutfitItems"
 
-	if len(inventoryOIDs) == 0 || len(slotOIDs) == 0 || len(inventoryOIDs) != len(slotOIDs) {
+	if len(inventoryOIDs) == 0 || len(inventoryOIDs) != len(slotOIDs) {
 		return wrap.IfErr(op, fmt.Errorf("invalid OIDs length"))
 	}
 
-	values := make([]string, len(inventoryOIDs))
-	args := make([]any, 0, len(inventoryOIDs)*2+2)
-	for i := range inventoryOIDs {
-		values[i] = "(?, ?)"
-		args = append(args, inventoryOIDs[i], slotOIDs[i])
-	}
-	args = append(args, playerOID, outfitOID)
-
-	query := fmt.Sprintf(`
-		with add_items(inventory_oid, slot_oid) as (values %s)
-		update player_item
-		set
-			player_avatar_outfit_id = new.outfit_id,
-			avatar_slot_id = new.avatar_slot_id
-		from (
-			select
-				pi.id as player_item_id,
-				avs.id as avatar_slot_id,
-				po.id as outfit_id
-			from add_items
-				join player as pl on pl.gsfoid = ?
-				join player_item as pi on pi.gsfoid = add_items.inventory_oid and pi.player_id = pl.id
-				join avatar_slot as avs on avs.gsfoid = add_items.slot_oid
-				join player_avatar_outfit as po on po.gsfoid = ?
-				join player_avatar as pa on pa.id = po.player_avatar_id and pa.player_id = pl.id
-		) new
-		where player_item.id = new.player_item_id;
-	`, strings.Join(values, ", "))
-
-	if _, err := s.store.DB().ExecContext(ctx, query, args...); err != nil {
+	tx, err := s.store.DB().BeginTx(ctx, nil)
+	if err != nil {
 		return wrap.IfErr(op, err)
 	}
+	defer tx.Rollback()
 
-	return nil
+	for i, inventoryOID := range inventoryOIDs {
+		_, err := tx.ExecContext(ctx, `
+				update player_item
+				set player_avatar_outfit_id = po.id, avatar_slot_id = avs.id
+				from player_avatar_outfit as po
+				join player_avatar as pa on pa.id = po.player_avatar_id
+				join avatar_slot as avs on avs.gsfoid = ?
+				where po.gsfoid = ? and pa.player_id = player_item.player_id
+					and player_item.gsfoid = ? and player_item.player_id = (select id from player where gsfoid = ?);
+			`, slotOIDs[i], outfitOID, inventoryOID, playerOID)
+		if err != nil {
+			return wrap.IfErr(op, err)
+		}
+	}
+
+	return wrap.IfErr(op, tx.Commit())
 }
 
 // RemoveOutfitItems takes the items of the player out of their outfits.
@@ -150,87 +150,53 @@ func (s *Service) RemoveOutfitItems(ctx context.Context, playerOID types.OID, in
 		return wrap.IfErr(op, fmt.Errorf("invalid OIDs length"))
 	}
 
-	values := make([]string, len(inventoryOIDs))
-	args := make([]any, 0, len(inventoryOIDs)+1)
-	for i := range inventoryOIDs {
-		values[i] = "(?)"
-		args = append(args, inventoryOIDs[i])
-	}
-	args = append(args, playerOID)
-
-	query := fmt.Sprintf(`
-		with remove_items(inventory_oid) as (values %s)
-		update player_item
-		set
-			player_avatar_outfit_id = null,
-			avatar_slot_id = null
-		from (
-			select pi.id as player_item_id
-			from remove_items
-				join player as pl on pl.gsfoid = ?
-				join player_item as pi on pi.gsfoid = remove_items.inventory_oid and pi.player_id = pl.id
-		) remove
-		where player_item.id = remove.player_item_id;
-	`, strings.Join(values, ", "))
-
-	if _, err := s.store.DB().ExecContext(ctx, query, args...); err != nil {
+	tx, err := s.store.DB().BeginTx(ctx, nil)
+	if err != nil {
 		return wrap.IfErr(op, err)
 	}
+	defer tx.Rollback()
 
-	return nil
+	for _, inventoryOID := range inventoryOIDs {
+		_, err := tx.ExecContext(ctx, `
+				update player_item
+				set player_avatar_outfit_id = null, avatar_slot_id = null
+				where gsfoid = ? and player_id = (select id from player where gsfoid = ?);
+			`, inventoryOID, playerOID)
+		if err != nil {
+			return wrap.IfErr(op, err)
+		}
+	}
+
+	return wrap.IfErr(op, tx.Commit())
 }
 
 // ReplaceOutfitItems swaps the outfits and slots of item pairs, both items of a pair must be of the player.
 func (s *Service) ReplaceOutfitItems(ctx context.Context, playerOID types.OID, oldOIDs, newOIDs []types.OID) error {
 	const op = "game.Service.ReplaceOutfitItems"
 
-	if len(oldOIDs) == 0 || len(newOIDs) == 0 || len(oldOIDs) != len(newOIDs) {
+	if len(oldOIDs) == 0 || len(oldOIDs) != len(newOIDs) {
 		return wrap.IfErr(op, fmt.Errorf("invalid OIDs length"))
 	}
 
-	values := make([]string, len(oldOIDs))
-	args := make([]any, 0, len(oldOIDs)*2+1)
-	for i := range oldOIDs {
-		values[i] = "(?, ?)"
-		args = append(args, oldOIDs[i], newOIDs[i])
-	}
-	args = append(args, playerOID)
-
-	query := fmt.Sprintf(`
-		with
-		pairs(old_oid, new_oid) as (values %s),
-		owned as (
-			select old_item.id as old_id, new_item.id as new_id
-			from pairs
-				join player as pl on pl.gsfoid = ?
-				join player_item as old_item on old_item.gsfoid = pairs.old_oid and old_item.player_id = pl.id
-				join player_item as new_item on new_item.gsfoid = pairs.new_oid and new_item.player_id = pl.id
-		)
-		update player_item
-		set
-			player_avatar_outfit_id = swap.player_avatar_outfit_id,
-			avatar_slot_id = swap.avatar_slot_id
-		from (
-			select
-				owned.old_id as id,
-				new_item.player_avatar_outfit_id,
-				new_item.avatar_slot_id
-			from owned
-				join player_item as new_item on new_item.id = owned.new_id
-			union all
-			select
-				owned.new_id as id,
-				old_item.player_avatar_outfit_id,
-				old_item.avatar_slot_id
-			from owned
-				join player_item as old_item on old_item.id = owned.old_id
-		) swap
-		where player_item.id = swap.id;
-	`, strings.Join(values, ", "))
-
-	if _, err := s.store.DB().ExecContext(ctx, query, args...); err != nil {
+	tx, err := s.store.DB().BeginTx(ctx, nil)
+	if err != nil {
 		return wrap.IfErr(op, err)
 	}
+	defer tx.Rollback()
 
-	return nil
+	// Both rows of a pair read the values of the other before the update.
+	for i, oldOID := range oldOIDs {
+		_, err := tx.ExecContext(ctx, `
+				update player_item
+				set player_avatar_outfit_id = other.player_avatar_outfit_id, avatar_slot_id = other.avatar_slot_id
+				from player_item as other, player as pl
+				where pl.gsfoid = ? and player_item.player_id = pl.id and other.player_id = pl.id
+					and ((player_item.gsfoid = ? and other.gsfoid = ?) or (player_item.gsfoid = ? and other.gsfoid = ?));
+			`, playerOID, oldOID, newOIDs[i], newOIDs[i], oldOID)
+		if err != nil {
+			return wrap.IfErr(op, err)
+		}
+	}
+
+	return wrap.IfErr(op, tx.Commit())
 }

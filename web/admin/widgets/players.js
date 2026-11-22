@@ -81,6 +81,7 @@ export function createPlayerLayout() {
             { id: 'avatars', text: 'Avatars' },
             { id: 'outfits', text: 'Outfits' },
             { id: 'items', text: 'Items' },
+            { id: 'mazes', text: 'Mazes' },
             { id: 'npcs', text: 'NPCs' },
             { id: 'quests', text: 'Quests' },
           ],
@@ -113,6 +114,9 @@ export function createPlayerLayout() {
         break
       case 'items':
         subLayout.html('main', createPlayerItemsGrid())
+        break
+      case 'mazes':
+        subLayout.html('main', createPlayerMazesGrid())
         break
       case 'npcs':
         subLayout.html('main', createPlayerNPCsGrid())
@@ -622,6 +626,37 @@ function createPlayerItemsGrid() {
         size: '120px',
         render: 'int',
       },
+      {
+        field: 'maze',
+        text: 'Placed In',
+        size: '200px',
+        render: 'text',
+      },
+      {
+        field: 'position',
+        text: 'Position',
+        size: '150px',
+        render: 'text',
+      },
+      {
+        field: 'rotation',
+        text: 'Rotation',
+        size: '150px',
+        render: 'text',
+        hidden: true,
+      },
+      {
+        field: 'parent',
+        text: 'Attached To',
+        size: '200px',
+        render: 'text',
+      },
+      {
+        field: 'ordinal',
+        text: 'Mount',
+        size: '70px',
+        render: 'int',
+      },
     ],
     onRender: function(event) {
       if (selectedPlayerID == null) {
@@ -739,6 +774,63 @@ function openPlayerItemPopup(event) {
   })
     .then(() => form.render('#popup-form'))
     .close(() => form.destroy())
+}
+
+function createPlayerMazesGrid() {
+  return new w2grid({
+    name: 'playerMazeGrid',
+    url: {
+      get: '/api/v1/player/:id/maze/grid',
+    },
+    routeData: { id: selectedPlayerID ?? 0 },
+    recid: 'id',
+    recordHeight: 28,
+    show: {
+      footer: true,
+      toolbar: true,
+      toolbarSearch: false,
+      toolbarReload: true,
+      searchSave: false,
+    },
+    columns: [
+      {
+        field: 'id',
+        text: 'ID',
+        size: '60px',
+      },
+      {
+        field: 'oid',
+        text: 'Player Maze OID',
+        size: '135px',
+        render: 'text',
+      },
+      {
+        field: 'oid_str',
+        text: 'OID Details',
+        size: '135px',
+        render: 'text',
+        hidden: true,
+      },
+      {
+        field: 'house',
+        text: 'House',
+        size: '200px',
+        render: 'text',
+      },
+      {
+        field: 'interior',
+        text: 'Interior Container',
+        size: '200px',
+        render: 'text',
+      },
+      {
+        field: 'items',
+        text: 'Placed Items',
+        size: '100px',
+        render: 'int',
+      },
+    ],
+  })
 }
 
 function createPlayerNPCsGrid() {

@@ -79,10 +79,10 @@ func (s *Service) createPlayer(ctx context.Context, username, password string) (
 	if err = s.insertPlayerAvatarOutfits(ctx, tx, playerID); err != nil {
 		return types.OID{}, wrap.IfErr(op, err)
 	}
-	if err = s.insertPlayerItems(ctx, tx, playerID); err != nil {
+	if err = s.insertPlayerYard(ctx, tx, playerID); err != nil {
 		return types.OID{}, wrap.IfErr(op, err)
 	}
-
+	// A new player starts with an empty inventory, the items are bought in the store.
 	if err = tx.Commit(); err != nil {
 		return types.OID{}, wrap.IfErr(op, err)
 	}
@@ -168,27 +168,6 @@ func (s *Service) insertPlayerAvatarOutfits(ctx context.Context, tx *sql.Tx, pla
 				1
 			from player_avatar as pa
 			where pa.player_id = ?;
-		`, playerID)
-	if s.store.IsErrConstraintUnique(err) {
-		return ErrCreatePlayerAccountFailed
-	}
-	if err != nil {
-		return wrap.IfErr(op, err)
-	}
-	return requireRowsAffected(op, result)
-}
-
-func (s *Service) insertPlayerItems(ctx context.Context, tx *sql.Tx, playerID int) error {
-	const op = "game.Service.insertPlayerItems"
-
-	result, err := tx.ExecContext(ctx, `
-			insert into player_item (gsfoid, player_id, item_id, quantity)
-			select
-				(select coalesce(max(gsfoid), 0) from player_item) + row_number() over (order by it.id),
-				?,
-				it.id,
-				1
-			from item as it;
 		`, playerID)
 	if s.store.IsErrConstraintUnique(err) {
 		return ErrCreatePlayerAccountFailed

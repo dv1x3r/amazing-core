@@ -101,6 +101,11 @@ func NewServer(logger *slog.Logger, handler *routes.Handler, store db.Store) *Se
 	v1.HandleFunc("POST /item/category/form", errorHandler(handler.PostItemCategoryForm))
 	v1.HandleFunc("POST /item/category/remove", errorHandler(handler.PostItemCategoryRemove))
 
+	v1.HandleFunc("GET /store/theme/grid", errorHandler(handler.GetStoreThemeGrid))
+	v1.HandleFunc("GET /store/theme/dropdown", errorHandler(handler.GetStoreThemeDropdown))
+	v1.HandleFunc("POST /store/theme/form", errorHandler(handler.PostStoreThemeForm))
+	v1.HandleFunc("POST /store/theme/remove", errorHandler(handler.PostStoreThemeRemove))
+
 	v1.HandleFunc("GET /npc/grid", errorHandler(handler.GetNPCGrid))
 	v1.HandleFunc("GET /npc/dropdown", errorHandler(handler.GetNPCDropdown))
 	v1.HandleFunc("POST /npc/form", errorHandler(handler.PostNPCForm))
@@ -128,6 +133,8 @@ func NewServer(logger *slog.Logger, handler *routes.Handler, store db.Store) *Se
 	v1.HandleFunc("GET /player/{id}/item/dropdown", errorHandler(handler.GetPlayerItemDropdown))
 	v1.HandleFunc("POST /player/{id}/item/form", errorHandler(handler.PostPlayerItemForm))
 	v1.HandleFunc("POST /player/item/remove", errorHandler(handler.PostPlayerItemRemove))
+
+	v1.HandleFunc("GET /player/{id}/maze/grid", errorHandler(handler.GetPlayerMazeGrid))
 
 	v1.HandleFunc("GET /player/{id}/avatar/grid", errorHandler(handler.GetPlayerAvatarGrid))
 	v1.HandleFunc("GET /player/{id}/avatar/dropdown", errorHandler(handler.GetPlayerAvatarDropdown))

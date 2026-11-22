@@ -92,6 +92,10 @@ func NewServer(logger *slog.Logger, svc *services.Service) *Server {
 	handleUser(usermessagetype.GET_ZONES, handler.GetZones)
 	handleUser(usermessagetype.INIT_LOCATION, handler.InitLocation)
 	handleUser(usermessagetype.GET_MAZE_ITEMS, handler.GetMazeItems)
+	handleUser(usermessagetype.PLACE_MAZE_ITEM, handler.PlaceMazeItem)
+	handleUser(usermessagetype.REMOVE_MAZE_ITEM, handler.RemoveMazeItem)
+	handleUser(usermessagetype.REMOVE_AND_DETACH_MAZE_ITEM, handler.RemoveAndDetachMazeItem)
+	handleUser(usermessagetype.ATTACH_SINGLE_ITEM, handler.AttachSingleItem)
 	handleUser(usermessagetype.ENTER_BUILDING, handler.EnterBuilding)
 
 	// ── Sync ─────────────────────────────────────────────────────────────────────
@@ -113,6 +117,9 @@ func NewServer(logger *slog.Logger, svc *services.Service) *Server {
 	handleUser(usermessagetype.GET_RULE_COUNT_LIST, handler.GetRuleCountList)
 	handleUser(usermessagetype.GET_RULE_INFO, handler.GetRuleInfo)
 	handleUser(usermessagetype.GET_RULE_INSTANCE_INFO, handler.GetRuleInstanceInfo)
+	handleUser(usermessagetype.GET_NPC_RELATIONSHIPS, handler.GetNPCRelationships)
+	handleUser(usermessagetype.GET_NPC_RELATIONSHIP_LEVELS, handler.GetNPCRelationshipLevels)
+	handleUser(usermessagetype.GET_NPCS_WITH_QUEST_OFFER, handler.GetNPCsWithQuestOffer)
 	handleUser(usermessagetype.GET_PLAYER_QUESTS, handler.GetPlayerQuests)
 	handleUser(usermessagetype.GET_PLAYER_QUESTS_BY_QUEST_IDS, handler.GetPlayerQuestsByOIDs)
 	handleUser(usermessagetype.GET_QUEST_FROM_PARENT, handler.GetQuestFromParent)
@@ -127,6 +134,14 @@ func NewServer(logger *slog.Logger, svc *services.Service) *Server {
 
 	// ── Store ────────────────────────────────────────────────────────────────────
 	handleUser(usermessagetype.GET_STORE_ITEMS, handler.GetStoreItems)
+	handleUser(usermessagetype.LIST_STORES, handler.ListStores)
+	handleUser(usermessagetype.GET_ALL_STORE_ITEMS, handler.GetAllStoreItems)
+	handleUser(usermessagetype.GET_STORE_THEMES, handler.GetStoreThemes)
+	handleUser(usermessagetype.ENTER_STORE, handler.EnterStore)
+	handleUser(usermessagetype.EXIT_STORE, handler.ExitStore)
+	handleUser(usermessagetype.PURCHASE_ITEMS, handler.PurchaseItems)
+	handleUser(usermessagetype.GET_CURRENCIES, handler.GetCurrencies)
+	handleUser(usermessagetype.GET_PLAYER_STATS, handler.GetPlayerStats)
 
 	gsfLogger := newGSFLogger(logger, s.sessions)
 

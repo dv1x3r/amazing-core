@@ -2,15 +2,17 @@ package services
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
+	"github.com/dv1x3r/w2go/w2db"
 )
 
 func (s *Service) GetItemCategories(ctx context.Context, publicOnly bool) ([]types.ItemCategory, error) {
 	const op = "game.Service.GetItemCategories"
-
-	rows, err := s.store.DB().QueryContext(ctx, `
+	categories, err := w2db.SelectContext(ctx, s.store.DB(), w2db.SelectOptions[types.ItemCategory]{
+		Query: `
 			select
 				ic.gsfoid,
 				icp.gsfoid as parent_gsfoid,
@@ -21,35 +23,29 @@ func (s *Service) GetItemCategories(ctx context.Context, publicOnly bool) ([]typ
 			from item_category as ic
 			left join item_category as icp on icp.id = ic.parent_id
 			where (? = 0 or ic.is_public = 1);
-		`, publicOnly)
-	if err != nil {
-		return nil, wrap.IfErr(op, err)
+		`,
+		Args: []any{publicOnly},
+		Scan: func(rows *sql.Rows, category *types.ItemCategory) error {
+			return rows.Scan(
+				&category.OID,
+				&category.ParentOID,
+				&category.Name,
+				&category.IsOutdoor,
+				&category.IsWalkover,
+				&category.ShowInDock,
+			)
+		},
+	})
+	if categories == nil {
+		categories = []types.ItemCategory{}
 	}
-	defer rows.Close()
-
-	categories := []types.ItemCategory{}
-	for rows.Next() {
-		var category types.ItemCategory
-		if err := rows.Scan(
-			&category.OID,
-			&category.ParentOID,
-			&category.Name,
-			&category.IsOutdoor,
-			&category.IsWalkover,
-			&category.ShowInDock,
-		); err != nil {
-			return categories, wrap.IfErr(op, err)
-		}
-		categories = append(categories, category)
-	}
-
-	return categories, wrap.IfErr(op, rows.Err())
+	return categories, wrap.IfErr(op, err)
 }
 
 func (s *Service) GetItemCategoriesByItemID(ctx context.Context, itemID int) ([]types.ItemCategory, error) {
 	const op = "game.Service.GetItemCategoriesByItemID"
-
-	rows, err := s.store.DB().QueryContext(ctx, `
+	categories, err := w2db.SelectContext(ctx, s.store.DB(), w2db.SelectOptions[types.ItemCategory]{
+		Query: `
 			select
 				ic.gsfoid,
 				icp.gsfoid as parent_gsfoid,
@@ -61,27 +57,21 @@ func (s *Service) GetItemCategoriesByItemID(ctx context.Context, itemID int) ([]
 			join item_category as ic on ic.id = icm.category_id
 			left join item_category as icp on icp.id = ic.parent_id
 			where icm.item_id = ?;
-		`, itemID)
-	if err != nil {
-		return nil, wrap.IfErr(op, err)
+		`,
+		Args: []any{itemID},
+		Scan: func(rows *sql.Rows, category *types.ItemCategory) error {
+			return rows.Scan(
+				&category.OID,
+				&category.ParentOID,
+				&category.Name,
+				&category.IsOutdoor,
+				&category.IsWalkover,
+				&category.ShowInDock,
+			)
+		},
+	})
+	if categories == nil {
+		categories = []types.ItemCategory{}
 	}
-	defer rows.Close()
-
-	categories := []types.ItemCategory{}
-	for rows.Next() {
-		var category types.ItemCategory
-		if err := rows.Scan(
-			&category.OID,
-			&category.ParentOID,
-			&category.Name,
-			&category.IsOutdoor,
-			&category.IsWalkover,
-			&category.ShowInDock,
-		); err != nil {
-			return categories, wrap.IfErr(op, err)
-		}
-		categories = append(categories, category)
-	}
-
-	return categories, wrap.IfErr(op, rows.Err())
+	return categories, wrap.IfErr(op, err)
 }

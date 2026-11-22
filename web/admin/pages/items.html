@@ -10,4 +10,29 @@
     Items may have multiple categories and acceptable avatar slots assigned.
   </p>
 
+  <p>
+    An item with a store theme is sold in the World Shop in that theme, every NPC store sells all items.
+  </p>
+
+  <p>
+    A house has the <code>Yard</code>, <code>House</code> and <code>HouseCategory</code> categories
+    and an <b>Interior Container</b>: a bought house gets its interior maze with this container as the home theme.
+    The <code>Scene_Unity3D</code> of the interior is the <code>Interior_N</code> of the house <code>Text</code> treenode,
+    its group is <code>Main_Scene</code>, with <code>EmptyScene</code> next to it.
+    A house given to a player on the <b>Players</b> page gets its interior maze too.
+  </p>
+
+  <p>
+    The yard and the house interiors of a player are on the <b>Mazes</b> tab of the <b>Players</b> page.
+    The placement of the player items (<b>Placed In</b>, <b>Position</b>, <b>Attached To</b>, <b>Mount</b>) is changed by the game only.
+  </p>
+
+  <p>
+    An item with the <code>Upgrade</code> category is the <b>Upgrade Of</b> a house to the <b>Upgrade Stage</b>
+    (<code>Stage_N</code> of the house treenode). The house sells its next upgrades in <code>GetStoreItems</code>,
+    the stage of a house is the number of upgrades attached to it.
+    The house container has the models and the exterior icons of every stage,
+    the interior container has the interiors of the next stages in the <code>Locked</code> group.
+  </p>
+
 </div>

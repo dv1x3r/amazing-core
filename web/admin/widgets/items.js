@@ -67,6 +67,35 @@ export function createItemLayout() {
         render: 'dropdown-multi',
       },
       {
+        field: 'store_theme',
+        text: 'Store Theme',
+        size: '150px',
+        render: 'dropdown',
+        sortable: true,
+        searchable: 'text',
+      },
+      {
+        field: 'interior_container',
+        text: 'Interior Container',
+        size: '150px',
+        render: 'dropdown-tooltip',
+        hidden: true,
+      },
+      {
+        field: 'house',
+        text: 'Upgrade Of',
+        size: '150px',
+        render: 'dropdown',
+        hidden: true,
+      },
+      {
+        field: 'house_stage',
+        text: 'Stage',
+        size: '60px',
+        render: 'int',
+        hidden: true,
+      },
+      {
         field: 'has_win_3d',
         text: 'Win 3D',
         size: '60px',
@@ -187,6 +216,49 @@ function openItemPopup(event) {
           column: 0,
         },
       },
+      {
+        field: 'store_theme',
+        type: 'list',
+        options: helpers.remoteListOptions('/api/v1/store/theme/dropdown'),
+        html: {
+          label: 'Store Theme',
+          attr: 'style="width:100%;" placeholder="Type to search..."',
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'interior_container',
+        type: 'list',
+        options: helpers.remoteListOptions('/api/v1/container/dropdown'),
+        html: {
+          label: 'Interior Container',
+          attr: 'style="width:100%;" placeholder="Type to search..."',
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'house',
+        type: 'list',
+        options: helpers.remoteListOptions('/api/v1/item/dropdown'),
+        html: {
+          label: 'Upgrade Of',
+          attr: 'style="width:100%;" placeholder="Type to search..."',
+          span: 6,
+          column: 0,
+        },
+      },
+      {
+        field: 'house_stage',
+        type: 'int',
+        html: {
+          label: 'Upgrade Stage',
+          attr: 'size="10"',
+          span: 6,
+          column: 0,
+        },
+      },
     ],
     actions: {
       async Save() {
@@ -202,7 +274,7 @@ function openItemPopup(event) {
   w2popup.open({
     title: isEditMode ? 'Edit Item' : 'New Item',
     body: '<div id="popup-form" style="width: 100%; height: 100%;"></div>',
-    width: 600, height: 340, showMax: false, resizable: false,
+    width: 600, height: 500, showMax: false, resizable: false,
   })
     .then(() => form.render('#popup-form'))
     .close(() => form.destroy())

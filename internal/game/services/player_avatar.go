@@ -2,16 +2,24 @@ package services
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
+	"github.com/dv1x3r/w2go/w2db"
 )
 
 func (s *Service) GetPlayerAvatars(ctx context.Context, platform gsf.Platform, playerOID types.OID) ([]types.PlayerAvatar, error) {
 	const op = "game.Service.GetPlayerAvatars"
 
-	rows, err := s.store.DB().QueryContext(ctx, `
+	type row struct {
+		playerAvatar types.PlayerAvatar
+		avatarID     int
+		maxOutfits   int16
+	}
+	avatarRows, err := w2db.SelectContext(ctx, s.store.DB(), w2db.SelectOptions[row]{
+		Query: `
 			select
 				pa.gsfoid,
 				pl.gsfoid as player_gsfoid,
@@ -24,38 +32,37 @@ func (s *Service) GetPlayerAvatars(ctx context.Context, platform gsf.Platform, p
 			join player as pl on pl.id = pa.player_id
 			left join player_avatar_outfit as pao on pao.player_avatar_id = pa.id and pao.outfit_no = pa.outfit_no
 			where pl.gsfoid = ?;
-		`, playerOID)
+		`,
+		Args: []any{playerOID},
+		Scan: func(rows *sql.Rows, r *row) error {
+			return rows.Scan(
+				&r.playerAvatar.OID,
+				&r.playerAvatar.PlayerOID,
+				&r.playerAvatar.Name,
+				&r.playerAvatar.OutfitNo,
+				&r.playerAvatar.PlayerAvatarOutfitOID,
+				&r.avatarID,
+				&r.maxOutfits,
+			)
+		},
+	})
 	if err != nil {
 		return nil, wrap.IfErr(op, err)
 	}
-	defer rows.Close()
 
-	playerAvatars := []types.PlayerAvatar{}
-	for rows.Next() {
-		var playerAvatar types.PlayerAvatar
-		var avatarID int
-		var maxOutfits int16
-		if err := rows.Scan(
-			&playerAvatar.OID,
-			&playerAvatar.PlayerOID,
-			&playerAvatar.Name,
-			&playerAvatar.OutfitNo,
-			&playerAvatar.PlayerAvatarOutfitOID,
-			&avatarID,
-			&maxOutfits,
-		); err != nil {
-			return playerAvatars, wrap.IfErr(op, err)
-		}
-		avatar, err := s.GetAvatar(ctx, platform, avatarID)
+	playerAvatars := make([]types.PlayerAvatar, 0, len(avatarRows))
+	for _, r := range avatarRows {
+		avatar, err := s.GetAvatar(ctx, platform, r.avatarID)
 		if err != nil {
 			return playerAvatars, wrap.IfErr(op, err)
 		}
-		avatar.MaxOutfits = maxOutfits
+		avatar.MaxOutfits = r.maxOutfits
+		playerAvatar := r.playerAvatar
 		playerAvatar.Avatar = avatar
 		playerAvatars = append(playerAvatars, playerAvatar)
 	}
 
-	return playerAvatars, wrap.IfErr(op, rows.Err())
+	return playerAvatars, nil
 }
 
 func (s *Service) GetActivePlayerAvatar(ctx context.Context, platform gsf.Platform, playerOID types.OID) (types.PlayerAvatar, error) {

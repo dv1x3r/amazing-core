@@ -58,16 +58,11 @@ func (h *Handler) platform(r *gsf.Request) gsf.Platform {
 	return gsf.PlatformUnknown
 }
 
+// The chat channel type OIDs of GET_CHAT_CHANNEL_TYPES.
 const (
-	SCENE_HOMELOT_SMALL  = "OTYxMTQ4NDU5NDE5MA"
-	SCENE_HOMELOT_WINTER = "OTQ1MDc3NTY0MjEyNg"
-	SCENE_EMPTY          = "OTYwNzA1NTQwOTE2Ng"
-)
-
-const (
-	CHAT_PRIVATE_OID       = 1
-	CHAT_PRIVATE_GROUP_OID = 2
-	CHAT_LOCAL_OID         = 3
+	chatPrivateOID      = 1
+	chatPrivateGroupOID = 2
+	chatLocalOID        = 3
 )
 
 // maxChatMessageLength is in characters, the real limit of the client chat field is unknown.
@@ -580,65 +575,105 @@ func (h *Handler) InitLocation(w gsf.ResponseWriter, r *gsf.Request) error {
 	}
 
 	// Not a zone: the location of a home is the OID of its owner, the visitors send it too.
-	ownerOID := req.LocOID
-	if _, err := h.svc.GetPlayerInfoTO(r.Context(), ownerOID); errors.Is(err, sql.ErrNoRows) {
+	res.Home, err = h.svc.GetPlayerHome(r.Context(), session.platform, req.LocOID, config.Get().Settings.Winter)
+	if errors.Is(err, sql.ErrNoRows) {
 		return wrap.WithGSFError(err, appcode.NOT_FOUND)
-	} else if err != nil {
-		return err
 	}
-
-	// The Home.PlayerMaze.HomeTheme.AssetMap["Scene_Unity3D"] asset drives scene loading via
-	// LoadMazeCommand.cs -> LoadMainScene() -> AssetDownloadManager.cs -> LoadMainScene()
-
-	cdnid := SCENE_HOMELOT_SMALL
-	if config.Get().Settings.Winter {
-		cdnid = SCENE_HOMELOT_WINTER
-	}
-
-	scene, err := h.svc.GetAssetByCDNID(r.Context(), cdnid)
 	if err != nil {
 		return err
 	}
-
-	// EmptyScene has the shared scene objects (AngleViewCamera, RadialMenuManager, MiniMap),
-	// LoadMazeCommand loads it additively after the Main_Scene.
-	emptyScene, err := h.svc.GetAssetByCDNID(r.Context(), SCENE_EMPTY)
-	if err != nil {
-		return err
-	}
-
-	container := types.AssetContainer{}
-	container.AssetMap = types.AssetMap{}
-	container.AssetMap["Scene_Unity3D"] = []types.Asset{scene, emptyScene}
-
-	// ZoneManager takes the yard owner from PlayerHome.PlayerOID and LoadMazeCommand from PlayerMaze.PlayerOID,
-	// ENTER_BUILDING then sends it as the location.
-	playerMaze := types.PlayerMaze{
-		Name:       "coremaze",
-		PlayerOID:  ownerOID,
-		MazePieces: []types.PlayerMazePiece{},
-		HomeTheme:  container,
-	}
-
-	res.Home = &types.PlayerHome{
-		PlayerMaze:  playerMaze,
-		HomeTheme:   container,
-		PlayerOID:   ownerOID,
-		PlayerMazes: []types.PlayerMaze{playerMaze},
-	}
-
 	return w.Write(res)
 }
 
-// GetMazeItems fetches the items placed in the player maze.
+// GetMazeItems fetches the items placed in the player maze, the visitors get them too.
 func (h *Handler) GetMazeItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	req := &messages.GetMazeItemsRequest{}
 	if err := r.Read(req); err != nil {
 		return err
 	}
+	items, err := h.svc.GetMazeItems(r.Context(), h.platform(r), req.PlayerMazeOID, req.PlayerOID)
+	if err != nil {
+		return err
+	}
 	res := &messages.GetMazeItemsResponse{}
-	res.MazeItems = []types.PlayerItem{}
+	res.MazeItems = items
 	return w.Write(res)
+}
+
+// PlaceMazeItem places an item of the player in a maze of the player, IsUpdated is false for an item or a maze of another player.
+func (h *Handler) PlaceMazeItem(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.PlaceMazeItemRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	session, err := h.session(r)
+	if err != nil {
+		return err
+	}
+	err = h.svc.PlaceMazeItem(r.Context(), session.player.OID, req.InventoryOID, req.PlayerMazeOID, req.ObjectPosition, req.Rotation)
+	if err != nil && !errors.Is(err, services.ErrMazeItemNotFound) {
+		return err
+	}
+	return w.Write(&messages.PlaceMazeItemResponse{IsUpdated: err == nil})
+}
+
+// RemoveMazeItem takes a placed item of the player back to the inventory.
+func (h *Handler) RemoveMazeItem(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.RemoveMazeItemRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	session, err := h.session(r)
+	if err != nil {
+		return err
+	}
+	err = h.svc.RemoveMazeItem(r.Context(), session.player.OID, req.InventoryOID)
+	if err != nil && !errors.Is(err, services.ErrMazeItemNotFound) {
+		return err
+	}
+	return w.Write(&messages.RemoveMazeItemResponse{IsUpdated: err == nil})
+}
+
+// RemoveAndDetachMazeItem takes an item on a mount of its parent back to the inventory.
+func (h *Handler) RemoveAndDetachMazeItem(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.RemoveAndDetachMazeItemRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	session, err := h.session(r)
+	if err != nil {
+		return err
+	}
+	err = h.svc.RemoveMazeItem(r.Context(), session.player.OID, req.InventoryOID)
+	if err != nil && !errors.Is(err, services.ErrMazeItemNotFound) {
+		return err
+	}
+	return w.Write(&messages.RemoveAndDetachMazeItemResponse{IsUpdated: err == nil})
+}
+
+// AttachSingleItem puts an item of the player on a mount of a parent item of the player, a door or a window on a house.
+func (h *Handler) AttachSingleItem(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.AttachSingleItemRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	session, err := h.session(r)
+	if err != nil {
+		return err
+	}
+	err = h.svc.AttachMazeItem(r.Context(), session.player.OID, req.ParentOID, req.ChildOID, req.Ordinal)
+	if errors.Is(err, services.ErrMazeItemNotFound) {
+		return wrap.WithGSFError(err, appcode.NOT_FOUND)
+	}
+	if err != nil {
+		return err
+	}
+	return w.Write(&messages.AttachSingleItemResponse{
+		ParentOID:  req.ParentOID,
+		ChildOID:   req.ChildOID,
+		Ordinal:    req.Ordinal,
+		OrdinalUpd: req.Ordinal,
+	})
 }
 
 // EnterBuilding puts the player into the location the client has loaded, at its spawn point.
@@ -683,9 +718,9 @@ func (h *Handler) GetChatChannelTypes(w gsf.ResponseWriter, r *gsf.Request) erro
 	}
 	res := &messages.GetChatChannelTypesResponse{}
 	res.ChatChannelTypes = []types.ChatChannelType{
-		{OID: types.OIDFromInt64(CHAT_PRIVATE_OID), Value: chatchanneltypevalue.PRIVATE},
-		{OID: types.OIDFromInt64(CHAT_PRIVATE_GROUP_OID), Value: chatchanneltypevalue.PRIVATE_GROUP},
-		{OID: types.OIDFromInt64(CHAT_LOCAL_OID), Value: chatchanneltypevalue.LOCAL},
+		{OID: types.OIDFromInt64(chatPrivateOID), Value: chatchanneltypevalue.PRIVATE},
+		{OID: types.OIDFromInt64(chatPrivateGroupOID), Value: chatchanneltypevalue.PRIVATE_GROUP},
+		{OID: types.OIDFromInt64(chatLocalOID), Value: chatchanneltypevalue.LOCAL},
 	}
 	return w.Write(res)
 }
@@ -713,7 +748,7 @@ func (h *Handler) SendMessage(w gsf.ResponseWriter, r *gsf.Request) error {
 		RecipientID:     req.RecipientID,
 	}
 
-	localChatTypeOID := types.OIDFromInt64(CHAT_LOCAL_OID)
+	localChatTypeOID := types.OIDFromInt64(chatLocalOID)
 	if req.Message != "" && req.TypeID == localChatTypeOID {
 		session, err := h.session(r)
 		if err != nil {
@@ -819,6 +854,47 @@ func (h *Handler) GetRuleInstanceInfo(w gsf.ResponseWriter, r *gsf.Request) erro
 	res.Property.ChildrenGroup = map[string][]types.RuleProperty{"Maps": {}}
 	res.InstanceOID = req.InstanceOID
 	return w.Write(res)
+}
+
+// GetNPCRelationships returns the relationships of the player with the NPCs, NPCManager requests them on the zone load and after a reward.
+func (h *Handler) GetNPCRelationships(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.GetNPCRelationshipsRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	session, err := h.session(r)
+	if err != nil {
+		return err
+	}
+	relationships, err := h.svc.GetNPCRelationships(r.Context(), session.player.OID, req.ZoneOID)
+	if err != nil {
+		return err
+	}
+	return w.Write(&messages.GetNPCRelationshipsResponse{Relationships: relationships})
+}
+
+// GetNPCRelationshipLevels returns the points of the relationship levels, none: they are unknown.
+func (h *Handler) GetNPCRelationshipLevels(w gsf.ResponseWriter, r *gsf.Request) error {
+	if err := r.Read(&messages.GetNPCRelationshipLevelsRequest{}); err != nil {
+		return err
+	}
+	return w.Write(&messages.GetNPCRelationshipLevelsResponse{Levels: []types.NPCRelationshipLevel{}})
+}
+
+// GetNPCsWithQuestOffer returns the NPCs that offer a quest to the player, TaskGUI.TriggerAlert shows the portrait of one.
+func (h *Handler) GetNPCsWithQuestOffer(w gsf.ResponseWriter, r *gsf.Request) error {
+	if err := r.Read(&messages.GetNPCsWithQuestOfferRequest{}); err != nil {
+		return err
+	}
+	session, err := h.session(r)
+	if err != nil {
+		return err
+	}
+	npcs, err := h.svc.GetNPCsWithQuestOffer(r.Context(), session.platform, session.player.OID)
+	if err != nil {
+		return err
+	}
+	return w.Write(&messages.GetNPCsWithQuestOfferResponse{NPCs: npcs})
 }
 
 // GetPlayerQuests returns the player quests of the NPC, none for now.
@@ -1065,7 +1141,157 @@ func (h *Handler) GetStoreItems(w gsf.ResponseWriter, r *gsf.Request) error {
 	if err := r.Read(req); err != nil {
 		return err
 	}
+	session, err := h.session(r)
+	if err != nil {
+		return err
+	}
+	// The only store of this message is a house of the player selling its upgrades, other stores get none.
+	items, err := h.svc.GetHouseUpgrades(r.Context(), session.platform, session.player.OID, req.StoreOID)
+	if err != nil {
+		return err
+	}
 	res := &messages.GetStoreItemsResponse{}
-	res.StoreItems = []types.StoreItem{}
+	res.StoreItems = items
 	return w.Write(res)
+}
+
+// ListStores returns the store of the NPC, NPCController shows the NPC Shop button when there is one.
+// Every NPC has the same store with every item.
+func (h *Handler) ListStores(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.ListStoresRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	res := &messages.ListStoresResponse{}
+	res.Stores = []types.Store{}
+	isNPC, err := h.svc.IsNPC(r.Context(), req.NPCOID)
+	if err != nil {
+		return err
+	}
+	if isNPC {
+		res.Stores = append(res.Stores, types.Store{
+			AssetContainer: types.AssetContainer{OID: services.StoreOID, AssetMap: types.AssetMap{}, AssetPackages: []types.AssetPackage{}},
+			ZoneOID:        req.ZoneOID,
+			NPCOID:         req.NPCOID,
+		})
+	}
+	return w.Write(res)
+}
+
+// GetAllStoreItems returns the products of the store for free: every item in the NPC store,
+// the items of the requested subcategory in the World Shop.
+func (h *Handler) GetAllStoreItems(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.GetAllStoreItemsRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	res := &messages.GetAllStoreItemsResponse{}
+	res.StoreItems = []types.StoreItem{}
+	var theme *types.OID
+	switch req.StoreOID {
+	case services.StoreOID:
+	case services.WorldShopOID:
+		// The World Shop asks for the items of one subcategory.
+		theme = &req.CategoryOID
+	default:
+		return w.Write(res)
+	}
+	items, err := h.svc.GetStoreItems(r.Context(), h.platform(r), theme)
+	if err != nil {
+		return err
+	}
+	res.StoreItems = items
+	return w.Write(res)
+}
+
+// GetStoreThemes returns the World Shop categories and subcategories, the other stores have none.
+func (h *Handler) GetStoreThemes(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.GetStoreThemesRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	res := &messages.GetStoreThemesResponse{}
+	res.StoreThemes = []types.StoreTheme{}
+	if req.StoreOID == services.WorldShopOID {
+		themes, err := h.svc.GetStoreThemes(r.Context(), h.platform(r))
+		if err != nil {
+			return err
+		}
+		res.StoreThemes = themes
+	}
+	return w.Write(res)
+}
+
+// EnterStore acknowledges the store window opening.
+func (h *Handler) EnterStore(w gsf.ResponseWriter, r *gsf.Request) error {
+	if err := r.Read(&messages.EnterStoreRequest{}); err != nil {
+		return err
+	}
+	return w.Write(&messages.EnterStoreResponse{})
+}
+
+// ExitStore acknowledges the store window closing.
+func (h *Handler) ExitStore(w gsf.ResponseWriter, r *gsf.Request) error {
+	if err := r.Read(&messages.ExitStoreRequest{}); err != nil {
+		return err
+	}
+	return w.Write(&messages.ExitStoreResponse{})
+}
+
+// PurchaseItems gives the player the bought items, the store is free.
+// The client reads every list of the response, so they are never null.
+func (h *Handler) PurchaseItems(w gsf.ResponseWriter, r *gsf.Request) error {
+	req := &messages.PurchaseItemsRequest{}
+	if err := r.Read(req); err != nil {
+		return err
+	}
+	session, err := h.session(r)
+	if err != nil {
+		return err
+	}
+	res := &messages.PurchaseItemsResponse{
+		ReturnedPlayerItems:         []types.PlayerItem{},
+		PurchasedPlayerItems:        []types.PlayerItem{},
+		ReturnedPlayerBuildObjects:  []types.PlayerBuildObject{},
+		PurchasedPlayerBuildObjects: []types.PlayerBuildObject{},
+		PurchasedPlayerMazes:        []types.PlayerMaze{},
+		PurchasedPlayerAvatars:      []types.PlayerAvatar{},
+		ReturnedPlayerAvatars:       []types.PlayerAvatar{},
+		ProcessedStoreItems:         []types.StoreItem{},
+		AvatarAdoptionItems:         []types.PlayerItem{},
+	}
+	items, mazes, err := h.svc.BuyStoreItems(r.Context(), session.platform, session.player.OID, req.Items)
+	if errors.Is(err, services.ErrStoreItemNotFound) {
+		res.PurchaseResponse = purchaseInvalid
+		return w.Write(res)
+	}
+	if err != nil {
+		return err
+	}
+	res.PurchasedPlayerItems = items
+	res.PurchasedPlayerMazes = mazes
+	return w.Write(res)
+}
+
+// purchaseInvalid is the INVALID_PURCHASES purchase response, NPCStoreSVCS shows "not enabled for purchase".
+const purchaseInvalid = 163
+
+// GetCurrencies returns the currencies, the store windows need the Coinz name of the price currency.
+func (h *Handler) GetCurrencies(w gsf.ResponseWriter, r *gsf.Request) error {
+	if err := r.Read(&messages.GetCurrenciesRequest{}); err != nil {
+		return err
+	}
+	currencies, err := h.svc.GetCurrencies(r.Context(), h.platform(r))
+	if err != nil {
+		return err
+	}
+	return w.Write(&messages.GetCurrenciesResponse{Currencies: currencies})
+}
+
+// GetPlayerStats returns the player statistics, none for now, the player has no money and the store is free.
+func (h *Handler) GetPlayerStats(w gsf.ResponseWriter, r *gsf.Request) error {
+	if err := r.Read(&messages.GetPlayerStatsRequest{}); err != nil {
+		return err
+	}
+	return w.Write(&messages.GetPlayerStatsResponse{PlayerStats: []types.PlayerStats{}})
 }

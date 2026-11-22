@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
-	"path"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -96,13 +96,13 @@ func main() {
 	}
 
 	// ── Database folders ────────────────────────────────────────────────────────
-	if err := os.MkdirAll(path.Dir(cfg.Storage.Databases.Core), os.ModePerm); err != nil {
+	if err := os.MkdirAll(filepath.Dir(cfg.Storage.Databases.Core), os.ModePerm); err != nil {
 		logger.Get().Error("unable to access the folder for the core database", "err", err)
 		fmt.Scanln()
 		os.Exit(1)
 	}
 
-	if err := os.MkdirAll(path.Dir(cfg.Storage.Databases.Blob), os.ModePerm); err != nil {
+	if err := os.MkdirAll(filepath.Dir(cfg.Storage.Databases.Blob), os.ModePerm); err != nil {
 		logger.Get().Error("unable to access the folder for the blob database", "err", err)
 		fmt.Scanln()
 		os.Exit(1)

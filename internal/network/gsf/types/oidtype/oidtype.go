@@ -13,4 +13,5 @@ const (
 	NPC          OIDType = 6
 	ZONE         OIDType = 7
 	PLAYER_QUEST OIDType = 8
+	PLAYER_MAZE  OIDType = 9
 )

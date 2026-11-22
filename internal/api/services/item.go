@@ -17,11 +17,15 @@ import (
 var ErrItemExists = errors.New("item with the same name or container already exists")
 
 type Item struct {
-	ID         int              `json:"id"`
-	Container  w2.Dropdown      `json:"container"`
-	Name       w2.Field[string] `json:"name"`
-	Categories []w2.Dropdown    `json:"categories"`
-	Slots      []w2.Dropdown    `json:"slots"`
+	ID                int              `json:"id"`
+	Container         w2.Dropdown      `json:"container"`
+	Name              w2.Field[string] `json:"name"`
+	Categories        []w2.Dropdown    `json:"categories"`
+	Slots             []w2.Dropdown    `json:"slots"`
+	StoreTheme        w2.Dropdown      `json:"store_theme"`
+	InteriorContainer w2.Dropdown      `json:"interior_container"`
+	House             w2.Dropdown      `json:"house"`
+	HouseStage        w2.Field[int]    `json:"house_stage"`
 
 	Icon             string `json:"icon"`
 	HasWin3D         bool   `json:"has_win_3d"`
@@ -42,6 +46,13 @@ func (s *Service) GetItemGrid(ctx context.Context, req w2.GetGridRequest) (w2.Ge
 			"it.name",
 			"cat.categories",
 			"slt.slots",
+			"it.store_theme_id",
+			"stc.name as store_theme",
+			"it.interior_container_id",
+			"(iac.gsfoid || ' - ' || iac.name) as interior_container",
+			"it.house_item_id",
+			"hit.name as house",
+			"it.house_stage",
 			"icon.cdnid",
 			"coalesce(flags.has_win_3d, 0)",
 			"coalesce(flags.has_osx_3d, 0)",
@@ -50,14 +61,16 @@ func (s *Service) GetItemGrid(ctx context.Context, req w2.GetGridRequest) (w2.Ge
 			"coalesce(flags.has_shop_icon, 0)",
 		},
 		Where: map[string]string{
-			"id":        "it.id",
-			"container": "ac.gsfoid || ' - ' || ac.name",
-			"name":      "it.name",
+			"id":          "it.id",
+			"container":   "ac.gsfoid || ' - ' || ac.name",
+			"name":        "it.name",
+			"store_theme": "stc.name",
 		},
 		OrderBy: map[string]string{
-			"id":        "it.id",
-			"container": "ac.gsfoid",
-			"name":      "it.name",
+			"id":          "it.id",
+			"container":   "ac.gsfoid",
+			"name":        "it.name",
+			"store_theme": "stc.name",
 		},
 		Build: func(sb *sqlbuilder.SelectBuilder) {
 			sb.Join("asset_container as ac", "ac.id = it.container_id")
@@ -83,6 +96,10 @@ func (s *Service) GetItemGrid(ctx context.Context, req w2.GetGridRequest) (w2.Ge
 					join avatar_slot as avs on avs.id = ias.avatar_slot_id
 					group by ias.item_id
 				) as slt`, "slt.item_id = it.id")
+			sb.JoinWithOption(sqlbuilder.LeftJoin, "store_theme as st", "st.id = it.store_theme_id")
+			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_container as stc", "stc.id = st.container_id")
+			sb.JoinWithOption(sqlbuilder.LeftJoin, "asset_container as iac", "iac.id = it.interior_container_id")
+			sb.JoinWithOption(sqlbuilder.LeftJoin, "item as hit", "hit.id = it.house_item_id")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, containerIconJoin, "icon.container_id = it.container_id and icon.rn = 1")
 			sb.JoinWithOption(sqlbuilder.LeftJoin, `(
 					select
@@ -109,6 +126,13 @@ func (s *Service) GetItemGrid(ctx context.Context, req w2.GetGridRequest) (w2.Ge
 				&record.Name,
 				&categories,
 				&slots,
+				&record.StoreTheme.ID,
+				&record.StoreTheme.Text,
+				&record.InteriorContainer.ID,
+				&record.InteriorContainer.Text,
+				&record.House.ID,
+				&record.House.Text,
+				&record.HouseStage,
 				&icon,
 				&record.HasWin3D,
 				&record.HasOSX3D,
@@ -143,8 +167,12 @@ func (s *Service) CreateItem(ctx context.Context, req w2.SaveFormRequest[Item]) 
 		itemID, err = w2db.InsertContext(ctx, tx, w2db.InsertOptions{
 			Into: "item",
 			Values: map[string]any{
-				"container_id": req.Record.Container.ID,
-				"name":         req.Record.Name,
+				"container_id":          req.Record.Container.ID,
+				"name":                  req.Record.Name,
+				"store_theme_id":        req.Record.StoreTheme.ID,
+				"interior_container_id": req.Record.InteriorContainer.ID,
+				"house_item_id":         req.Record.House.ID,
+				"house_stage":           req.Record.HouseStage,
 			},
 		})
 		if s.store.IsErrConstraintUnique(err) {
@@ -167,8 +195,12 @@ func (s *Service) UpdateItem(ctx context.Context, req w2.SaveFormRequest[Item]) 
 		_, err := w2db.UpdateContext(ctx, tx, w2db.UpdateOptions{
 			Update: "item",
 			Values: map[string]any{
-				"container_id": req.Record.Container.ID,
-				"name":         req.Record.Name,
+				"container_id":          req.Record.Container.ID,
+				"name":                  req.Record.Name,
+				"store_theme_id":        req.Record.StoreTheme.ID,
+				"interior_container_id": req.Record.InteriorContainer.ID,
+				"house_item_id":         req.Record.House.ID,
+				"house_stage":           req.Record.HouseStage,
 			},
 			Where: map[string]any{
 				"id": req.Record.ID,

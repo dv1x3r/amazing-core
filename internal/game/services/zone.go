@@ -2,37 +2,37 @@ package services
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
+	"github.com/dv1x3r/w2go/w2db"
 )
 
 func (s *Service) GetZones(ctx context.Context, platform gsf.Platform) ([]types.Zone, error) {
 	const op = "game.Service.GetZones"
 
-	rows, err := s.store.DB().QueryContext(ctx, "select container_id from zone;")
+	containerIDs, err := w2db.SelectContext(ctx, s.store.DB(), w2db.SelectOptions[int]{
+		Query: "select container_id from zone;",
+		Scan:  func(rows *sql.Rows, containerID *int) error { return rows.Scan(containerID) },
+	})
 	if err != nil {
 		return nil, wrap.IfErr(op, err)
 	}
-	defer rows.Close()
 
-	zones := []types.Zone{}
-	for rows.Next() {
-		var zone types.Zone
-		var containerID int
-		if err := rows.Scan(&containerID); err != nil {
-			return zones, wrap.IfErr(op, err)
-		}
+	zones := make([]types.Zone, 0, len(containerIDs))
+	for _, containerID := range containerIDs {
 		container, err := s.GetAssetContainer(ctx, platform, containerID)
 		if err != nil {
 			return zones, wrap.IfErr(op, err)
 		}
+		var zone types.Zone
 		zone.AssetContainer = container
 		zones = append(zones, zone)
 	}
 
-	return zones, wrap.IfErr(op, rows.Err())
+	return zones, nil
 }
 
 // GetZone returns the zone by the OID of its container.

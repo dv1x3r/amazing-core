@@ -39,15 +39,9 @@ func (s *Service) GetOtherPlayerDetails(ctx context.Context, platform gsf.Platfo
 		Clothing:          clothing,
 		PlayerName:        player.ActivePlayerAvatar.Name,
 		WorldName:         player.ActivePlayerAvatar.Name,
-		TierOID:           types.OID{},
 		PlayerAvatarCount: int32(avatarCount),
 		Level:             1,
-		XP:                0,
-		Token:             0,
-		Energy:            0,
-		PlayerFriendCount: 0,
 		Findable:          true,
-		FindableDuration:  0,
 		ExternalSites:     []types.PlayerExternalSite{},
 	}, nil
 }

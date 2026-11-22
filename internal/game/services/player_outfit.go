@@ -2,15 +2,18 @@ package services
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/dv1x3r/amazing-core/internal/lib/wrap"
 	"github.com/dv1x3r/amazing-core/internal/network/gsf/types"
+	"github.com/dv1x3r/w2go/w2db"
 )
 
 func (s *Service) GetOutfits(ctx context.Context, playerAvatarOID, playerOID types.OID) ([]types.PlayerAvatarOutfit, error) {
 	const op = "game.Service.GetOutfits"
 
-	rows, err := s.store.DB().QueryContext(ctx, `
+	outfits, err := w2db.SelectContext(ctx, s.store.DB(), w2db.SelectOptions[types.PlayerAvatarOutfit]{
+		Query: `
 			select
 				po.gsfoid,
 				pl.gsfoid as player_gsfoid,
@@ -21,27 +24,21 @@ func (s *Service) GetOutfits(ctx context.Context, playerAvatarOID, playerOID typ
 			join player as pl on pl.id = pa.player_id
 			where pa.gsfoid = ? and pl.gsfoid = ?
 			order by po.outfit_no;
-		`, playerAvatarOID, playerOID)
-	if err != nil {
-		return nil, wrap.IfErr(op, err)
+		`,
+		Args: []any{playerAvatarOID, playerOID},
+		Scan: func(rows *sql.Rows, outfit *types.PlayerAvatarOutfit) error {
+			return rows.Scan(
+				&outfit.OID,
+				&outfit.PlayerOID,
+				&outfit.PlayerAvatarOID,
+				&outfit.OutfitNo,
+			)
+		},
+	})
+	if outfits == nil {
+		outfits = []types.PlayerAvatarOutfit{}
 	}
-	defer rows.Close()
-
-	outfits := []types.PlayerAvatarOutfit{}
-	for rows.Next() {
-		var outfit types.PlayerAvatarOutfit
-		if err := rows.Scan(
-			&outfit.OID,
-			&outfit.PlayerOID,
-			&outfit.PlayerAvatarOID,
-			&outfit.OutfitNo,
-		); err != nil {
-			return outfits, wrap.IfErr(op, err)
-		}
-		outfits = append(outfits, outfit)
-	}
-
-	return outfits, wrap.IfErr(op, rows.Err())
+	return outfits, wrap.IfErr(op, err)
 }
 
 // CreateOutfit creates an outfit of the player avatar, an avatar of another player fails the not null constraint.

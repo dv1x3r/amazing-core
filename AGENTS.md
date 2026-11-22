@@ -82,6 +82,7 @@ TCP game server and game-facing runtime logic:
 - Message handlers and routing live directly under `internal/game/`
 - Game/client service logic lives in `internal/game/services/`
 - `internal/game/services` is a single package with one `Service` type
+- Game services may use the `w2db` helpers (`SelectContext`, `InsertContext`, `UpdateContext`) where they are simpler than plain SQL
 - Keep game handlers focused on protocol workflow; delegate database and DTO assembly to `internal/game/services`
 
 ### internal/network/
